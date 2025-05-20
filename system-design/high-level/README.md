@@ -1,108 +1,171 @@
-# High Level System Design
+# High-Level System Design Interview Guide
 
-This directory contains detailed explanations of commonly asked system design interview questions. Each question is covered in its own markdown file with comprehensive explanations, including implementation details, code examples, and best practices.
+## Table of Contents
+1. [System Design Fundamentals](system-design-fundamentals.md)
+2. [Scalability](scalability.md)
+3. [Performance](performance.md)
+4. [Reliability](reliability.md)
+5. [Security](security.md)
+6. [Data Management](data-management.md)
+7. [Caching](caching.md)
+8. [Load Balancing](load-balancing.md)
+9. [Message Queues](message-queues.md)
+10. [Microservices](microservices.md)
 
-## Common System Design Questions
+## Core Components Overview
 
-### 1. [Design a URL Shortening Service (TinyURL)](tinyurl.md)
-- URL shortening algorithm and collision handling
-- Database schema and indexing strategies
-- Rate limiting and analytics tracking
-- Scaling considerations and caching strategies
-- Security measures and URL validation
+### System Design Fundamentals
+- Requirements Analysis (Functional, Non-functional)
+- Architecture Patterns (Monolithic, Microservices)
+- Design Principles (SOLID, DRY, KISS)
+- Trade-offs (Performance vs Scalability)
 
-### 2. [Design a Distributed Cache System](distributed-cache.md)
-- Cache invalidation strategies and consistency models
-- Partitioning and replication techniques
-- Cache eviction policies and memory management
-- Cache warming and monitoring strategies
-- Performance optimization and failure handling
+### Scalability
+- Horizontal vs Vertical Scaling
+- Database Scaling (Sharding, Replication)
+- Caching Strategies
+- Load Balancing
 
-### 3. [Design a Rate Limiter](rate-limiter.md)
-- Token bucket and leaky bucket algorithms
-- Distributed rate limiting implementation
-- Rate limit headers and bypass strategies
-- Analytics and monitoring
-- Configuration management and security
+### Performance
+- Response Time Optimization
+- Throughput Enhancement
+- Resource Utilization
+- Bottleneck Identification
 
-### 4. [Design a Distributed Logging System](distributed-logging.md)
-- Log aggregation and real-time processing
-- Storage and retention policies
-- Query capabilities and search optimization
-- Log shipping and compression strategies
-- Monitoring and alerting
+### Reliability
+- Fault Tolerance
+- High Availability
+- Disaster Recovery
+- Data Consistency
 
-### 5. [Design a Real-time Chat Application](chat-application.md)
-- WebSocket implementation and message delivery
-- Message ordering and persistence
-- Online/offline status management
-- Group chat scaling strategies
-- End-to-end encryption and security
+### Security
+- Authentication & Authorization
+- Data Protection
+- API Security
+- Infrastructure Security
 
-### 6. [Design a Search Engine](search-engine.md)
-- Crawling and indexing strategies
-- Relevance ranking algorithms
-- Distributed search implementation
-- Query optimization and caching
-- Real-time indexing and updates
+### Data Management
+- Database Selection
+- Data Modeling
+- Data Partitioning
+- Data Consistency
 
-### 7. [Design a Distributed File System](distributed-file-system.md)
-- File storage and retrieval mechanisms
-- Replication and consistency models
-- Fault tolerance and recovery
-- Performance optimization
-- Security and access control
+### Caching
+- Cache Types (Application, Database, CDN)
+- Cache Invalidation
+- Cache Consistency
+- Cache Performance
 
-### 8. [Design a Notification System](notification-system.md)
-- Push, email, and SMS notifications
-- Delivery guarantees and retry mechanisms
-- Template management and personalization
-- Rate limiting and batching
-- Analytics and monitoring
+### Load Balancing
+- Algorithms (Round Robin, Least Connections)
+- Health Checking
+- Session Management
+- Failover Handling
 
-### 9. [Design a Payment System](payment-system.md)
-- Transaction processing and idempotency
-- Payment gateway integration
-- Fraud detection and prevention
-- Security and compliance
-- Monitoring and reconciliation
+### Message Queues
+- Message Patterns
+- Queue Management
+- Message Processing
+- Error Handling
 
-### 10. [Design a Social Media Feed](social-media-feed.md)
-- Feed generation and ranking
-- Real-time updates and caching
-- Content personalization
-- Performance optimization
-- Analytics and monitoring
+### Microservices
+- Service Decomposition
+- API Design
+- Service Communication
+- Deployment Strategies
 
-## Document Structure
+## Common Interview Questions
 
-Each design document includes:
-- System requirements and constraints
-- Capacity estimation and scaling
-- High-level architecture
-- Detailed component design
-- Data models and schemas
-- API specifications
-- Implementation details and code examples
-- Scaling considerations
-- Performance optimization
-- Security considerations
-- Monitoring and analytics
-- Trade-offs and alternatives
+1. System Design Process
+   - Requirements gathering
+   - Architecture selection
+   - Component design
+   - Trade-off analysis
+
+2. Scalability Challenges
+   - Database scaling
+   - Cache implementation
+   - Load balancing
+   - Service decomposition
+
+3. Performance Optimization
+   - Response time improvement
+   - Resource utilization
+   - Bottleneck resolution
+   - Monitoring and metrics
+
+4. Reliability Patterns
+   - Fault tolerance
+   - High availability
+   - Disaster recovery
+   - Data consistency
+
+5. Security Implementation
+   - Authentication methods
+   - Authorization patterns
+   - Data protection
+   - API security
+
+6. Data Management
+   - Database selection
+   - Data modeling
+   - Partitioning strategies
+   - Consistency patterns
+
+7. Caching Strategies
+   - Cache types and placement
+   - Invalidation patterns
+   - Consistency models
+   - Performance impact
+
+8. Load Balancing
+   - Algorithm selection
+   - Health monitoring
+   - Session handling
+   - Failover strategies
 
 ## Best Practices
 
-When designing these systems, consider:
-1. **Scalability**: Design for horizontal scaling
-2. **Availability**: Implement fault tolerance
-3. **Performance**: Optimize for latency and throughput
-4. **Security**: Implement proper access control
-5. **Monitoring**: Track key metrics and alerts
-6. **Cost**: Balance performance and resources
-7. **Maintenance**: Consider operational complexity
+1. System Design
+   - Clear requirements
+   - Scalable architecture
+   - Performance optimization
+   - Security first
 
-## Additional Resources
+2. Implementation
+   - Clean architecture
+   - Proper documentation
+   - Monitoring and logging
+   - Error handling
 
-- [System Design Primer](https://github.com/donnemartin/system-design-primer)
-- [High Scalability](http://feeds.feedburner.com/HighScalability)
-- [System Design Interview](https://www.educative.io/courses/grokking-the-system-design-interview)
+3. Common Pitfalls
+   - Premature optimization
+   - Over-engineering
+   - Security oversights
+   - Scalability issues
+
+## Resources
+
+### Books
+- Designing Data-Intensive Applications (Kleppmann)
+- Clean Architecture (Martin)
+- Building Microservices (Newman)
+- System Design Interview (Alex Xu)
+
+### Online Resources
+- High Scalability
+- Martin Fowler's Blog
+- InfoQ Architecture
+- AWS Architecture Center
+
+### Tools
+- Draw.io (Architecture Diagrams)
+- Postman (API Testing)
+- JMeter (Load Testing)
+- Prometheus (Monitoring)
+
+### Communities
+- Stack Overflow
+- Reddit r/systemdesign
+- High Scalability Forum
+- InfoQ Architecture Forum
