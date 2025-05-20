@@ -439,6 +439,647 @@ React.memo is for functional components, while React.PureComponent is for class 
 ### 50. What is the purpose of React.forwardRef?
 React.forwardRef lets you pass refs to child components.
 
+### 51. What is the purpose of React.StrictMode?
+React.StrictMode helps identify potential problems in your application by enabling additional checks and warnings.
+
+```jsx
+function App() {
+  return (
+    <React.StrictMode>
+      <div>
+        <ComponentOne />
+        <ComponentTwo />
+      </div>
+    </React.StrictMode>
+  );
+}
+```
+
+### 52. How do you handle forms in React?
+Using controlled components with form state:
+
+```jsx
+function Form() {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        name="username"
+        value={formData.username}
+        onChange={handleChange}
+      />
+      <input
+        name="email"
+        value={formData.email}
+        onChange={handleChange}
+      />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+### 53. What is the difference between useRef and useState?
+useRef doesn't trigger re-renders, while useState does:
+
+```jsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+
+  const handleClick = () => {
+    countRef.current += 1; // No re-render
+    setCount(count + 1); // Triggers re-render
+  };
+
+  return (
+    <div>
+      <p>State: {count}</p>
+      <p>Ref: {countRef.current}</p>
+      <button onClick={handleClick}>Increment</button>
+    </div>
+  );
+}
+```
+
+### 54. How do you implement infinite scrolling?
+Using Intersection Observer API:
+
+```jsx
+function InfiniteScroll() {
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const observer = useRef();
+
+  const lastElementRef = useCallback(node => {
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, []);
+
+  useEffect(() => {
+    // Fetch more items when page changes
+    fetchItems(page).then(newItems => {
+      setItems(prevItems => [...prevItems, ...newItems]);
+    });
+  }, [page]);
+
+  return (
+    <div>
+      {items.map((item, index) => (
+        <div
+          ref={index === items.length - 1 ? lastElementRef : null}
+          key={item.id}
+        >
+          {item.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 55. How do you implement drag and drop?
+Using react-dnd:
+
+```jsx
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+
+function DraggableItem({ id, text }) {
+  const [{ isDragging }, drag] = useDrag({
+    item: { type: 'ITEM', id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
+  return (
+    <div
+      ref={drag}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      {text}
+    </div>
+  );
+}
+
+function DroppableArea({ onDrop }) {
+  const [{ isOver }, drop] = useDrop({
+    accept: 'ITEM',
+    drop: item => onDrop(item.id),
+    collect: monitor => ({
+      isOver: monitor.isOver()
+    })
+  });
+
+  return (
+    <div
+      ref={drop}
+      style={{ backgroundColor: isOver ? 'lightblue' : 'white' }}
+    >
+      Drop here
+    </div>
+  );
+}
+```
+
+### 56. How do you implement authentication in React?
+Using context and protected routes:
+
+```jsx
+const AuthContext = React.createContext(null);
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in
+    checkAuth().then(user => {
+      setUser(user);
+      setLoading(false);
+    });
+  }, []);
+
+  const login = async (credentials) => {
+    const user = await loginUser(credentials);
+    setUser(user);
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function useAuth() {
+  return useContext(AuthContext);
+}
+```
+
+### 57. How do you implement real-time updates?
+Using WebSocket:
+
+```jsx
+function RealTimeComponent() {
+  const [messages, setMessages] = useState([]);
+  const ws = useRef(null);
+
+  useEffect(() => {
+    ws.current = new WebSocket('ws://your-websocket-server');
+
+    ws.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      setMessages(prev => [...prev, message]);
+    };
+
+    return () => {
+      ws.current.close();
+    };
+  }, []);
+
+  const sendMessage = (message) => {
+    ws.current.send(JSON.stringify(message));
+  };
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+      <button onClick={() => sendMessage({ content: 'Hello!' })}>
+        Send Message
+      </button>
+    </div>
+  );
+}
+```
+
+### 58. How do you implement file uploads?
+Using FormData and fetch:
+
+```jsx
+function FileUpload() {
+  const [file, setFile] = useState(null);
+  const [progress, setProgress] = useState(0);
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setProgress(percentCompleted);
+        }
+      });
+      const data = await response.json();
+      console.log('Upload successful:', data);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
+      <button onClick={handleUpload}>Upload</button>
+      {progress > 0 && <progress value={progress} max="100" />}
+    </div>
+  );
+}
+```
+
+### 59. How do you implement pagination?
+Using state and API calls:
+
+```jsx
+function PaginatedList() {
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+
+  useEffect(() => {
+    fetchItems(page).then(data => {
+      setItems(data.items);
+      setTotalPages(data.totalPages);
+    });
+  }, [page]);
+
+  return (
+    <div>
+      {items.map(item => (
+        <div key={item.id}>{item.name}</div>
+      ))}
+      <div>
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(p => p - 1)}
+        >
+          Previous
+        </button>
+        <span>Page {page} of {totalPages}</span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(p => p + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### 60. How do you implement search with debouncing?
+Using useCallback and debounce:
+
+```jsx
+function SearchComponent() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [results, setResults] = useState([]);
+
+  const debouncedSearch = useCallback(
+    debounce((term) => {
+      searchAPI(term).then(setResults);
+    }, 500),
+    []
+  );
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    debouncedSearch(value);
+  };
+
+  return (
+    <div>
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={handleSearch}
+        placeholder="Search..."
+      />
+      <div>
+        {results.map(result => (
+          <div key={result.id}>{result.name}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### 61. How do you implement a custom hook for data fetching?
+Creating a reusable hook:
+
+```jsx
+function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url);
+        const json = await response.json();
+        setData(json);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data, loading, error };
+}
+
+// Usage
+function UserProfile({ userId }) {
+  const { data, loading, error } = useFetch(`/api/users/${userId}`);
+
+  if (loading) return <Loading />;
+  if (error) return <Error message={error} />;
+  if (!data) return null;
+
+  return (
+    <div>
+      <h1>{data.name}</h1>
+      <p>{data.email}</p>
+    </div>
+  );
+}
+```
+
+### 62. How do you implement a custom hook for local storage?
+Creating a reusable hook:
+
+```jsx
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue];
+}
+
+// Usage
+function ThemeToggle() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
+
+  return (
+    <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+      Toggle Theme
+    </button>
+  );
+}
+```
+
+### 63. How do you implement a custom hook for window size?
+Creating a reusable hook:
+
+```jsx
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return size;
+}
+
+// Usage
+function ResponsiveComponent() {
+  const { width, height } = useWindowSize();
+
+  return (
+    <div>
+      <p>Window width: {width}</p>
+      <p>Window height: {height}</p>
+    </div>
+  );
+}
+```
+
+### 64. How do you implement a custom hook for keyboard events?
+Creating a reusable hook:
+
+```jsx
+function useKeyPress(targetKey) {
+  const [keyPressed, setKeyPressed] = useState(false);
+
+  useEffect(() => {
+    const downHandler = ({ key }) => {
+      if (key === targetKey) {
+        setKeyPressed(true);
+      }
+    };
+
+    const upHandler = ({ key }) => {
+      if (key === targetKey) {
+        setKeyPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', downHandler);
+    window.addEventListener('keyup', upHandler);
+
+    return () => {
+      window.removeEventListener('keydown', downHandler);
+      window.removeEventListener('keyup', upHandler);
+    };
+  }, [targetKey]);
+
+  return keyPressed;
+}
+
+// Usage
+function KeyboardComponent() {
+  const isPressed = useKeyPress('a');
+
+  return (
+    <div>
+      {isPressed ? 'A key is pressed!' : 'Press A key'}
+    </div>
+  );
+}
+```
+
+### 65. How do you implement a custom hook for mouse position?
+Creating a reusable hook:
+
+```jsx
+function useMousePosition() {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      setPosition({
+        x: event.clientX,
+        y: event.clientY
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  return position;
+}
+
+// Usage
+function MouseTracker() {
+  const { x, y } = useMousePosition();
+
+  return (
+    <div>
+      <p>Mouse X: {x}</p>
+      <p>Mouse Y: {y}</p>
+    </div>
+  );
+}
+```
+
+### 66. How do you implement a custom hook for scroll position?
+
+### 67. How do you implement a custom hook for network status?
+
+### 68. How do you implement a custom hook for geolocation?
+
+### 69. How do you implement a custom hook for clipboard operations?
+
+### 70. How do you implement a custom hook for media queries?
+
+### 71. How do you implement a custom hook for animations?
+
+### 72. How do you implement a custom hook for form validation?
+
+### 73. How do you implement a custom hook for API polling?
+
+### 74. How do you implement a custom hook for infinite scroll?
+
+### 75. How do you implement a custom hook for drag and drop?
+
+### 76. How do you implement a custom hook for file uploads?
+
+### 77. How do you implement a custom hook for authentication?
+
+### 78. How do you implement a custom hook for real-time updates?
+
+### 79. How do you implement a custom hook for pagination?
+
+### 80. How do you implement a custom hook for search?
+
+### 81. How do you implement a custom hook for sorting?
+
+### 82. How do you implement a custom hook for filtering?
+
+### 83. How do you implement a custom hook for caching?
+
+### 84. How do you implement a custom hook for error boundaries?
+
+### 85. How do you implement a custom hook for loading states?
+
+### 86. How do you implement a custom hook for modal dialogs?
+
+### 87. How do you implement a custom hook for tooltips?
+
+### 88. How do you implement a custom hook for dropdowns?
+
+### 89. How do you implement a custom hook for tabs?
+
+### 90. How do you implement a custom hook for accordions?
+
+### 91. How do you implement a custom hook for carousels?
+
+### 92. How do you implement a custom hook for date pickers?
+
+### 93. How do you implement a custom hook for time pickers?
+
+### 94. How do you implement a custom hook for color pickers?
+
+### 95. How do you implement a custom hook for file explorers?
+
+### 96. How do you implement a custom hook for image galleries?
+
+### 97. How do you implement a custom hook for video players?
+
+### 98. How do you implement a custom hook for audio players?
+
+### 99. How do you implement a custom hook for charts?
+
+### 100. How do you implement a custom hook for maps?
+
 ## Resources
 
 ### Books
