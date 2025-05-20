@@ -136,30 +136,61 @@ const counterReducer = (state = 0, action) => {
 
 ## Hooks
 
-### 10. Core Hooks
-- `useState`: For managing state in functional components
-- `useEffect`: For handling side effects
-- `useContext`: For consuming context
-- `useReducer`: For complex state logic
-- `useCallback`: For memoizing functions
-- `useMemo`: For memoizing values
+### 10. useState
+For managing state in functional components:
 
-### 11. Custom Hooks
-Common custom hooks for:
-- Data fetching
-- Local storage
-- Window size
-- Keyboard events
-- Mouse position
-- Scroll position
-- Network status
-- Geolocation
-- Clipboard operations
-- Media queries
+```jsx
+const [state, setState] = useState(initialState);
+```
+
+### 11. useEffect
+For handling side effects:
+
+```jsx
+useEffect(() => {
+  // Side effect code
+  return () => {
+    // Cleanup code
+  };
+}, [dependencies]);
+```
+
+### 12. useContext
+For consuming context:
+
+```jsx
+const value = useContext(MyContext);
+```
+
+### 13. useReducer
+For complex state logic:
+
+```jsx
+const [state, dispatch] = useReducer(reducer, initialState);
+```
+
+### 14. useCallback
+For memoizing functions:
+
+```jsx
+const memoizedCallback = useCallback(
+  () => {
+    doSomething(a, b);
+  },
+  [a, b],
+);
+```
+
+### 15. useMemo
+For memoizing values:
+
+```jsx
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+```
 
 ## Performance Optimization
 
-### 12. React.memo
+### 16. React.memo
 For preventing unnecessary re-renders:
 
 ```jsx
@@ -168,7 +199,17 @@ const MemoizedComponent = React.memo(function MyComponent(props) {
 });
 ```
 
-### 13. Code Splitting
+### 17. useMemo and useCallback
+For optimizing performance:
+
+```jsx
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+const memoizedCallback = useCallback(() => {
+  doSomething(a, b);
+}, [a, b]);
+```
+
+### 18. Code Splitting
 Using React.lazy and Suspense:
 
 ```jsx
@@ -185,7 +226,7 @@ function App() {
 
 ## Routing
 
-### 14. React Router
+### 19. React Router
 Basic routing setup:
 
 ```jsx
@@ -204,7 +245,7 @@ function App() {
 }
 ```
 
-### 15. Protected Routes
+### 20. Protected Routes
 Implementing authentication:
 
 ```jsx
@@ -226,7 +267,7 @@ function PrivateRoute({ children, ...rest }) {
 
 ## Testing
 
-### 16. Jest and React Testing Library
+### 21. Jest and React Testing Library
 Basic test example:
 
 ```jsx
@@ -241,9 +282,17 @@ test('renders learn react link', () => {
 });
 ```
 
+### 22. Snapshot Testing
+```jsx
+test('renders correctly', () => {
+  const tree = renderer.create(<App />).toJSON();
+  expect(tree).toMatchSnapshot();
+});
+```
+
 ## Advanced Patterns
 
-### 17. Higher-Order Components
+### 23. Higher-Order Components
 ```jsx
 function withAuth(WrappedComponent) {
   return function WithAuth(props) {
@@ -253,7 +302,7 @@ function withAuth(WrappedComponent) {
 }
 ```
 
-### 18. Render Props
+### 24. Render Props
 ```jsx
 class Mouse extends React.Component {
   state = { x: 0, y: 0 };
@@ -275,27 +324,51 @@ class Mouse extends React.Component {
 }
 ```
 
+### 25. Custom Hooks
+```jsx
+function useWindowSize() {
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return size;
+}
+```
+
 ## Best Practices
 
-### 19. Component Structure
+### 26. Component Structure
 - Keep components small and focused
 - Use functional components with hooks
 - Implement proper prop types
 - Follow naming conventions
 
-### 20. State Management
+### 27. State Management
 - Use local state for component-specific data
 - Use context for theme/global state
 - Use Redux for complex state
 - Implement proper error boundaries
 
-### 21. Performance
+### 28. Performance
 - Implement code splitting
 - Use React.memo for expensive renders
 - Optimize with useMemo and useCallback
 - Implement proper loading states
 
-### 22. Testing
+### 29. Testing
 - Write unit tests for components
 - Implement integration tests
 - Use snapshot testing
@@ -303,49 +376,337 @@ class Mouse extends React.Component {
 
 ## Common Interview Questions
 
-### 23. Core Concepts
-1. What is the difference between props and state?
-2. What is the Virtual DOM?
-3. What are React Hooks?
-4. What is the difference between useEffect and useLayoutEffect?
-5. What is the purpose of keys in React?
+### 30. What is the difference between props and state?
+Props are read-only and passed from parent to child, while state is managed within the component and can be changed.
 
-### 24. Component Lifecycle
-1. What is the difference between controlled and uncontrolled components?
-2. What is the purpose of React.Fragment?
-3. What is the difference between useCallback and useMemo?
-4. What is the purpose of React.lazy?
-5. What is the difference between React.memo and useMemo?
+### 31. What is the Virtual DOM?
+The Virtual DOM is a lightweight copy of the actual DOM that React uses to determine what needs to be updated.
 
-### 25. State Management
-1. What is the purpose of useRef?
-2. What is the difference between useState and useReducer?
-3. What is the purpose of useContext?
-4. What is the difference between class and functional components?
-5. What is the purpose of Error Boundaries?
+### 32. What are React Hooks?
+Hooks are functions that let you use state and other React features in functional components.
 
-## Resources
+### 33. What is the difference between useEffect and useLayoutEffect?
+useEffect runs after render, while useLayoutEffect runs synchronously after DOM mutations.
 
-### Books
-- Learning React (O'Reilly)
-- React Design Patterns and Best Practices
-- Fullstack React
-- React in Action
+### 34. What is the purpose of keys in React?
+Keys help React identify which items have changed, been added, or been removed in lists.
 
-### Online Resources
-- React Documentation
-- React Patterns
-- React Training
-- React Router Documentation
+### 35. What is the difference between controlled and uncontrolled components?
+Controlled components have their state controlled by React, while uncontrolled components maintain their own state.
 
-### Tools
-- Create React App
-- React Developer Tools
-- React Testing Library
-- Jest
+### 36. What is the purpose of React.Fragment?
+React.Fragment lets you group multiple elements without adding extra nodes to the DOM.
 
-### Communities
-- React Discord
-- React Reddit
-- React Stack Overflow
-- React GitHub Discussions 
+### 37. What is the difference between useCallback and useMemo?
+useCallback memoizes functions, while useMemo memoizes values.
+
+### 38. What is the purpose of React.lazy?
+React.lazy lets you load components lazily, improving initial load time.
+
+### 39. What is the difference between React.memo and useMemo?
+React.memo is for components, while useMemo is for values.
+
+### 40. What is the purpose of useRef?
+useRef creates a mutable reference that persists across renders.
+
+### 41. What is the difference between useState and useReducer?
+useState is for simple state, while useReducer is for complex state logic.
+
+### 42. What is the purpose of useContext?
+useContext lets you consume context values in functional components.
+
+### 43. What is the difference between class and functional components?
+Class components use lifecycle methods, while functional components use hooks.
+
+### 44. What is the purpose of Error Boundaries?
+Error Boundaries catch JavaScript errors in their child component tree.
+
+### 45. What is the difference between React.lazy and dynamic import?
+React.lazy is specifically for React components, while dynamic import is for any module.
+
+### 46. What is the purpose of React.Suspense?
+React.Suspense lets you handle loading states for lazy-loaded components.
+
+### 47. What is the difference between useEffect and componentDidMount?
+useEffect runs after render, while componentDidMount runs after the first render.
+
+### 48. What is the purpose of React.PureComponent?
+React.PureComponent implements shouldComponentUpdate with a shallow prop and state comparison.
+
+### 49. What is the difference between React.memo and React.PureComponent?
+React.memo is for functional components, while React.PureComponent is for class components.
+
+### 50. What is the purpose of React.forwardRef?
+React.forwardRef lets you pass refs to child components.
+
+### 51. What is the purpose of React.StrictMode?
+React.StrictMode helps identify potential problems in your application by enabling additional checks and warnings.
+
+```jsx
+function App() {
+  return (
+    <React.StrictMode>
+      <div>
+        <ComponentOne />
+        <ComponentTwo />
+      </div>
+    </React.StrictMode>
+  );
+}
+```
+
+### 52. How do you handle forms in React?
+Using controlled components with form state:
+
+```jsx
+function Form() {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        name="username"
+        value={formData.username}
+        onChange={handleChange}
+      />
+      <input
+        name="email"
+        value={formData.email}
+        onChange={handleChange}
+      />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+### 53. What is the difference between useRef and useState?
+useRef doesn't trigger re-renders, while useState does:
+
+```jsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+
+  const handleClick = () => {
+    countRef.current += 1; // No re-render
+    setCount(count + 1); // Triggers re-render
+  };
+
+  return (
+    <div>
+      <p>State: {count}</p>
+      <p>Ref: {countRef.current}</p>
+      <button onClick={handleClick}>Increment</button>
+    </div>
+  );
+}
+```
+
+### 54. How do you implement infinite scrolling?
+Using Intersection Observer API:
+
+```jsx
+function InfiniteScroll() {
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const observer = useRef();
+
+  const lastElementRef = useCallback(node => {
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, []);
+
+  useEffect(() => {
+    // Fetch more items when page changes
+    fetchItems(page).then(newItems => {
+      setItems(prevItems => [...prevItems, ...newItems]);
+    });
+  }, [page]);
+
+  return (
+    <div>
+      {items.map((item, index) => (
+        <div
+          ref={index === items.length - 1 ? lastElementRef : null}
+          key={item.id}
+        >
+          {item.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 55. How do you implement drag and drop?
+Using react-dnd:
+
+```jsx
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+
+function DraggableItem({ id, text }) {
+  const [{ isDragging }, drag] = useDrag({
+    item: { type: 'ITEM', id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
+  return (
+    <div
+      ref={drag}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      {text}
+    </div>
+  );
+}
+
+function DroppableArea({ onDrop }) {
+  const [{ isOver }, drop] = useDrop({
+    accept: 'ITEM',
+    drop: item => onDrop(item.id),
+    collect: monitor => ({
+      isOver: monitor.isOver()
+    })
+  });
+
+  return (
+    <div
+      ref={drop}
+      style={{ backgroundColor: isOver ? 'lightblue' : 'white' }}
+    >
+      Drop here
+    </div>
+  );
+}
+```
+
+### 56. How do you implement authentication in React?
+Using context and protected routes:
+
+```jsx
+const AuthContext = React.createContext(null);
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in
+    checkAuth().then(user => {
+      setUser(user);
+      setLoading(false);
+    });
+  }, []);
+
+  const login = async (credentials) => {
+    const user = await loginUser(credentials);
+    setUser(user);
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function useAuth() {
+  return useContext(AuthContext);
+}
+```
+
+### 57. How do you implement real-time updates?
+Using WebSocket:
+
+```jsx
+function RealTimeComponent() {
+  const [messages, setMessages] = useState([]);
+  const ws = useRef(null);
+
+  useEffect(() => {
+    ws.current = new WebSocket('ws://your-websocket-server');
+
+    ws.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      setMessages(prev => [...prev, message]);
+    };
+
+    return () => {
+      ws.current.close();
+    };
+  }, []);
+
+  const sendMessage = (message) => {
+    ws.current.send(JSON.stringify(message));
+  };
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+      <button onClick={() => sendMessage({ content: 'Hello!' })}>
+        Send Message
+      </button>
+    </div>
+  );
+}
+```
+
+### 58. How do you implement a custom hook for real-time updates?
+Using WebSocket:
+
+```jsx
+function useRealTimeUpdates() {
+  const [messages, setMessages] = useState([]);
+  const ws = useRef(null);
+
+  useEffect(() => {
+    ws.current = new WebSocket('ws://your-websocket-server');
+
+    ws.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      setMessages(prev => [...prev, message]);
+    };
+
+    return () => {
+      ws.current.close();
+    };
+  }, []);
+
+  const sendMessage = (message) => {
+    ws.current.send(JSON.stringify(message));
+  };
+
+  return { messages, sendMessage };
+}
+``` 
