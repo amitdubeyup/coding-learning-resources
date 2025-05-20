@@ -1,136 +1,122 @@
 # High-Level System Design Interview Guide
 
 ## Table of Contents
-1. [System Design Fundamentals](system-design-fundamentals.md)
-2. [Scalability](scalability.md)
-3. [Performance](performance.md)
-4. [Reliability](reliability.md)
-5. [Security](security.md)
-6. [Data Management](data-management.md)
-7. [Caching](caching.md)
-8. [Load Balancing](load-balancing.md)
-9. [Message Queues](message-queues.md)
-10. [Microservices](microservices.md)
+1. [Design a URL Shortening Service (TinyURL)](tinyurl.md)
+2. [Design a Distributed Cache System](distributed-cache.md)
+3. [Design a Rate Limiter](rate-limiter.md)
+4. [Design a Distributed Logging System](distributed-logging.md)
+5. [Design a Real-time Chat Application](chat-application.md)
+6. [Design a Search Engine](search-engine.md)
+7. [Design a Distributed File System](distributed-file-system.md)
+8. [Design a Notification System](notification-system.md)
+9. [Design a Payment System](payment-system.md)
+10. [Design a Social Media Feed](social-media-feed.md)
 
 ## Core Components Overview
 
-### System Design Fundamentals
-- Requirements Analysis (Functional, Non-functional)
-- Architecture Patterns (Monolithic, Microservices)
-- Design Principles (SOLID, DRY, KISS)
-- Trade-offs (Performance vs Scalability)
+### URL Shortening Service
+- URL shortening algorithm and collision handling
+- Database schema and indexing strategies
+- Rate limiting and analytics tracking
+- Scaling considerations and caching strategies
+- Security measures and URL validation
 
-### Scalability
-- Horizontal vs Vertical Scaling
-- Database Scaling (Sharding, Replication)
-- Caching Strategies
-- Load Balancing
+### Distributed Cache System
+- Cache invalidation strategies and consistency models
+- Partitioning and replication techniques
+- Cache eviction policies and memory management
+- Cache warming and monitoring strategies
+- Performance optimization and failure handling
 
-### Performance
-- Response Time Optimization
-- Throughput Enhancement
-- Resource Utilization
-- Bottleneck Identification
+### Rate Limiter
+- Token bucket and leaky bucket algorithms
+- Distributed rate limiting implementation
+- Rate limit headers and bypass strategies
+- Analytics and monitoring
+- Configuration management and security
 
-### Reliability
-- Fault Tolerance
-- High Availability
-- Disaster Recovery
-- Data Consistency
+### Distributed Logging System
+- Log aggregation and real-time processing
+- Storage and retention policies
+- Query capabilities and search optimization
+- Log shipping and compression strategies
+- Monitoring and alerting
 
-### Security
-- Authentication & Authorization
-- Data Protection
-- API Security
-- Infrastructure Security
+### Real-time Chat Application
+- WebSocket implementation and message delivery
+- Message ordering and persistence
+- Online/offline status management
+- Group chat scaling strategies
+- End-to-end encryption and security
 
-### Data Management
-- Database Selection
-- Data Modeling
-- Data Partitioning
-- Data Consistency
+### Search Engine
+- Crawling and indexing strategies
+- Relevance ranking algorithms
+- Distributed search implementation
+- Query optimization and caching
+- Real-time indexing and updates
 
-### Caching
-- Cache Types (Application, Database, CDN)
-- Cache Invalidation
-- Cache Consistency
-- Cache Performance
+### Distributed File System
+- File storage and retrieval mechanisms
+- Replication and consistency models
+- Fault tolerance and recovery
+- Performance optimization
+- Security and access control
 
-### Load Balancing
-- Algorithms (Round Robin, Least Connections)
-- Health Checking
-- Session Management
-- Failover Handling
+### Notification System
+- Push, email, and SMS notifications
+- Delivery guarantees and retry mechanisms
+- Template management and personalization
+- Rate limiting and batching
+- Analytics and monitoring
 
-### Message Queues
-- Message Patterns
-- Queue Management
-- Message Processing
-- Error Handling
+### Payment System
+- Transaction processing and idempotency
+- Payment gateway integration
+- Fraud detection and prevention
+- Security and compliance
+- Monitoring and reconciliation
 
-### Microservices
-- Service Decomposition
-- API Design
-- Service Communication
-- Deployment Strategies
+### Social Media Feed
+- Feed generation and ranking
+- Real-time updates and caching
+- Content personalization
+- Performance optimization
+- Analytics and monitoring
 
-## Common Interview Questions
+## Common Design Patterns
 
-1. System Design Process
-   - Requirements gathering
-   - Architecture selection
-   - Component design
-   - Trade-off analysis
+1. Scalability Patterns
+   - Horizontal vs Vertical Scaling
+   - Database Sharding
+   - Caching Strategies
+   - Load Balancing
 
-2. Scalability Challenges
-   - Database scaling
-   - Cache implementation
-   - Load balancing
-   - Service decomposition
+2. Performance Patterns
+   - Response Time Optimization
+   - Throughput Enhancement
+   - Resource Utilization
+   - Bottleneck Identification
 
-3. Performance Optimization
-   - Response time improvement
-   - Resource utilization
-   - Bottleneck resolution
-   - Monitoring and metrics
+3. Reliability Patterns
+   - Fault Tolerance
+   - High Availability
+   - Disaster Recovery
+   - Data Consistency
 
-4. Reliability Patterns
-   - Fault tolerance
-   - High availability
-   - Disaster recovery
-   - Data consistency
-
-5. Security Implementation
-   - Authentication methods
-   - Authorization patterns
-   - Data protection
-   - API security
-
-6. Data Management
-   - Database selection
-   - Data modeling
-   - Partitioning strategies
-   - Consistency patterns
-
-7. Caching Strategies
-   - Cache types and placement
-   - Invalidation patterns
-   - Consistency models
-   - Performance impact
-
-8. Load Balancing
-   - Algorithm selection
-   - Health monitoring
-   - Session handling
-   - Failover strategies
+4. Security Patterns
+   - Authentication & Authorization
+   - Data Protection
+   - API Security
+   - Infrastructure Security
 
 ## Best Practices
 
 1. System Design
-   - Clear requirements
-   - Scalable architecture
+   - Clear requirements gathering
+   - Scalable architecture planning
    - Performance optimization
-   - Security first
+   - Security-first approach
 
 2. Implementation
    - Clean architecture
