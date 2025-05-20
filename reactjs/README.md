@@ -2278,6 +2278,153 @@ function MapComponent({initialCenter, initialZoom}) {
 }
 ```
 
+## Accessibility in React
+
+Accessibility (a11y) ensures your app is usable by everyone, including people with disabilities. Use semantic HTML, ARIA attributes, and keyboard navigation. Example:
+
+```jsx
+<button aria-label="Close" onClick={onClose}>×</button>
+```
+- Use `<label htmlFor="id">` for form fields.
+- Ensure all interactive elements are keyboard accessible.
+- Use tools like [axe](https://www.deque.com/axe/) and [eslint-plugin-jsx-a11y](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y).
+
+## TypeScript with React
+
+TypeScript adds static typing to React, improving code quality and maintainability.
+
+```tsx
+interface Props {
+  name: string;
+}
+
+const Welcome: React.FC<Props> = ({ name }) => <h1>Hello, {name}</h1>;
+```
+- Use `.tsx` files for components.
+- Type props, state, and event handlers.
+- Use `React.FC`, `React.ChangeEvent`, etc.
+
+## Testing Best Practices (including hooks)
+
+- Use [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for component tests.
+- Use [@testing-library/react-hooks](https://react-hooks-testing-library.com/) for custom hooks.
+- Mock API calls with [msw](https://mswjs.io/) or jest mocks.
+- Test user interactions, not implementation details.
+
+```jsx
+import { renderHook, act } from '@testing-library/react-hooks';
+import useCounter from './useCounter';
+
+test('should increment counter', () => {
+  const { result } = renderHook(() => useCounter());
+  act(() => {
+    result.current.increment();
+  });
+  expect(result.current.count).toBe(1);
+});
+```
+
+## Common Pitfalls in React
+
+- **Infinite loops in useEffect:** Always specify dependencies correctly.
+- **Stale closures:** Use functional updates or dependencies in hooks.
+- **Unnecessary re-renders:** Use React.memo, useCallback, and useMemo.
+- **Direct DOM manipulation:** Avoid unless necessary; use refs.
+- **Not cleaning up effects:** Always return a cleanup function in useEffect.
+- **Improper key usage in lists:** Use stable, unique keys.
+- **Security:** Never trust user input in `dangerouslySetInnerHTML`.
+
+## Interview Preparation Tips
+
+- Review React documentation and official blog.
+- Practice coding: build small apps, clone UIs, or solve problems on LeetCode/CodeSandbox.
+- Read and understand open-source React projects.
+- Practice explaining concepts out loud.
+- Mock interviews with peers or use platforms like Pramp.
+- Stay updated with the latest React features.
+
+## Expanded Best Practices
+
+### Code Organization
+- Use feature-based folder structure for scalability.
+- Separate presentational and container components.
+- Keep files small and focused.
+
+### Security
+- Sanitize user input, especially with `dangerouslySetInnerHTML`.
+- Avoid exposing sensitive data in the frontend.
+- Use HTTPS and secure cookies for authentication.
+
+### State Management
+- Lift state up only when necessary.
+- Normalize state shape for complex data.
+- Use Context or Redux for global state, but avoid overuse.
+
+## React Server Components & Concurrent Features
+
+- **React Server Components** allow you to render components on the server, reducing bundle size and improving performance. Still experimental.
+- **Concurrent Features** (like `useTransition`, `Suspense` for data fetching) enable smoother user experiences by allowing React to interrupt rendering and prioritize updates.
+
+## Clarification: Error Boundaries
+
+> **Note:** As of now, error boundaries can only be implemented with class components. There is no hook for error boundaries yet. Use class-based error boundaries for catching errors in the component tree.
+
+```jsx
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    // Log error
+  }
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+```
+
+## Expanded Explanations for Advanced Custom Hooks (90–100)
+
+### 90. useAccordion
+**Purpose:** Manage open/close state for multiple accordion sections. Useful for FAQs, settings panels, etc.
+
+### 91. useCarousel
+**Purpose:** Manage current slide and navigation for image or content carousels. Handles next/prev logic and looping.
+
+### 92. useDatePicker
+**Purpose:** Manage selected date and handle changes. Can be integrated with calendar UIs.
+
+### 93. useTimePicker
+**Purpose:** Manage selected time and handle changes. Useful for scheduling apps.
+
+### 94. useColorPicker
+**Purpose:** Manage color selection, often used in design tools or settings.
+
+### 95. useFileExplorer
+**Purpose:** Manage navigation and selection in a file system UI. Can be extended to fetch files from APIs.
+
+### 96. useImageGallery
+**Purpose:** Manage current image and navigation in a gallery. Handles next/prev logic and looping.
+
+### 97. useVideoPlayer
+**Purpose:** Manage play/pause, seek, and time tracking for video elements. Integrate with custom controls.
+
+### 98. useAudioPlayer
+**Purpose:** Similar to useVideoPlayer, but for audio elements.
+
+### 99. useChart
+**Purpose:** Manage chart data and updates. Integrate with chart libraries like Chart.js or Recharts.
+
+### 100. useMap
+**Purpose:** Manage map center, zoom, and events. Integrate with map libraries like Leaflet or Google Maps.
+
 ## Resources
 
 ### Books
