@@ -7,7 +7,13 @@
 4. [Hooks](#hooks)
 5. [Performance Optimization](#performance-optimization)
 6. [Routing](#routing)
+7. [Testing](#testing)
 8. [Advanced Patterns](#advanced-patterns)
+9. [Modern React Features](#modern-react-features)
+10. [TypeScript Integration](#typescript-integration)
+11. [Build Tools](#build-tools)
+12. [React Best Practices](#react-best-practices)
+13. [Additional Resources](#additional-resources)
 
 ## Core Concepts
 
