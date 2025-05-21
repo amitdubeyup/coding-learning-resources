@@ -4458,6 +4458,12 @@ function SafeComponent({ userInput }) {
   return <div>{escapeHtml(userInput)}</div>;
 }
 
+// Use DOMPurify for sanitizing HTML
+import DOMPurify from 'dompurify';
+function SafeHtml({ html }) {
+  return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
+}
+
 // CSRF Protection
 function SecureForm() {
   const [csrfToken, setCsrfToken] = useState('');
@@ -4489,7 +4495,19 @@ function SecureForm() {
     </form>
   );
 }
+
+// Authentication & Authorization
+// Use secure cookies (httpOnly, secure, sameSite)
+// Store secrets in environment variables, not in code
+// Always use HTTPS in production
+// Audit dependencies for vulnerabilities (e.g., npm audit)
 ```
+
+**Recommended Libraries:**
+- [DOMPurify](https://github.com/cure53/DOMPurify) for sanitizing HTML
+- [Helmet](https://helmetjs.github.io/) for setting HTTP headers (server-side)
+- [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) for JWT handling
+- [OWASP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/React_Security_Cheat_Sheet.html)
 
 ### Accessibility Guidelines
 Implementing accessibility features in React components.
@@ -4502,6 +4520,7 @@ function AccessibleButton({ onClick, children }) {
       onClick={onClick}
       role="button"
       tabIndex={0}
+      aria-pressed="false"
       onKeyPress={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           onClick();
@@ -4527,7 +4546,6 @@ function AccessibleForm() {
       <span id="username-error" role="alert">
         {errors.username}
       </span>
-      
       <button type="submit">Submit</button>
     </form>
   );
@@ -4560,6 +4578,13 @@ function AccessibleModal({ isOpen, onClose, children }) {
   );
 }
 ```
+
+**Advanced Accessibility Topics:**
+- Use proper ARIA roles and attributes
+- Ensure keyboard navigation for all interactive elements
+- Maintain sufficient color contrast (use tools like [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/))
+- Test with screen readers (NVDA, VoiceOver)
+- Use automated tools like [axe](https://www.deque.com/axe/) and [Lighthouse](https://developers.google.com/web/tools/lighthouse)
 
 ### Code Organization and Structure
 Best practices for organizing React code.
@@ -4635,6 +4660,56 @@ export function useUser(userId: string) {
 }
 ```
 
+### Design Systems and Component Libraries
+
+Design systems help maintain consistency and scalability in UI development. Popular component libraries include Material-UI, Chakra UI, and Ant Design.
+
+```js
+// Using Material-UI
+import Button from '@mui/material/Button';
+function MyButton() {
+  return <Button variant="contained">Material UI Button</Button>;
+}
+```
+
+**Resources:**
+- [Material-UI](https://mui.com/)
+- [Chakra UI](https://chakra-ui.com/)
+- [Ant Design](https://ant.design/)
+
+### Error Monitoring & Logging
+
+Integrate tools like Sentry or LogRocket to monitor errors and user sessions in production.
+
+```js
+// Example: Sentry integration
+import * as Sentry from '@sentry/react';
+Sentry.init({ dsn: 'YOUR_SENTRY_DSN' });
+```
+
+**Resources:**
+- [Sentry](https://sentry.io/)
+- [LogRocket](https://logrocket.com/)
+
+### DevTools & Debugging
+
+Use React DevTools for inspecting component trees and profiling performance. Chrome DevTools and Redux DevTools are also valuable.
+
+**Resources:**
+- [React DevTools](https://react.dev/tools)
+- [Redux DevTools](https://github.com/reduxjs/redux-devtools)
+
+### Micro-frontends
+
+Micro-frontends is an architectural style where independently deliverable frontend applications are composed into a greater whole.
+
+- Use Module Federation (Webpack 5) to share code between apps.
+- Each micro-frontend can be developed and deployed independently.
+
+**Resources:**
+- [Micro-Frontends.org](https://micro-frontends.org/)
+- [Webpack Module Federation](https://webpack.js.org/concepts/module-federation/)
+
 ## Additional Resources
 
 ### Official React Documentation
@@ -4664,3 +4739,149 @@ export function useUser(userId: string) {
 - React Summit
 - React Native EU
 - React Advanced London
+
+## React Native Integration
+
+### What is React Native?
+React Native is a framework for building native mobile applications using React. It allows you to use React concepts to build apps for iOS and Android with a single codebase.
+
+### Sharing Logic Between React and React Native
+You can share business logic, hooks, and state management between web and mobile apps by extracting them into shared modules.
+
+```js
+// shared/useCounter.js
+import { useState } from 'react';
+export function useCounter() {
+  const [count, setCount] = useState(0);
+  const increment = () => setCount(c => c + 1);
+  return { count, increment };
+}
+```
+
+**Usage in React Web:**
+```js
+import { useCounter } from './shared/useCounter';
+function WebCounter() {
+  const { count, increment } = useCounter();
+  return <button onClick={increment}>Web Count: {count}</button>;
+}
+```
+
+**Usage in React Native:**
+```js
+import { useCounter } from './shared/useCounter';
+import { Button, Text, View } from 'react-native';
+function NativeCounter() {
+  const { count, increment } = useCounter();
+  return (
+    <View>
+      <Text>Native Count: {count}</Text>
+      <Button title="Increment" onPress={increment} />
+    </View>
+  );
+}
+```
+
+**Resources:**
+- [React Native Docs](https://reactnative.dev/)
+- [React Native for Web](https://necolas.github.io/react-native-web/)
+
+## Internationalization (i18n)
+
+Internationalization (i18n) is the process of designing your app so it can be adapted to various languages and regions.
+
+### Using react-i18next
+
+```js
+import { useTranslation } from 'react-i18next';
+
+function MyComponent() {
+  const { t, i18n } = useTranslation();
+  return (
+    <div>
+      <p>{t('welcome_message')}</p>
+      <button onClick={() => i18n.changeLanguage('fr')}>Français</button>
+      <button onClick={() => i18n.changeLanguage('en')}>English</button>
+    </div>
+  );
+}
+```
+
+**Resources:**
+- [react-i18next](https://react.i18next.com/)
+- [FormatJS](https://formatjs.io/)
+- [MDN: Internationalization](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl)
+
+## GraphQL with React
+
+GraphQL is a query language for APIs and a runtime for executing those queries. React integrates well with GraphQL using libraries like Apollo Client and Relay.
+
+### Using Apollo Client
+
+```js
+import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
+
+const client = new ApolloClient({
+  uri: 'https://example.com/graphql',
+  cache: new InMemoryCache(),
+});
+
+const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      name
+    }
+  }
+`;
+
+function Users() {
+  const { loading, error, data } = useQuery(GET_USERS);
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error :(</p>;
+  return (
+    <ul>
+      {data.users.map(user => <li key={user.id}>{user.name}</li>)}
+    </ul>
+  );
+}
+
+function App() {
+  return (
+    <ApolloProvider client={client}>
+      <Users />
+    </ApolloProvider>
+  );
+}
+```
+
+**Resources:**
+- [Apollo Client](https://www.apollographql.com/docs/react/)
+- [Relay](https://relay.dev/)
+- [GraphQL.org](https://graphql.org/)
+
+## Animation in React
+
+React supports animation via CSS, React Transition Group, and powerful libraries like Framer Motion and React Spring.
+
+### Using Framer Motion
+```js
+import { motion } from 'framer-motion';
+function FadeIn() {
+  return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Hello!</motion.div>;
+}
+```
+
+### Using React Spring
+```js
+import { useSpring, animated } from 'react-spring';
+function SpringComponent() {
+  const props = useSpring({ opacity: 1, from: { opacity: 0 } });
+  return <animated.div style={props}>Hello Spring!</animated.div>;
+}
+```
+
+**Resources:**
+- [Framer Motion](https://www.framer.com/motion/)
+- [React Spring](https://react-spring.dev/)
+- [React Transition Group](https://reactcommunity.org/react-transition-group/)
