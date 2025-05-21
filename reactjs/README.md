@@ -350,6 +350,19 @@ function useWindowSize() {
   return size;
 }
 ```
+
+### 26. What is the difference between useCallback and useMemo?
+useCallback memoizes functions, while useMemo memoizes values. useCallback is useful when passing callbacks to optimized child components, while useMemo is useful for expensive calculations.
+
+### 27. What is the purpose of React.lazy?
+React.lazy lets you load components lazily, improving initial load time. It's used with Suspense to handle loading states.
+
+### 28. What is the difference between React.memo and useMemo?
+React.memo is for components, while useMemo is for values. React.memo prevents unnecessary re-renders of components, while useMemo prevents unnecessary recalculations of values.
+
+### 29. What is the purpose of useRef?
+useRef creates a mutable reference that persists across renders. It's useful for accessing DOM elements, storing previous values, and maintaining values that don't trigger re-renders.
+
 ### 30. What is the difference between props and state?
 Props are read-only and passed from parent to child, while state is managed within the component and can be changed.
 
