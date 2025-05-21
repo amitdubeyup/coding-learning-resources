@@ -3461,3 +3461,1200 @@ function AdaptiveComponent() {
   );
 }
 ```
+
+## Modern React Features
+
+### React Server Components
+React Server Components (RSC) is a new paradigm that allows components to run on the server, reducing the JavaScript bundle size sent to the client.
+
+```jsx
+// Server Component
+async function UserProfile({ userId }) {
+  const user = await fetchUser(userId); // Runs on server
+  
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <p>{user.email}</p>
+    </div>
+  );
+}
+
+// Client Component
+'use client';
+function UserActions({ userId }) {
+  const [liked, setLiked] = useState(false);
+  
+  return (
+    <button onClick={() => setLiked(!liked)}>
+      {liked ? 'Unlike' : 'Like'}
+    </button>
+  );
+}
+```
+
+### Suspense and Concurrent Features
+React Suspense allows components to "wait" for something before rendering, improving the user experience.
+
+```jsx
+function App() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <UserProfile />
+    </Suspense>
+  );
+}
+
+// Using concurrent features
+function ConcurrentComponent() {
+  const [isPending, startTransition] = useTransition();
+  
+  const handleClick = () => {
+    startTransition(() => {
+      // Non-urgent updates
+      setCount(c => c + 1);
+    });
+  };
+  
+  return (
+    <div>
+      {isPending ? <Spinner /> : null}
+      <button onClick={handleClick}>Increment</button>
+    </div>
+  );
+}
+```
+
+### React Query/SWR
+Modern data fetching libraries that handle caching, revalidation, and state management.
+
+```jsx
+// Using React Query
+function UserProfile() {
+  const { data, isLoading, error } = useQuery('user', fetchUser);
+  
+  if (isLoading) return <Loading />;
+  if (error) return <Error />;
+  
+  return <div>{data.name}</div>;
+}
+
+// Using SWR
+function UserProfile() {
+  const { data, error } = useSWR('/api/user', fetcher);
+  
+  if (error) return <Error />;
+  if (!data) return <Loading />;
+  
+  return <div>{data.name}</div>;
+}
+```
+
+### React 18 Features
+React 18 introduces new features for concurrent rendering and automatic batching.
+
+```jsx
+// Automatic batching
+function BatchExample() {
+  const [count, setCount] = useState(0);
+  const [flag, setFlag] = useState(false);
+  
+  function handleClick() {
+    setCount(c => c + 1); // Batch these updates
+    setFlag(f => !f);     // into a single re-render
+  }
+  
+  return <button onClick={handleClick}>Click</button>;
+}
+
+// Using createRoot
+import { createRoot } from 'react-dom/client';
+
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
+```
+
+## TypeScript Integration
+
+### TypeScript with React
+TypeScript provides type safety and better developer experience in React applications.
+
+```tsx
+// Props interface
+interface ButtonProps {
+  text: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+}
+
+// Typed component
+const Button: React.FC<ButtonProps> = ({ text, onClick, variant = 'primary' }) => {
+  return (
+    <button 
+      className={`btn-${variant}`}
+      onClick={onClick}
+    >
+      {text}
+    </button>
+  );
+};
+
+// Using the component
+<Button 
+  text="Click me"
+  onClick={() => console.log('clicked')}
+  variant="secondary"
+/>
+```
+
+### Type Definitions for Props and State
+Proper type definitions improve code quality and catch errors early.
+
+```tsx
+// State types
+interface UserState {
+  id: number;
+  name: string;
+  email: string;
+  preferences: {
+    theme: 'light' | 'dark';
+    notifications: boolean;
+  };
+}
+
+function UserProfile() {
+  const [user, setUser] = useState<UserState | null>(null);
+  
+  // TypeScript will ensure type safety
+  const updateUser = (updates: Partial<UserState>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+  
+  return (
+    <div>
+      {user ? (
+        <div>
+          <h1>{user.name}</h1>
+          <p>{user.email}</p>
+        </div>
+      ) : (
+        <Loading />
+      )}
+    </div>
+  );
+}
+```
+
+### Generic Components
+Generic components provide type safety while maintaining flexibility.
+
+```tsx
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+}
+
+function List<T>({ items, renderItem }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={index}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Usage
+interface User {
+  id: number;
+  name: string;
+}
+
+function UserList() {
+  const users: User[] = [
+    { id: 1, name: 'John' },
+    { id: 2, name: 'Jane' }
+  ];
+  
+  return (
+    <List
+      items={users}
+      renderItem={(user) => <div>{user.name}</div>}
+    />
+  );
+}
+```
+
+### Type-Safe Hooks
+Creating type-safe custom hooks ensures proper usage and error prevention.
+
+```tsx
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return [storedValue, setValue] as const;
+}
+
+// Usage
+function UserSettings() {
+  const [settings, setSettings] = useLocalStorage<{
+    theme: 'light' | 'dark';
+    fontSize: number;
+  }>('settings', {
+    theme: 'light',
+    fontSize: 16
+  });
+  
+  return (
+    <div>
+      <select
+        value={settings.theme}
+        onChange={e => setSettings(prev => ({
+          ...prev,
+          theme: e.target.value as 'light' | 'dark'
+        }))}
+      >
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+  );
+}
+```
+
+## Testing
+
+### Jest and React Testing Library
+Modern testing approaches focus on user behavior rather than implementation details.
+
+```tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+    </div>
+  );
+}
+
+describe('Counter', () => {
+  test('increments count when button is clicked', async () => {
+    render(<Counter />);
+    
+    const button = screen.getByRole('button', { name: /increment/i });
+    const count = screen.getByText(/count: 0/i);
+    
+    await userEvent.click(button);
+    
+    expect(screen.getByText(/count: 1/i)).toBeInTheDocument();
+  });
+});
+```
+
+### Component Testing
+Testing individual components in isolation.
+
+```tsx
+function UserCard({ user, onEdit }) {
+  return (
+    <div className="user-card">
+      <h2>{user.name}</h2>
+      <p>{user.email}</p>
+      <button onClick={() => onEdit(user)}>Edit</button>
+    </div>
+  );
+}
+
+describe('UserCard', () => {
+  const mockUser = {
+    id: 1,
+    name: 'John Doe',
+    email: 'john@example.com'
+  };
+  
+  const mockOnEdit = jest.fn();
+  
+  test('renders user information correctly', () => {
+    render(<UserCard user={mockUser} onEdit={mockOnEdit} />);
+    
+    expect(screen.getByText(mockUser.name)).toBeInTheDocument();
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+  });
+  
+  test('calls onEdit when edit button is clicked', async () => {
+    render(<UserCard user={mockUser} onEdit={mockOnEdit} />);
+    
+    const editButton = screen.getByRole('button', { name: /edit/i });
+    await userEvent.click(editButton);
+    
+    expect(mockOnEdit).toHaveBeenCalledWith(mockUser);
+  });
+});
+```
+
+### Integration Testing
+Testing how components work together.
+
+```tsx
+function UserList() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchUsers().then(data => {
+      setUsers(data);
+      setLoading(false);
+    });
+  }, []);
+  
+  if (loading) return <Loading />;
+  
+  return (
+    <div>
+      {users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+}
+
+describe('UserList Integration', () => {
+  test('loads and displays users', async () => {
+    const mockUsers = [
+      { id: 1, name: 'John' },
+      { id: 2, name: 'Jane' }
+    ];
+    
+    global.fetch = jest.fn().mockResolvedValue({
+      json: () => Promise.resolve(mockUsers)
+    });
+    
+    render(<UserList />);
+    
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    
+    const userCards = await screen.findAllByRole('heading');
+    expect(userCards).toHaveLength(2);
+    expect(userCards[0]).toHaveTextContent('John');
+    expect(userCards[1]).toHaveTextContent('Jane');
+  });
+});
+```
+
+### E2E Testing with Cypress
+End-to-end testing ensures the entire application works as expected.
+
+```tsx
+// cypress/integration/user-flow.spec.ts
+describe('User Flow', () => {
+  beforeEach(() => {
+    cy.visit('/');
+  });
+  
+  it('completes user registration', () => {
+    cy.get('[data-testid="register-button"]').click();
+    
+    cy.get('[data-testid="name-input"]').type('John Doe');
+    cy.get('[data-testid="email-input"]').type('john@example.com');
+    cy.get('[data-testid="password-input"]').type('password123');
+    
+    cy.get('[data-testid="submit-button"]').click();
+    
+    cy.url().should('include', '/dashboard');
+    cy.get('[data-testid="welcome-message"]')
+      .should('contain', 'Welcome, John Doe');
+  });
+  
+  it('handles login and profile update', () => {
+    cy.get('[data-testid="login-button"]').click();
+    
+    cy.get('[data-testid="email-input"]').type('john@example.com');
+    cy.get('[data-testid="password-input"]').type('password123');
+    
+    cy.get('[data-testid="submit-button"]').click();
+    
+    cy.get('[data-testid="profile-link"]').click();
+    cy.get('[data-testid="edit-profile"]').click();
+    
+    cy.get('[data-testid="bio-input"]')
+      .type('Software Developer');
+    
+    cy.get('[data-testid="save-button"]').click();
+    
+    cy.get('[data-testid="bio"]')
+      .should('contain', 'Software Developer');
+  });
+});
+```
+
+## Performance Optimization
+
+### Code Splitting Strategies
+Implementing efficient code splitting to reduce initial bundle size.
+
+```tsx
+// Route-based code splitting
+import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+
+function App() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+// Component-based code splitting
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+
+function ParentComponent() {
+  const [showHeavy, setShowHeavy] = useState(false);
+  
+  return (
+    <div>
+      <button onClick={() => setShowHeavy(true)}>
+        Load Heavy Component
+      </button>
+      
+      {showHeavy && (
+        <Suspense fallback={<Loading />}>
+          <HeavyComponent />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+```
+
+### Bundle Optimization
+Techniques to optimize the JavaScript bundle size.
+
+```tsx
+// Tree shaking friendly exports
+export const Button = ({ children, ...props }) => (
+  <button {...props}>{children}</button>
+);
+
+export const Input = ({ ...props }) => (
+  <input {...props} />
+);
+
+// Dynamic imports with webpack
+const loadComponent = () => import('./HeavyComponent');
+
+// Using webpack magic comments
+const Component = lazy(() => import(
+  /* webpackChunkName: "component" */
+  /* webpackPrefetch: true */
+  './Component'
+));
+```
+
+### Memory Leak Prevention
+Preventing memory leaks in React applications.
+
+```tsx
+function DataFetcher() {
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      try {
+        const result = await api.getData();
+        if (isMounted) {
+          setData(result);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error(error);
+        }
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+  
+  return <div>{data ? JSON.stringify(data) : 'Loading...'}</div>;
+}
+
+// Using AbortController
+function SearchComponent() {
+  const [results, setResults] = useState([]);
+  
+  useEffect(() => {
+    const controller = new AbortController();
+    
+    const search = async (query) => {
+      try {
+        const response = await fetch(
+          `/api/search?q=${query}`,
+          { signal: controller.signal }
+        );
+        const data = await response.json();
+        setResults(data);
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('Search aborted');
+        }
+      }
+    };
+    
+    search('react');
+    
+    return () => {
+      controller.abort();
+    };
+  }, []);
+  
+  return <div>{/* render results */}</div>;
+}
+```
+
+### Performance Monitoring
+Implementing performance monitoring in React applications.
+
+```tsx
+// Using React Profiler
+function ProfilerExample() {
+  const handleRender = (
+    id,
+    phase,
+    actualDuration,
+    baseDuration,
+    startTime,
+    commitTime
+  ) => {
+    console.log({
+      id,
+      phase,
+      actualDuration,
+      baseDuration,
+      startTime,
+      commitTime
+    });
+  };
+  
+  return (
+    <Profiler id="app" onRender={handleRender}>
+      <App />
+    </Profiler>
+  );
+}
+
+// Custom performance hook
+function usePerformanceMonitor(componentName) {
+  useEffect(() => {
+    const startTime = performance.now();
+    
+    return () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      console.log(`${componentName} mounted for ${duration}ms`);
+    };
+  }, [componentName]);
+}
+
+// Usage
+function MonitoredComponent() {
+  usePerformanceMonitor('MonitoredComponent');
+  
+  return <div>Content</div>;
+}
+```
+
+## State Management
+
+### Redux Toolkit
+Modern Redux with simplified setup and best practices.
+
+```tsx
+// store.ts
+import { configureStore, createSlice } from '@reduxjs/toolkit';
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { value: 0 },
+  reducers: {
+    increment: state => {
+      state.value += 1;
+    },
+    decrement: state => {
+      state.value -= 1;
+    }
+  }
+});
+
+export const { increment, decrement } = counterSlice.actions;
+
+export const store = configureStore({
+  reducer: {
+    counter: counterSlice.reducer
+  }
+});
+
+// Component
+function Counter() {
+  const count = useSelector(state => state.counter.value);
+  const dispatch = useDispatch();
+  
+  return (
+    <div>
+      <button onClick={() => dispatch(decrement())}>-</button>
+      <span>{count}</span>
+      <button onClick={() => dispatch(increment())}>+</button>
+    </div>
+  );
+}
+```
+
+### Zustand
+Lightweight state management with hooks.
+
+```tsx
+import create from 'zustand';
+
+const useStore = create((set) => ({
+  bears: 0,
+  increasePopulation: () => set((state) => ({ bears: state.bears + 1 })),
+  removeAllBears: () => set({ bears: 0 })
+}));
+
+function BearCounter() {
+  const bears = useStore((state) => state.bears);
+  const increasePopulation = useStore((state) => state.increasePopulation);
+  
+  return (
+    <div>
+      <h1>{bears} bears around here...</h1>
+      <button onClick={increasePopulation}>one up</button>
+    </div>
+  );
+}
+```
+
+### Jotai
+Atomic state management for React.
+
+```tsx
+import { atom, useAtom } from 'jotai';
+
+const countAtom = atom(0);
+const doubleAtom = atom((get) => get(countAtom) * 2);
+
+function Counter() {
+  const [count, setCount] = useAtom(countAtom);
+  const [doubled] = useAtom(doubleAtom);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <p>Doubled: {doubled}</p>
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+### Recoil
+Facebook's experimental state management library.
+
+```tsx
+import { atom, selector, useRecoilState, useRecoilValue } from 'recoil';
+
+const countState = atom({
+  key: 'countState',
+  default: 0
+});
+
+const doubleCountState = selector({
+  key: 'doubleCountState',
+  get: ({get}) => {
+    const count = get(countState);
+    return count * 2;
+  }
+});
+
+function Counter() {
+  const [count, setCount] = useRecoilState(countState);
+  const doubledCount = useRecoilValue(doubleCountState);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <p>Doubled: {doubledCount}</p>
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+## Build Tools
+
+### Vite
+Next-generation frontend tooling.
+
+```tsx
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          utils: ['./src/utils']
+        }
+      }
+    }
+  }
+});
+```
+
+### Next.js
+React framework for production.
+
+```tsx
+// pages/index.tsx
+import { GetServerSideProps } from 'next';
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  const data = await fetchData();
+  return {
+    props: { data }
+  };
+};
+
+function HomePage({ data }) {
+  return (
+    <div>
+      <h1>Welcome to Next.js</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+
+export default HomePage;
+```
+
+### Remix
+Full stack web framework.
+
+```tsx
+// app/routes/index.tsx
+import { json } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
+
+export async function loader() {
+  const data = await fetchData();
+  return json({ data });
+}
+
+export default function Index() {
+  const { data } = useLoaderData();
+  
+  return (
+    <div>
+      <h1>Welcome to Remix</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+## React Best Practices
+
+### Component Composition Patterns
+Effective patterns for component composition.
+
+```tsx
+// Compound Components
+const Tabs = ({ children }) => {
+  const [activeTab, setActiveTab] = useState(0);
+  
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      {children}
+    </TabsContext.Provider>
+  );
+};
+
+Tabs.List = function TabsList({ children }) {
+  return <div className="tabs-list">{children}</div>;
+};
+
+Tabs.Tab = function Tab({ index, children }) {
+  const { activeTab, setActiveTab } = useContext(TabsContext);
+  
+  return (
+    <button
+      className={activeTab === index ? 'active' : ''}
+      onClick={() => setActiveTab(index)}
+    >
+      {children}
+    </button>
+  );
+};
+
+Tabs.Panel = function Panel({ index, children }) {
+  const { activeTab } = useContext(TabsContext);
+  
+  return activeTab === index ? <div>{children}</div> : null;
+};
+
+// Usage
+function App() {
+  return (
+    <Tabs>
+      <Tabs.List>
+        <Tabs.Tab index={0}>Tab 1</Tabs.Tab>
+        <Tabs.Tab index={1}>Tab 2</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel index={0}>Content 1</Tabs.Panel>
+      <Tabs.Panel index={1}>Content 2</Tabs.Panel>
+    </Tabs>
+  );
+}
+```
+
+### Error Boundary Implementation
+Proper error handling with error boundaries.
+
+```tsx
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Log error to service
+    console.error('Error:', error);
+    console.error('Error Info:', errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-boundary">
+          <h1>Something went wrong</h1>
+          <details>
+            <summary>Error Details</summary>
+            <pre>{this.state.error?.toString()}</pre>
+          </details>
+          <button onClick={() => this.setState({ hasError: false })}>
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Usage
+function App() {
+  return (
+    <ErrorBoundary>
+      <MyComponent />
+    </ErrorBoundary>
+  );
+}
+```
+
+### Performance Optimization Techniques
+Advanced performance optimization strategies.
+
+```tsx
+// Memoization
+const MemoizedComponent = React.memo(function MyComponent({ data }) {
+  return <div>{data.map(item => <Item key={item.id} {...item} />)}</div>;
+});
+
+// useMemo for expensive calculations
+function ExpensiveComponent({ items }) {
+  const sortedItems = useMemo(() => {
+    return items.sort((a, b) => a.value - b.value);
+  }, [items]);
+  
+  return <div>{sortedItems.map(item => <Item key={item.id} {...item} />)}</div>;
+}
+
+// useCallback for stable function references
+function ParentComponent() {
+  const [count, setCount] = useState(0);
+  
+  const handleClick = useCallback(() => {
+    setCount(c => c + 1);
+  }, []);
+  
+  return <ChildComponent onClick={handleClick} />;
+}
+```
+
+### Security Considerations
+Implementing security best practices in React applications.
+
+```tsx
+// XSS Prevention
+function SafeComponent({ userInput }) {
+  // Don't do this
+  // return <div>{userInput}</div>;
+  
+  // Do this instead
+  return <div>{escapeHtml(userInput)}</div>;
+}
+
+// CSRF Protection
+function SecureForm() {
+  const [csrfToken, setCsrfToken] = useState('');
+  
+  useEffect(() => {
+    // Fetch CSRF token from server
+    fetch('/api/csrf-token')
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.token));
+  }, []);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    await fetch('/api/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify(formData)
+    });
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="hidden" name="csrf-token" value={csrfToken} />
+      {/* form fields */}
+    </form>
+  );
+}
+```
+
+### Accessibility Guidelines
+Implementing accessibility features in React components.
+
+```tsx
+// Accessible Button
+function AccessibleButton({ onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Accessible Form
+function AccessibleForm() {
+  return (
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="username">Username:</label>
+      <input
+        id="username"
+        name="username"
+        aria-required="true"
+        aria-describedby="username-error"
+      />
+      <span id="username-error" role="alert">
+        {errors.username}
+      </span>
+      
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+
+// Accessible Modal
+function AccessibleModal({ isOpen, onClose, children }) {
+  const modalRef = useRef();
+  
+  useEffect(() => {
+    if (isOpen) {
+      modalRef.current?.focus();
+    }
+  }, [isOpen]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      ref={modalRef}
+      tabIndex={-1}
+    >
+      <h2 id="modal-title">Modal Title</h2>
+      {children}
+      <button onClick={onClose}>Close</button>
+    </div>
+  );
+}
+```
+
+### Code Organization and Structure
+Best practices for organizing React code.
+
+```tsx
+// Feature-based organization
+src/
+  features/
+    auth/
+      components/
+      hooks/
+      api/
+      types/
+    users/
+      components/
+      hooks/
+      api/
+      types/
+  shared/
+    components/
+    hooks/
+    utils/
+    types/
+
+// Component structure
+// UserCard.tsx
+import { UserCardProps } from './types';
+import { useUser } from './hooks';
+import { formatDate } from './utils';
+import styles from './UserCard.module.css';
+
+export function UserCard({ userId }: UserCardProps) {
+  const { user, loading, error } = useUser(userId);
+  
+  if (loading) return <Loading />;
+  if (error) return <Error error={error} />;
+  
+  return (
+    <div className={styles.card}>
+      <h2>{user.name}</h2>
+      <p>Joined: {formatDate(user.joinDate)}</p>
+    </div>
+  );
+}
+
+// Types
+// types.ts
+export interface UserCardProps {
+  userId: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  joinDate: string;
+}
+
+// Hooks
+// hooks.ts
+export function useUser(userId: string) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    fetchUser(userId)
+      .then(setUser)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [userId]);
+  
+  return { user, loading, error };
+}
+```
+
+## Additional Resources
+
+### Official React Documentation
+- [React Documentation](https://reactjs.org/docs/getting-started.html)
+- [React Hooks Documentation](https://reactjs.org/docs/hooks-intro.html)
+- [React Router Documentation](https://reactrouter.com/docs/en/v6)
+
+### React Community Resources
+- [React GitHub Repository](https://github.com/facebook/react)
+- [Reactiflux Discord](https://www.reactiflux.com/)
+- [React Stack Overflow](https://stackoverflow.com/questions/tagged/reactjs)
+
+### Recommended Books and Courses
+- "Learning React" by Alex Banks and Eve Porcello
+- "Fullstack React" by Anthony Accomazzo
+- "React Design Patterns and Best Practices" by Carlos Santana Roldán
+
+### Useful React Libraries
+- [React Query](https://react-query.tanstack.com/)
+- [React Hook Form](https://react-hook-form.com/)
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+- [React Router](https://reactrouter.com/)
+- [Redux Toolkit](https://redux-toolkit.js.org/)
+
+### React Conferences and Events
+- React Conf
+- React Summit
+- React Native EU
+- React Advanced London
