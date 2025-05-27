@@ -11,6 +11,8 @@ This repository is organized into several key areas:
 - **React.js**: Modern React development, hooks, and best practices
 - **DSA (Data Structures & Algorithms)**: Common data structures, algorithms, and problem-solving techniques
 - **System Design**: Architecture patterns, scalability, and system design principles
+- **Cloud**: Cloud computing concepts, services, and best practices
+- **Database**: Database design, management, and optimization techniques
 - **Behavioral**: Interview preparation and soft skills development
 
 ## Purpose
