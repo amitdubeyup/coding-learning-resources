@@ -1706,3 +1706,125 @@
       }
     }
     ```
+
+201. **What is event bubbling and event capturing in the DOM?**
+    ```javascript
+    // Bubbling: event propagates from child to parent
+    element.addEventListener('click', handler, false); // default is bubbling
+
+    // Capturing: event propagates from parent to child
+    element.addEventListener('click', handler, true);
+    ```
+
+202. **What are WeakRefs and FinalizationRegistry?**
+    ```javascript
+    const obj = {};
+    const weakRef = new WeakRef(obj);
+    // FinalizationRegistry lets you run cleanup after GC
+    const registry = new FinalizationRegistry((heldValue) => {
+      console.log('Object was garbage collected:', heldValue);
+    });
+    registry.register(obj, 'myObject');
+    ```
+
+203. **Explain the difference between microtasks and macrotasks.**
+    - Microtasks: `Promise.then`, `MutationObserver`
+    - Macrotasks: `setTimeout`, `setInterval`, `setImmediate`
+    ```javascript
+    console.log('start');
+    setTimeout(() => console.log('timeout'), 0);
+    Promise.resolve().then(() => console.log('promise'));
+    console.log('end');
+    // Output: start, end, promise, timeout
+    ```
+
+204. **What is a Service Worker and how is it used?**
+    ```javascript
+    // Registering a service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+    ```
+
+205. **What is the difference between interface and type in TypeScript?**
+    ```typescript
+    interface A { x: number; }
+    type B = { x: number; };
+    // Interfaces can be extended/merged, types cannot (as easily)
+    ```
+
+206. **What is type narrowing in TypeScript?**
+    ```typescript
+    function printId(id: string | number) {
+      if (typeof id === 'string') {
+        // id is string here
+      } else {
+        // id is number here
+      }
+    }
+    ```
+
+207. **What are mapped types in TypeScript?**
+    ```typescript
+    type Readonly<T> = { readonly [P in keyof T]: T[P] };
+    ```
+
+208. **What is the difference between `unknown` and `any` in TypeScript?**
+    - `unknown` is safer; you must check type before using.
+    - `any` disables all type checking.
+
+209. **What is a discriminated union in TypeScript?**
+    ```typescript
+    type Shape = { kind: 'circle', radius: number } | { kind: 'square', size: number };
+    function area(shape: Shape) {
+      if (shape.kind === 'circle') return Math.PI * shape.radius ** 2;
+      return shape.size ** 2;
+    }
+    ```
+
+210. **What is the difference between shallow and deep copy?**
+    - Shallow copy: only top-level properties are copied.
+    - Deep copy: all nested objects are recursively copied.
+
+211. **What is the difference between `Object.freeze` and `const`?**
+    - `const` prevents reassignment of the variable.
+    - `Object.freeze` makes the object immutable (shallow).
+
+212. **What is the difference between `setTimeout(fn, 0)` and `Promise.resolve().then(fn)`?**
+    - `setTimeout` schedules a macrotask, `Promise.then` schedules a microtask (runs sooner).
+
+213. **What is the difference between `export default` and `export` in ES modules?**
+    ```javascript
+    // export default: only one per file, imported without braces
+    // export: named exports, imported with braces
+    ```
+
+214. **What is tree shaking?**
+    - The process of removing unused code during bundling (e.g., with Webpack, Rollup).
+
+215. **What is the difference between `Object.assign` and spread operator?**
+    - Both copy properties, but spread can copy symbol properties and is more concise.
+
+216. **What is the difference between `==` and `Object.is`?**
+    ```javascript
+    Object.is(NaN, NaN); // true
+    NaN === NaN; // false
+    ```
+
+217. **What is the difference between `Array.prototype.find` and `Array.prototype.filter`?**
+    - `find` returns the first matching element, `filter` returns all matching elements.
+
+218. **What is the difference between `Array.prototype.map` and `Array.prototype.flatMap`?**
+    ```javascript
+    [1, 2, 3].map(x => [x, x * 2]); // [[1,2],[2,4],[3,6]]
+    [1, 2, 3].flatMap(x => [x, x * 2]); // [1,2,2,4,3,6]
+    ```
+
+219. **What is the difference between `let`, `const`, and `var` in terms of hoisting?**
+    - `var` is hoisted and initialized as `undefined`.
+    - `let` and `const` are hoisted but not initialized (temporal dead zone).
+
+220. **What is the difference between `Function.prototype.call`, `apply`, and `bind`?**
+    - `call`: calls a function with a given `this` and arguments.
+    - `apply`: same as `call`, but arguments are provided as an array.
+    - `bind`: returns a new function with bound `this`.
