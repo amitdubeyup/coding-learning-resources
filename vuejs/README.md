@@ -168,7 +168,7 @@ methods: {
 **Answer:** `deactivated` is called when a kept-alive component is deactivated.
 
 ### 28. What is the errorCaptured lifecycle hook?
-**Answer:** `errorCaptured` is called when an error from any descendent component is captured.
+**Answer:** `errorCaptured` is called when an error from any descendant component is captured.
 
 ### 29. What is the serverPrefetch lifecycle hook?
 **Answer:** `serverPrefetch` is called during server-side rendering, before the component is rendered on the server.
@@ -1006,56 +1006,50 @@ const { value1, value2 } = useVModels(props, ['value1', 'value2'], emit)
 ```
 
 ### 145. What is the useToggle function in Vue 3?
-**Answer:** `useToggle` creates a toggle function for a boolean ref.
+**Answer:** `useToggle` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library, a popular utility collection for Vue Composition API. It creates a toggle function for a boolean ref.
 
 ```javascript
-import { useToggle } from 'vue'
-
+import { useToggle } from '@vueuse/core'
 const [value, toggle] = useToggle()
 ```
 
 ### 146. What is the useCounter function in Vue 3?
-**Answer:** `useCounter` creates a counter with increment and decrement functions.
+**Answer:** `useCounter` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library. It creates a counter with increment and decrement functions.
 
 ```javascript
-import { useCounter } from 'vue'
-
+import { useCounter } from '@vueuse/core'
 const { count, inc, dec, reset } = useCounter()
 ```
 
 ### 147. What is the useLocalStorage function in Vue 3?
-**Answer:** `useLocalStorage` creates a ref that syncs with localStorage.
+**Answer:** `useLocalStorage` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library. It creates a ref that syncs with localStorage.
 
 ```javascript
-import { useLocalStorage } from 'vue'
-
+import { useLocalStorage } from '@vueuse/core'
 const value = useLocalStorage('key', 'default')
 ```
 
 ### 148. What is the useSessionStorage function in Vue 3?
-**Answer:** `useSessionStorage` creates a ref that syncs with sessionStorage.
+**Answer:** `useSessionStorage` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library. It creates a ref that syncs with sessionStorage.
 
 ```javascript
-import { useSessionStorage } from 'vue'
-
+import { useSessionStorage } from '@vueuse/core'
 const value = useSessionStorage('key', 'default')
 ```
 
 ### 149. What is the useMouse function in Vue 3?
-**Answer:** `useMouse` tracks mouse position.
+**Answer:** `useMouse` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library. It tracks mouse position.
 
 ```javascript
-import { useMouse } from 'vue'
-
+import { useMouse } from '@vueuse/core'
 const { x, y } = useMouse()
 ```
 
 ### 150. What is the useKeyboard function in Vue 3?
-**Answer:** `useKeyboard` tracks keyboard events.
+**Answer:** `useKeyboard` is not part of Vue core. It is provided by the [VueUse](https://vueuse.org/) library. It tracks keyboard events.
 
 ```javascript
-import { useKeyboard } from 'vue'
-
+import { useKeyboard } from '@vueuse/core'
 const { isPressed, key } = useKeyboard()
 ```
 
@@ -1313,6 +1307,12 @@ const User = () => import('./views/User.vue')
 - Lazy load components and routes
 - Use production builds
 - Implement proper caching strategies
+
+### 201. What is Pinia and how does it compare to Vuex?
+**Answer:** Pinia is the new official state management library for Vue.js, designed for Vue 3 and the Composition API. It offers a simpler API, better TypeScript support, improved modularity, and a more intuitive developer experience compared to Vuex. Pinia is now the recommended solution for new Vue 3 projects.
+
+### 202. How do you test Vue components?
+**Answer:** Vue components can be tested using [Vue Test Utils](https://vue-test-utils.vuejs.org/) for unit testing, and tools like [Cypress](https://www.cypress.io/) or [Playwright](https://playwright.dev/) for end-to-end testing. Unit tests check component logic and rendering, while E2E tests simulate real user interactions in the browser.
 
 ---
 
