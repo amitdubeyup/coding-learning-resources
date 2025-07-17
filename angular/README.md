@@ -317,13 +317,110 @@ Custom strategies rarely needed. Use case: high-frequency trading dashboard with
 
 **Answer:**
 
-NgZone patches async operations to trigger change detection. Run outside zone for high-frequency updates, animations, performance-critical operations.
+```typescript
+@Component({
+  template: `
+    <div>{{ counter }}</div>
+    <canvas #canvas></canvas>
+  `
+})
+class PerformanceComponent implements OnInit {
+  counter = 0;
+  
+  constructor(private ngZone: NgZone) {}
+  
+  ngOnInit() {
+    // High-frequency updates outside zone (no change detection)
+    this.ngZone.runOutsideAngular(() => {
+      setInterval(() => {
+        this.updateCanvas(); // Heavy animation logic
+      }, 16); // 60fps
+    });
+    
+    // Periodic updates inside zone (triggers change detection)
+    this.ngZone.run(() => {
+      setInterval(() => {
+        this.counter++; // UI update needed
+      }, 1000);
+    });
+  }
+  
+  // Manual change detection trigger when needed
+  onUserAction() {
+    this.ngZone.runOutsideAngular(() => {
+      // Expensive operation
+      this.processLargeDataset();
+      
+      // Trigger change detection once at the end
+      this.ngZone.run(() => {
+        this.updateUI();
+      });
+    });
+  }
+}
+```
 
 ### 24. Explain the concept of change detection cycles and how to debug performance issues related to excessive change detection.
 
 **Answer:**
 
-Cycle: Event → Check components → Update DOM. Debug with ng.profiler.timeChangeDetection(), avoid method calls in templates.
+```typescript
+// Debugging change detection performance
+export class ChangeDetectionDebugger {
+  
+  // Method 1: Profile change detection timing
+  profileChangeDetection() {
+    ng.profiler.timeChangeDetection();
+    // Logs change detection timing to console
+  }
+  
+  // Method 2: Track component check counts
+  @Component({
+    template: `{{ getDisplayValue() }} <!-- AVOID: method in template -->`,
+    changeDetection: ChangeDetectionStrategy.OnPush
+  })
+  class ProblematicComponent {
+    private checkCount = 0;
+    
+    getDisplayValue() {
+      console.log(`Component checked ${++this.checkCount} times`);
+      return this.someExpensiveCalculation(); // Performance killer!
+    }
+  }
+  
+  // Method 3: Better approach with memoization
+  @Component({
+    template: `{{ displayValue }}`, // Use property instead
+    changeDetection: ChangeDetectionStrategy.OnPush
+  })
+  class OptimizedComponent {
+    private _cachedValue: string;
+    private _lastInput: any;
+    
+    @Input() 
+    set data(value: any) {
+      if (value !== this._lastInput) {
+        this._lastInput = value;
+        this._cachedValue = this.someExpensiveCalculation(value);
+      }
+    }
+    
+    get displayValue() { return this._cachedValue; }
+  }
+  
+  // Method 4: Change detection strategy
+  measureChangeDetectionCycles() {
+    let cycleCount = 0;
+    
+    // Patch ApplicationRef.tick to count cycles
+    const originalTick = ApplicationRef.prototype.tick;
+    ApplicationRef.prototype.tick = function() {
+      console.log(`Change detection cycle ${++cycleCount}`);
+      return originalTick.apply(this, arguments);
+    };
+  }
+}
+```
 
 ### 25. How would you implement manual change detection triggering in a large application with complex component hierarchies?
 
@@ -392,13 +489,233 @@ Use InjectionToken, plugin registry service, and dynamic imports. Register plugi
 
 **Answer:**
 
-Use TENANT_CONFIG injection token, factory providers based on tenant ID, and conditional service provisioning.
+```typescript
+// Tenant configuration interface
+interface TenantConfig {
+  id: string;
+  features: string[];
+  theme: string;
+  apiUrl: string;
+  dbConnection: string;
+}
+
+// Injection tokens
+const TENANT_CONFIG = new InjectionToken<TenantConfig>('tenant.config');
+const TENANT_ID = new InjectionToken<string>('tenant.id');
+
+// Abstract base service
+abstract class BaseDataService {
+  abstract getData(): Observable<any[]>;
+}
+
+// Tenant-specific implementations
+@Injectable()
+class TenantADataService extends BaseDataService {
+  constructor(@Inject(TENANT_CONFIG) private config: TenantConfig) {
+    super();
+  }
+  
+  getData(): Observable<any[]> {
+    return this.http.get(`${this.config.apiUrl}/tenant-a/data`);
+  }
+}
+
+@Injectable()
+class TenantBDataService extends BaseDataService {
+  constructor(@Inject(TENANT_CONFIG) private config: TenantConfig) {
+    super();
+  }
+  
+  getData(): Observable<any[]> {
+    return this.http.get(`${this.config.apiUrl}/tenant-b/special-data`);
+  }
+}
+
+// Factory function for tenant-specific services
+export function dataServiceFactory(
+  config: TenantConfig,
+  http: HttpClient
+): BaseDataService {
+  switch (config.id) {
+    case 'tenant-a':
+      return new TenantADataService(config);
+    case 'tenant-b':
+      return new TenantBDataService(config);
+    default:
+      throw new Error(`Unknown tenant: ${config.id}`);
+  }
+}
+
+// Module configuration
+@NgModule({
+  providers: [
+    {
+      provide: TENANT_CONFIG,
+      useFactory: () => {
+        // Get tenant config from URL, localStorage, etc.
+        const tenantId = getTenantFromUrl();
+        return loadTenantConfig(tenantId);
+      }
+    },
+    {
+      provide: BaseDataService,
+      useFactory: dataServiceFactory,
+      deps: [TENANT_CONFIG, HttpClient]
+    }
+  ]
+})
+class TenantModule {}
+
+// Usage in components
+@Component({
+  template: `
+    <div [ngClass]="'theme-' + tenantConfig.theme">
+      <ng-container *ngFor="let feature of tenantConfig.features">
+        <feature-component [type]="feature"></feature-component>
+      </ng-container>
+    </div>
+  `
+})
+class TenantAwareComponent {
+  constructor(
+    @Inject(TENANT_CONFIG) public tenantConfig: TenantConfig,
+    private dataService: BaseDataService
+  ) {}
+}
+```
 
 ### 34. Explain injection tokens and how you'd use them to implement a configurable logging system.
 
 **Answer:**
 
-InjectionToken for type-safe DI without classes. Use for configuration objects, feature flags, and multi-provider scenarios.
+```typescript
+// Logging configuration interfaces
+interface LogConfig {
+  level: LogLevel;
+  enableConsole: boolean;
+  enableRemote: boolean;
+  remoteUrl?: string;
+  enableFileLogging: boolean;
+}
+
+enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3
+}
+
+// Injection tokens for configuration
+const LOG_CONFIG = new InjectionToken<LogConfig>('log.config');
+const LOG_WRITERS = new InjectionToken<LogWriter[]>('log.writers');
+
+// Abstract log writer interface
+abstract class LogWriter {
+  abstract write(level: LogLevel, message: string, data?: any): void;
+}
+
+// Concrete log writer implementations
+@Injectable()
+class ConsoleLogWriter extends LogWriter {
+  write(level: LogLevel, message: string, data?: any): void {
+    const method = level >= LogLevel.ERROR ? 'error' : 
+                   level >= LogLevel.WARN ? 'warn' : 
+                   level >= LogLevel.INFO ? 'info' : 'debug';
+    console[method](message, data);
+  }
+}
+
+@Injectable()
+class RemoteLogWriter extends LogWriter {
+  constructor(
+    private http: HttpClient,
+    @Inject(LOG_CONFIG) private config: LogConfig
+  ) {
+    super();
+  }
+  
+  write(level: LogLevel, message: string, data?: any): void {
+    if (this.config.enableRemote && this.config.remoteUrl) {
+      this.http.post(this.config.remoteUrl, {
+        level: LogLevel[level],
+        message,
+        data,
+        timestamp: new Date().toISOString()
+      }).subscribe();
+    }
+  }
+}
+
+// Main logging service
+@Injectable({ providedIn: 'root' })
+class LoggerService {
+  constructor(
+    @Inject(LOG_CONFIG) private config: LogConfig,
+    @Inject(LOG_WRITERS) private writers: LogWriter[]
+  ) {}
+  
+  debug(message: string, data?: any): void {
+    this.log(LogLevel.DEBUG, message, data);
+  }
+  
+  info(message: string, data?: any): void {
+    this.log(LogLevel.INFO, message, data);
+  }
+  
+  warn(message: string, data?: any): void {
+    this.log(LogLevel.WARN, message, data);
+  }
+  
+  error(message: string, data?: any): void {
+    this.log(LogLevel.ERROR, message, data);
+  }
+  
+  private log(level: LogLevel, message: string, data?: any): void {
+    if (level >= this.config.level) {
+      this.writers.forEach(writer => writer.write(level, message, data));
+    }
+  }
+}
+
+// Factory function for log writers
+export function logWritersFactory(config: LogConfig): LogWriter[] {
+  const writers: LogWriter[] = [];
+  
+  if (config.enableConsole) {
+    writers.push(new ConsoleLogWriter());
+  }
+  
+  if (config.enableRemote) {
+    writers.push(new RemoteLogWriter(inject(HttpClient), config));
+  }
+  
+  return writers;
+}
+
+// Module configuration
+@NgModule({
+  providers: [
+    {
+      provide: LOG_CONFIG,
+      useValue: {
+        level: LogLevel.INFO,
+        enableConsole: true,
+        enableRemote: environment.production,
+        remoteUrl: environment.logUrl,
+        enableFileLogging: false
+      }
+    },
+    {
+      provide: LOG_WRITERS,
+      useFactory: logWritersFactory,
+      deps: [LOG_CONFIG],
+      multi: true // Multiple providers for same token
+    },
+    LoggerService
+  ]
+})
+class LoggingModule {}
+```
 
 ### 35. How would you implement service inheritance and composition patterns in Angular's DI system?
 
@@ -444,13 +761,236 @@ Wrapper around Injector, cached lookups, use only for dynamic/optional services,
 
 **Answer:**
 
-Mixin functions, base classes with generics, decorators for behavior injection, composition over inheritance.
+```typescript
+// Mixin pattern for shared behavior
+type Constructor<T = {}> = new (...args: any[]) => T;
+
+// Loadable mixin
+function WithLoading<TBase extends Constructor>(Base: TBase) {
+  return class extends Base {
+    loading = false;
+    
+    async executeWithLoading<T>(operation: () => Promise<T>): Promise<T> {
+      this.loading = true;
+      try {
+        return await operation();
+      } finally {
+        this.loading = false;
+      }
+    }
+  };
+}
+
+// Trackable mixin
+function WithTracking<TBase extends Constructor>(Base: TBase) {
+  return class extends Base {
+    private analytics = inject(AnalyticsService);
+    
+    track(event: string, data?: any) {
+      this.analytics.track(event, data);
+    }
+  };
+}
+
+// Usage in components
+@Component({
+  template: `
+    <div *ngIf="loading">Loading...</div>
+    <button (click)="handleClick()">Action</button>
+  `
+})
+class MyComponent extends WithTracking(WithLoading(class {})) {
+  async handleClick() {
+    this.track('button_clicked');
+    await this.executeWithLoading(() => this.performAction());
+  }
+  
+  private async performAction() {
+    // Async operation
+  }
+}
+
+// Alternative: Decorator-based approach
+function Trackable(eventName: string) {
+  return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    
+    descriptor.value = function(...args: any[]) {
+      const analytics = inject(AnalyticsService);
+      analytics.track(eventName, { method: propertyKey, args });
+      return originalMethod.apply(this, args);
+    };
+  };
+}
+
+@Component({...})
+class TrackedComponent {
+  @Trackable('user_action')
+  performAction() {
+    // Method automatically tracked
+  }
+}
+```
 
 ### 42. Design a complex data table component with virtual scrolling, dynamic column configuration, and inline editing capabilities.
 
 **Answer:**
 
-CDK Virtual Scroll, column config service, cell renderers, edit mode state management, trackBy optimization.
+```typescript
+// Column configuration interface
+interface TableColumn<T = any> {
+  key: keyof T;
+  header: string;
+  width?: number;
+  sortable?: boolean;
+  editable?: boolean;
+  renderer?: (value: any, row: T) => string;
+  editor?: ComponentType<any>;
+}
+
+// Data table component
+@Component({
+  selector: 'app-data-table',
+  template: `
+    <div class="table-container">
+      <!-- Virtual scroll viewport -->
+      <cdk-virtual-scroll-viewport itemSize="50" class="table-viewport">
+        <div class="table-header">
+          <div *ngFor="let column of columns; trackBy: trackByColumn"
+               class="table-cell header-cell"
+               [style.width.px]="column.width"
+               (click)="sort(column)">
+            {{ column.header }}
+            <span *ngIf="sortColumn === column.key" 
+                  class="sort-indicator">
+              {{ sortDirection === 'asc' ? '↑' : '↓' }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Virtual scroll items -->
+        <div *cdkVirtualFor="let row of sortedData; trackBy: trackByRow"
+             class="table-row"
+             [class.editing]="editingRow === row">
+          
+          <div *ngFor="let column of columns; trackBy: trackByColumn"
+               class="table-cell"
+               [style.width.px]="column.width">
+            
+            <!-- Edit mode -->
+            <ng-container *ngIf="editingRow === row && column.editable">
+              <ng-container [ngSwitch]="getEditorType(column)">
+                <input *ngSwitchCase="'text'" 
+                       [(ngModel)]="editingData[column.key]"
+                       (keyup.enter)="saveEdit()"
+                       (keyup.escape)="cancelEdit()">
+                <select *ngSwitchCase="'select'"
+                        [(ngModel)]="editingData[column.key]">
+                  <option *ngFor="let option of getSelectOptions(column)"
+                          [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </ng-container>
+            </ng-container>
+            
+            <!-- Display mode -->
+            <span *ngIf="editingRow !== row" 
+                  (dblclick)="startEdit(row, column)">
+              {{ getDisplayValue(row, column) }}
+            </span>
+          </div>
+          
+          <!-- Action buttons -->
+          <div class="table-cell actions">
+            <button *ngIf="editingRow !== row" 
+                    (click)="startEdit(row)">Edit</button>
+            <button *ngIf="editingRow === row" 
+                    (click)="saveEdit()">Save</button>
+            <button *ngIf="editingRow === row" 
+                    (click)="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+      </cdk-virtual-scroll-viewport>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+class DataTableComponent<T = any> implements OnInit {
+  @Input() data: T[] = [];
+  @Input() columns: TableColumn<T>[] = [];
+  @Input() pageSize = 50;
+  
+  editingRow: T | null = null;
+  editingData: Partial<T> = {};
+  sortColumn: keyof T | null = null;
+  sortDirection: 'asc' | 'desc' = 'asc';
+  
+  get sortedData(): T[] {
+    if (!this.sortColumn) return this.data;
+    
+    return [...this.data].sort((a, b) => {
+      const aVal = a[this.sortColumn!];
+      const bVal = b[this.sortColumn!];
+      const result = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return this.sortDirection === 'asc' ? result : -result;
+    });
+  }
+  
+  trackByRow = (index: number, row: T): any => {
+    return (row as any).id || index;
+  };
+  
+  trackByColumn = (index: number, column: TableColumn<T>): any => {
+    return column.key;
+  };
+  
+  sort(column: TableColumn<T>) {
+    if (!column.sortable) return;
+    
+    if (this.sortColumn === column.key) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column.key;
+      this.sortDirection = 'asc';
+    }
+    
+    this.cdr.markForCheck();
+  }
+  
+  startEdit(row: T, column?: TableColumn<T>) {
+    this.editingRow = row;
+    this.editingData = { ...row };
+    this.cdr.markForCheck();
+  }
+  
+  saveEdit() {
+    if (this.editingRow) {
+      Object.assign(this.editingRow, this.editingData);
+      this.editingRow = null;
+      this.editingData = {};
+      this.cdr.markForCheck();
+    }
+  }
+  
+  cancelEdit() {
+    this.editingRow = null;
+    this.editingData = {};
+    this.cdr.markForCheck();
+  }
+  
+  getDisplayValue(row: T, column: TableColumn<T>): string {
+    const value = row[column.key];
+    return column.renderer ? column.renderer(value, row) : String(value);
+  }
+  
+  getEditorType(column: TableColumn<T>): string {
+    return column.editor ? 'custom' : 'text';
+  }
+  
+  constructor(private cdr: ChangeDetectorRef) {}
+}
+```
 
 ### 43. How would you implement the compound component pattern in Angular (similar to React's compound components)?
 
@@ -572,13 +1112,429 @@ Module federation, route delegation, independent router instances, cross-app nav
 
 **Answer:**
 
-Custom validators, FormGroup cross-validation, conditional validation with form state, debounced async validators.
+```typescript
+// Custom validator functions
+export class CustomValidators {
+  // Cross-field password confirmation
+  static passwordConfirmation(passwordField: string, confirmField: string): ValidatorFn {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const password = group.get(passwordField);
+      const confirm = group.get(confirmField);
+      
+      if (!password || !confirm) return null;
+      
+      return password.value === confirm.value 
+        ? null 
+        : { passwordMismatch: true };
+    };
+  }
+  
+  // Conditional validation based on other field
+  static conditionalRequired(conditionField: string, conditionValue: any): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const form = control.parent;
+      if (!form) return null;
+      
+      const conditionControl = form.get(conditionField);
+      if (!conditionControl) return null;
+      
+      const shouldValidate = conditionControl.value === conditionValue;
+      return shouldValidate && !control.value 
+        ? { conditionalRequired: true } 
+        : null;
+    };
+  }
+  
+  // Async email uniqueness validator
+  static emailExists(userService: UserService): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<ValidationErrors | null> => {
+      if (!control.value) return of(null);
+      
+      return userService.checkEmailExists(control.value).pipe(
+        debounceTime(500), // Debounce API calls
+        map(exists => exists ? { emailExists: true } : null),
+        catchError(() => of(null)) // Handle API errors gracefully
+      );
+    };
+  }
+}
+
+// Advanced form component
+@Component({
+  selector: 'app-user-registration',
+  template: `
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <!-- Basic fields -->
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email">
+        <div *ngIf="userForm.get('email')?.errors?.['emailExists']" 
+             class="error">
+          Email already exists
+        </div>
+      </div>
+      
+      <!-- Account type selection -->
+      <div class="form-group">
+        <label>Account Type</label>
+        <select formControlName="accountType">
+          <option value="personal">Personal</option>
+          <option value="business">Business</option>
+        </select>
+      </div>
+      
+      <!-- Conditional business fields -->
+      <div *ngIf="userForm.get('accountType')?.value === 'business'" 
+           formGroupName="businessInfo">
+        <div class="form-group">
+          <label>Company Name</label>
+          <input formControlName="companyName">
+          <div *ngIf="businessInfo?.get('companyName')?.errors?.['conditionalRequired']" 
+               class="error">
+            Company name is required for business accounts
+          </div>
+        </div>
+      </div>
+      
+      <!-- Password fields with cross-validation -->
+      <div class="form-group">
+        <label>Password</label>
+        <input formControlName="password" type="password">
+      </div>
+      
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input formControlName="confirmPassword" type="password">
+        <div *ngIf="userForm.errors?.['passwordMismatch']" class="error">
+          Passwords do not match
+        </div>
+      </div>
+      
+      <button type="submit" [disabled]="userForm.invalid || userForm.pending">
+        Register
+      </button>
+    </form>
+  `
+})
+class UserRegistrationComponent implements OnInit {
+  userForm: FormGroup;
+  
+  get businessInfo() {
+    return this.userForm.get('businessInfo') as FormGroup;
+  }
+  
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserService
+  ) {}
+  
+  ngOnInit() {
+    this.userForm = this.fb.group({
+      email: ['', {
+        validators: [Validators.required, Validators.email],
+        asyncValidators: [CustomValidators.emailExists(this.userService)]
+      }],
+      accountType: ['personal', Validators.required],
+      businessInfo: this.fb.group({
+        companyName: ['', CustomValidators.conditionalRequired('accountType', 'business')]
+      }),
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, {
+      validators: [CustomValidators.passwordConfirmation('password', 'confirmPassword')]
+    });
+    
+    // Dynamic validation based on account type
+    this.userForm.get('accountType')?.valueChanges.subscribe(accountType => {
+      const businessInfo = this.userForm.get('businessInfo');
+      const companyName = businessInfo?.get('companyName');
+      
+      if (accountType === 'business') {
+        companyName?.setValidators([Validators.required]);
+      } else {
+        companyName?.clearValidators();
+      }
+      companyName?.updateValueAndValidity();
+    });
+  }
+  
+  onSubmit() {
+    if (this.userForm.valid) {
+      console.log('Form submitted:', this.userForm.value);
+    }
+  }
+}
+```
 
 ### 62. Implement a dynamic form generator that creates forms from JSON schema with custom component mappings.
 
 **Answer:**
 
-Schema parser, component registry, FormBuilder integration, custom form controls, validation mapping.
+```typescript
+// Schema interfaces
+interface FieldSchema {
+  key: string;
+  type: 'text' | 'email' | 'select' | 'checkbox' | 'custom';
+  label: string;
+  required?: boolean;
+  validators?: ValidatorConfig[];
+  options?: { label: string; value: any }[];
+  component?: string;
+  props?: any;
+  dependencies?: FieldDependency[];
+}
+
+interface ValidatorConfig {
+  type: 'required' | 'email' | 'minLength' | 'maxLength' | 'pattern';
+  value?: any;
+  message?: string;
+}
+
+interface FieldDependency {
+  field: string;
+  condition: 'equals' | 'notEquals' | 'contains';
+  value: any;
+  action: 'show' | 'hide' | 'enable' | 'disable';
+}
+
+interface FormSchema {
+  fields: FieldSchema[];
+  layout?: 'vertical' | 'horizontal' | 'grid';
+}
+
+// Component registry for custom fields
+@Injectable({ providedIn: 'root' })
+class ComponentRegistry {
+  private components = new Map<string, any>();
+  
+  register(name: string, component: any) {
+    this.components.set(name, component);
+  }
+  
+  get(name: string): any {
+    return this.components.get(name);
+  }
+}
+
+// Dynamic form field component
+@Component({
+  selector: 'app-dynamic-field',
+  template: `
+    <div class="form-field" [ngSwitch]="field.type">
+      <label>{{ field.label }}</label>
+      
+      <!-- Text input -->
+      <input *ngSwitchCase="'text'" 
+             [formControlName]="field.key"
+             type="text">
+      
+      <!-- Email input -->
+      <input *ngSwitchCase="'email'" 
+             [formControlName]="field.key"
+             type="email">
+      
+      <!-- Select dropdown -->
+      <select *ngSwitchCase="'select'" [formControlName]="field.key">
+        <option value="">Select...</option>
+        <option *ngFor="let option of field.options" 
+                [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      
+      <!-- Checkbox -->
+      <input *ngSwitchCase="'checkbox'" 
+             [formControlName]="field.key"
+             type="checkbox">
+      
+      <!-- Custom component -->
+      <ng-container *ngSwitchCase="'custom'">
+        <ng-container *ngComponentOutlet="getCustomComponent(field.component); 
+                                           injector: createCustomInjector(field)">
+        </ng-container>
+      </ng-container>
+      
+      <!-- Validation errors -->
+      <div class="errors" *ngIf="getControl(field.key)?.errors && getControl(field.key)?.touched">
+        <div *ngFor="let error of getErrorMessages(field.key)" class="error">
+          {{ error }}
+        </div>
+      </div>
+    </div>
+  `
+})
+class DynamicFieldComponent {
+  @Input() field: FieldSchema;
+  @Input() form: FormGroup;
+  
+  constructor(
+    private componentRegistry: ComponentRegistry,
+    private injector: Injector
+  ) {}
+  
+  getControl(key: string): AbstractControl | null {
+    return this.form.get(key);
+  }
+  
+  getCustomComponent(componentName: string): any {
+    return this.componentRegistry.get(componentName);
+  }
+  
+  createCustomInjector(field: FieldSchema): Injector {
+    return Injector.create({
+      providers: [
+        { provide: 'fieldConfig', useValue: field },
+        { provide: FormControl, useValue: this.getControl(field.key) }
+      ],
+      parent: this.injector
+    });
+  }
+  
+  getErrorMessages(fieldKey: string): string[] {
+    const control = this.getControl(fieldKey);
+    const errors = control?.errors;
+    if (!errors) return [];
+    
+    const messages: string[] = [];
+    const field = this.field;
+    
+    Object.keys(errors).forEach(errorKey => {
+      const validatorConfig = field.validators?.find(v => v.type === errorKey as any);
+      if (validatorConfig?.message) {
+        messages.push(validatorConfig.message);
+      } else {
+        // Default error messages
+        switch (errorKey) {
+          case 'required':
+            messages.push(`${field.label} is required`);
+            break;
+          case 'email':
+            messages.push(`${field.label} must be a valid email`);
+            break;
+          case 'minlength':
+            messages.push(`${field.label} must be at least ${errors[errorKey].requiredLength} characters`);
+            break;
+          default:
+            messages.push(`${field.label} is invalid`);
+        }
+      }
+    });
+    
+    return messages;
+  }
+}
+
+// Main dynamic form component
+@Component({
+  selector: 'app-dynamic-form',
+  template: `
+    <form [formGroup]="dynamicForm" (ngSubmit)="onSubmit()">
+      <app-dynamic-field
+        *ngFor="let field of visibleFields"
+        [field]="field"
+        [form]="dynamicForm">
+      </app-dynamic-field>
+      
+      <button type="submit" [disabled]="dynamicForm.invalid">
+        Submit
+      </button>
+    </form>
+  `
+})
+class DynamicFormComponent implements OnInit {
+  @Input() schema: FormSchema;
+  @Output() formSubmit = new EventEmitter<any>();
+  
+  dynamicForm: FormGroup;
+  visibleFields: FieldSchema[] = [];
+  
+  constructor(private fb: FormBuilder) {}
+  
+  ngOnInit() {
+    this.buildForm();
+    this.setupDependencies();
+  }
+  
+  private buildForm() {
+    const group: any = {};
+    
+    this.schema.fields.forEach(field => {
+      const validators = this.buildValidators(field);
+      group[field.key] = ['', validators];
+    });
+    
+    this.dynamicForm = this.fb.group(group);
+    this.updateVisibleFields();
+  }
+  
+  private buildValidators(field: FieldSchema): ValidatorFn[] {
+    const validators: ValidatorFn[] = [];
+    
+    if (field.required) {
+      validators.push(Validators.required);
+    }
+    
+    field.validators?.forEach(validatorConfig => {
+      switch (validatorConfig.type) {
+        case 'email':
+          validators.push(Validators.email);
+          break;
+        case 'minLength':
+          validators.push(Validators.minLength(validatorConfig.value));
+          break;
+        case 'maxLength':
+          validators.push(Validators.maxLength(validatorConfig.value));
+          break;
+        case 'pattern':
+          validators.push(Validators.pattern(validatorConfig.value));
+          break;
+      }
+    });
+    
+    return validators;
+  }
+  
+  private setupDependencies() {
+    this.schema.fields.forEach(field => {
+      if (field.dependencies) {
+        field.dependencies.forEach(dep => {
+          this.dynamicForm.get(dep.field)?.valueChanges.subscribe(() => {
+            this.updateVisibleFields();
+          });
+        });
+      }
+    });
+  }
+  
+  private updateVisibleFields() {
+    this.visibleFields = this.schema.fields.filter(field => {
+      if (!field.dependencies) return true;
+      
+      return field.dependencies.every(dep => {
+        const depControl = this.dynamicForm.get(dep.field);
+        const depValue = depControl?.value;
+        
+        switch (dep.condition) {
+          case 'equals':
+            return depValue === dep.value;
+          case 'notEquals':
+            return depValue !== dep.value;
+          case 'contains':
+            return Array.isArray(depValue) && depValue.includes(dep.value);
+          default:
+            return true;
+        }
+      });
+    });
+  }
+  
+  onSubmit() {
+    if (this.dynamicForm.valid) {
+      this.formSubmit.emit(this.dynamicForm.value);
+    }
+  }
+}
+```
 
 ### 63. How would you handle large forms with thousands of fields while maintaining performance?
 
@@ -642,13 +1598,394 @@ Test pyramid: unit (70%), integration (20%), e2e (10%). TestBed, mocking strateg
 
 **Answer:**
 
-fakeAsync/tick, marble testing, subscription testing, async/await patterns, mock observables.
+```typescript
+// Component with complex observables
+@Component({
+  template: `
+    <div *ngIf="loading">Loading...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
+    <div *ngFor="let user of users$ | async">{{ user.name }}</div>
+  `
+})
+class UserListComponent implements OnInit {
+  users$ = new BehaviorSubject<User[]>([]);
+  loading = false;
+  error: string | null = null;
+  
+  constructor(private userService: UserService) {}
+  
+  ngOnInit() {
+    this.loadUsers();
+  }
+  
+  loadUsers() {
+    this.loading = true;
+    this.error = null;
+    
+    this.userService.getUsers().pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      retry(3),
+      catchError(error => {
+        this.error = 'Failed to load users';
+        return of([]);
+      }),
+      finalize(() => this.loading = false)
+    ).subscribe(users => {
+      this.users$.next(users);
+    });
+  }
+}
+
+// Comprehensive test suite
+describe('UserListComponent', () => {
+  let component: UserListComponent;
+  let fixture: ComponentFixture<UserListComponent>;
+  let userService: jasmine.SpyObj<UserService>;
+  
+  beforeEach(() => {
+    const spy = jasmine.createSpyObj('UserService', ['getUsers']);
+    
+    TestBed.configureTestingModule({
+      declarations: [UserListComponent],
+      providers: [
+        { provide: UserService, useValue: spy }
+      ]
+    });
+    
+    fixture = TestBed.createComponent(UserListComponent);
+    component = fixture.componentInstance;
+    userService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
+  });
+  
+  describe('Observable Testing with fakeAsync', () => {
+    it('should handle successful data loading with debounce', fakeAsync(() => {
+      const mockUsers = [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }];
+      userService.getUsers.and.returnValue(of(mockUsers));
+      
+      component.ngOnInit();
+      
+      // Initially loading should be true
+      expect(component.loading).toBe(true);
+      
+      // Fast-forward through debounceTime
+      tick(300);
+      
+      // Loading should be false after completion
+      expect(component.loading).toBe(false);
+      expect(component.users$.value).toEqual(mockUsers);
+      expect(component.error).toBeNull();
+    }));
+    
+    it('should handle errors with retry', fakeAsync(() => {
+      const errorResponse = throwError('Network error');
+      userService.getUsers.and.returnValue(errorResponse);
+      
+      component.ngOnInit();
+      tick(300);
+      
+      // Should retry 3 times before giving up
+      expect(userService.getUsers).toHaveBeenCalledTimes(4); // 1 + 3 retries
+      expect(component.error).toBe('Failed to load users');
+      expect(component.loading).toBe(false);
+    }));
+  });
+  
+  describe('Marble Testing for Complex Streams', () => {
+    let scheduler: TestScheduler;
+    
+    beforeEach(() => {
+      scheduler = new TestScheduler((actual, expected) => {
+        expect(actual).toEqual(expected);
+      });
+    });
+    
+    it('should test observable streams with marble diagrams', () => {
+      scheduler.run(({ cold, expectObservable }) => {
+        // Mock service response timeline
+        const response$ = cold('--a--b--c|', {
+          a: [{ id: 1, name: 'User1' }],
+          b: [{ id: 2, name: 'User2' }],
+          c: [{ id: 3, name: 'User3' }]
+        });
+        
+        userService.getUsers.and.returnValue(response$);
+        
+        // Expected behavior after debounce and processing
+        const expected = '-----a--b--c|';
+        const expectedValues = {
+          a: [{ id: 1, name: 'User1' }],
+          b: [{ id: 2, name: 'User2' }],
+          c: [{ id: 3, name: 'User3' }]
+        };
+        
+        component.ngOnInit();
+        expectObservable(component.users$).toBe(expected, expectedValues);
+      });
+    });
+  });
+  
+  describe('Async Testing Patterns', () => {
+    it('should test async operations with async/await', async () => {
+      const mockUsers = [{ id: 1, name: 'Test User' }];
+      userService.getUsers.and.returnValue(of(mockUsers).pipe(delay(100)));
+      
+      component.ngOnInit();
+      
+      // Wait for async operations to complete
+      await fixture.whenStable();
+      
+      expect(component.users$.value).toEqual(mockUsers);
+    });
+    
+    it('should test subscription cleanup', () => {
+      const mockUsers = [{ id: 1, name: 'Test User' }];
+      userService.getUsers.and.returnValue(of(mockUsers));
+      
+      spyOn(component.users$, 'next');
+      
+      component.ngOnInit();
+      component.ngOnDestroy();
+      
+      // Verify subscriptions are cleaned up
+      expect(component.users$.observers.length).toBe(0);
+    });
+  });
+});
+```
 
 ### 73. Implement a custom testing utility that simplifies testing of components with complex dependencies.
 
 **Answer:**
 
-Test harness pattern, component page objects, shared mocking utilities, setup helpers.
+```typescript
+// Test harness for complex component setup
+export class ComponentTestHarness<T> {
+  private fixture: ComponentFixture<T>;
+  private component: T;
+  private mockProviders: any[] = [];
+  
+  constructor(private componentClass: new (...args: any[]) => T) {}
+  
+  withMockProvider<S>(token: any, mock: Partial<S>): this {
+    this.mockProviders.push({
+      provide: token,
+      useValue: jasmine.createSpyObj(token.name || 'MockService', Object.keys(mock), mock)
+    });
+    return this;
+  }
+  
+  withRealProvider<S>(token: any, implementation: S): this {
+    this.mockProviders.push({
+      provide: token,
+      useValue: implementation
+    });
+    return this;
+  }
+  
+  withImports(imports: any[]): this {
+    this.mockProviders.push(...imports.map(imp => ({ provide: imp, useValue: imp })));
+    return this;
+  }
+  
+  build(): ComponentTestHarness<T> {
+    TestBed.configureTestingModule({
+      declarations: [this.componentClass],
+      providers: this.mockProviders,
+      imports: [ReactiveFormsModule, CommonModule]
+    });
+    
+    this.fixture = TestBed.createComponent(this.componentClass);
+    this.component = this.fixture.componentInstance;
+    
+    return this;
+  }
+  
+  get instance(): T {
+    return this.component;
+  }
+  
+  get element(): HTMLElement {
+    return this.fixture.nativeElement;
+  }
+  
+  getMock<S>(token: any): jasmine.SpyObj<S> {
+    return TestBed.inject(token) as jasmine.SpyObj<S>;
+  }
+  
+  detectChanges(): void {
+    this.fixture.detectChanges();
+  }
+  
+  click(selector: string): void {
+    const element = this.element.querySelector(selector) as HTMLElement;
+    element?.click();
+    this.detectChanges();
+  }
+  
+  inputValue(selector: string, value: string): void {
+    const input = this.element.querySelector(selector) as HTMLInputElement;
+    if (input) {
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      this.detectChanges();
+    }
+  }
+  
+  expectElement(selector: string): jasmine.Matchers<HTMLElement> {
+    const element = this.element.querySelector(selector) as HTMLElement;
+    return expect(element);
+  }
+  
+  expectText(selector: string): jasmine.Matchers<string> {
+    const element = this.element.querySelector(selector) as HTMLElement;
+    return expect(element?.textContent?.trim());
+  }
+}
+
+// Page Object Model for complex forms
+export class FormPageObject {
+  constructor(private element: HTMLElement) {}
+  
+  static create(fixture: ComponentFixture<any>): FormPageObject {
+    return new FormPageObject(fixture.nativeElement);
+  }
+  
+  fillField(fieldName: string, value: string): this {
+    const input = this.element.querySelector(`[name="${fieldName}"], [formControlName="${fieldName}"]`) as HTMLInputElement;
+    if (input) {
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    }
+    return this;
+  }
+  
+  selectOption(fieldName: string, value: string): this {
+    const select = this.element.querySelector(`select[name="${fieldName}"], select[formControlName="${fieldName}"]`) as HTMLSelectElement;
+    if (select) {
+      select.value = value;
+      select.dispatchEvent(new Event('change'));
+    }
+    return this;
+  }
+  
+  checkBox(fieldName: string, checked: boolean = true): this {
+    const checkbox = this.element.querySelector(`input[type="checkbox"][name="${fieldName}"]`) as HTMLInputElement;
+    if (checkbox) {
+      checkbox.checked = checked;
+      checkbox.dispatchEvent(new Event('change'));
+    }
+    return this;
+  }
+  
+  submit(): this {
+    const submitButton = this.element.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitButton?.click();
+    return this;
+  }
+  
+  getError(fieldName: string): string | null {
+    const errorElement = this.element.querySelector(`[data-error="${fieldName}"], .error-${fieldName}`) as HTMLElement;
+    return errorElement?.textContent?.trim() || null;
+  }
+  
+  isFieldValid(fieldName: string): boolean {
+    const field = this.element.querySelector(`[name="${fieldName}"], [formControlName="${fieldName}"]`) as HTMLElement;
+    return !field?.classList.contains('ng-invalid');
+  }
+  
+  isSubmitDisabled(): boolean {
+    const submitButton = this.element.querySelector('button[type="submit"]') as HTMLButtonElement;
+    return submitButton?.disabled || false;
+  }
+}
+
+// Usage in tests
+describe('UserRegistrationComponent with Test Harness', () => {
+  let harness: ComponentTestHarness<UserRegistrationComponent>;
+  let userService: jasmine.SpyObj<UserService>;
+  let formPage: FormPageObject;
+  
+  beforeEach(() => {
+    harness = new ComponentTestHarness(UserRegistrationComponent)
+      .withMockProvider(UserService, {
+        checkEmailExists: jasmine.createSpy().and.returnValue(of(false)),
+        createUser: jasmine.createSpy().and.returnValue(of({ id: 1 }))
+      })
+      .withMockProvider(Router, {
+        navigate: jasmine.createSpy()
+      })
+      .build();
+    
+    userService = harness.getMock(UserService);
+    formPage = FormPageObject.create(harness.fixture);
+    harness.detectChanges();
+  });
+  
+  it('should validate form and show errors using page object', () => {
+    formPage
+      .fillField('email', 'invalid-email')
+      .fillField('password', '123')
+      .submit();
+    
+    expect(formPage.getError('email')).toContain('valid email');
+    expect(formPage.getError('password')).toContain('at least 8 characters');
+    expect(formPage.isSubmitDisabled()).toBe(true);
+  });
+  
+  it('should successfully submit valid form', () => {
+    formPage
+      .fillField('email', 'test@example.com')
+      .fillField('password', 'password123')
+      .fillField('confirmPassword', 'password123')
+      .submit();
+    
+    expect(userService.createUser).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password123'
+    });
+  });
+  
+  it('should handle async email validation', fakeAsync(() => {
+    userService.checkEmailExists.and.returnValue(of(true).pipe(delay(500)));
+    
+    formPage.fillField('email', 'existing@example.com');
+    
+    tick(500); // Wait for debounced validation
+    harness.detectChanges();
+    
+    expect(formPage.getError('email')).toContain('already exists');
+  }));
+});
+
+// Shared test utilities
+export class TestDataBuilder {
+  static user(overrides: Partial<User> = {}): User {
+    return {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      active: true,
+      ...overrides
+    };
+  }
+  
+  static userList(count: number = 3): User[] {
+    return Array.from({ length: count }, (_, i) => this.user({ id: i + 1, name: `User ${i + 1}` }));
+  }
+}
+
+// Mock data factory
+export class MockDataFactory {
+  static createObservableMock<T>(data: T): Observable<T> {
+    return of(data).pipe(delay(10)); // Simulate async behavior
+  }
+  
+  static createErrorMock(errorMessage: string): Observable<never> {
+    return throwError(errorMessage).pipe(delay(10));
+  }
+}
+```
 
 ### 74. How would you test Angular services that interact with external APIs and handle various error scenarios?
 
