@@ -955,174 +955,26 @@ class ComponentOptimizations {
 
 **Answer:**
 
-**Angular's async handling:**
-- Zone.js patches async operations (setTimeout, Promise, XMLHttpRequest)
-- Each async completion triggers change detection
-- Can cause excessive checks in real-time apps
-
-**Optimization strategies:**
-
-```typescript
-// 1. Use OnPush with async pipe
-@Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div>{{data$ | async | json}}</div>`
-})
-class RealtimeComponent {
-  data$ = this.websocket.messages$; // Auto-optimized with async pipe
-}
-
-// 2. Batch real-time updates
-@Injectable()
-class RealTimeService {
-  private updates$ = new Subject();
-  
-  batchedUpdates$ = this.updates$.pipe(
-    bufferTime(100), // Batch updates every 100ms
-    filter(batch => batch.length > 0)
-  );
-  
-  sendUpdate(data: any) {
-    this.updates$.next(data);
-  }
-}
-
-// 3. Manual zone control for high-frequency updates
-class HighFrequencyComponent {
-  constructor(private ngZone: NgZone, private cdr: ChangeDetectorRef) {
-    this.cdr.detach(); // Take manual control
-    
-    // High-frequency updates outside zone
-    this.ngZone.runOutsideAngular(() => {
-      this.websocket.onMessage(data => {
-        this.processData(data);
-        
-        // Throttled UI updates
-        if (this.shouldUpdateUI()) {
-          this.ngZone.run(() => {
-            this.cdr.detectChanges();
-          });
-        }
-      });
-    });
-  }
-}
-```
+Zone.js patches async ops to trigger change detection. Optimize with OnPush + async pipe, or run outside zone for high-frequency updates.
 
 ### 28. Explain the relationship between Observables and change detection. How does the async pipe optimize this process?
 
 **Answer:**
 
-**Observable-Change Detection relationship:**
-- Observables don't automatically trigger change detection
-- Need manual triggering or async pipe
-- Subscription management affects performance
-
-**Async pipe optimizations:**
-
-```typescript
-// ❌ Manual subscription - triggers change detection on every emission
-class ManualComponent {
-  data: any;
-  
-  ngOnInit() {
-    this.dataService.getData().subscribe(data => {
-      this.data = data;
-      this.cdr.markForCheck(); // Manual trigger needed
-    });
-  }
-}
-
-// ✅ Async pipe - automatically optimized
-@Component({
-  template: `<div>{{data$ | async | json}}</div>`,
-  changeDetection: ChangeDetectionStrategy.OnPush
-})
-class OptimizedComponent {
-  data$ = this.dataService.getData(); // No manual subscription
-}
-
-// Async pipe benefits:
-// 1. Automatic subscription/unsubscription
-// 2. Automatic markForCheck() calls
-// 3. Works perfectly with OnPush
-// 4. Prevents memory leaks
-
-// Advanced async pipe usage
-@Component({
-  template: `
-    <div *ngIf="data$ | async as data">
-      {{data.value}}
-    </div>
-  `
-})
-class AdvancedAsyncComponent {
-  data$ = this.service.getData().pipe(
-    distinctUntilChanged(),
-    shareReplay(1) // Cache for multiple async pipes
-  );
-}
-```
+Observables don't trigger change detection. Async pipe auto-subscribes/unsubscribes and calls `markForCheck()` on OnPush components.
 
 ### 29. How would you implement a custom trackBy function for large lists with complex objects?
 
 **Answer:**
 
-**TrackBy function optimizes ngFor by identifying items uniquely:**
-
 ```typescript
-@Component({
-  template: `
-    <div *ngFor="let item of items; trackBy: trackByFn">
-      {{item.name}} - {{item.value}}
-    </div>
-  `
-})
-class ListComponent {
-  items: ComplexItem[];
-  
-  // Simple ID tracking
-  trackByFn(index: number, item: ComplexItem): any {
-    return item.id; // Use unique identifier
-  }
-  
-  // Composite key tracking
-  trackByComposite(index: number, item: ComplexItem): string {
-    return `${item.category}-${item.id}-${item.version}`;
-  }
-  
-  // Hash-based tracking for objects without IDs
-  trackByHash(index: number, item: ComplexItem): string {
-    return this.generateHash(item);
-  }
-  
-  // Performance-optimized tracking
-  trackByOptimized = (index: number, item: ComplexItem) => {
-    // Cache hash values to avoid recalculation
-    if (!item._trackingHash) {
-      item._trackingHash = this.generateHash(item);
-    }
-    return item._trackingHash;
-  }
-  
-  private generateHash(obj: any): string {
-    return btoa(JSON.stringify(obj)).slice(0, 16);
-  }
+trackByFn(index: number, item: any): any {
+  return item.id; // Use unique identifier
 }
 
-// Advanced tracking for dynamic lists
-class DynamicListComponent {
-  trackByIndex = (index: number) => index; // For static order
-  trackByProperty = (index: number, item: any) => item.timestamp; // For time-based
-  
-  // Conditional tracking based on list type
-  getTrackByFn(listType: string) {
-    switch(listType) {
-      case 'users': return this.trackByUserId;
-      case 'messages': return this.trackByMessageId;
-      default: return this.trackByIndex;
-    }
-  }
+// For objects without ID
+trackByHash(index: number, item: any): string {
+  return JSON.stringify(item);
 }
 ```
 
@@ -1130,94 +982,7 @@ class DynamicListComponent {
 
 **Answer:**
 
-**Comprehensive optimization strategy:**
-
-```typescript
-// 1. Global OnPush Strategy
-@Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  // Apply to all dashboard components
-})
-
-// 2. Smart Data Management
-@Injectable()
-class DashboardDataService {
-  private cache = new Map();
-  
-  // Immutable updates for OnPush
-  updateData(key: string, data: any) {
-    this.cache.set(key, Object.freeze({...data}));
-    this.notifyComponents(key);
-  }
-  
-  // Batch updates
-  batchUpdate(updates: Map<string, any>) {
-    updates.forEach((data, key) => this.cache.set(key, data));
-    this.notifyAllComponents();
-  }
-}
-
-// 3. Component Hierarchy Optimization
-class DashboardContainer {
-  // Detach non-visible components
-  @ViewChildren(DashboardWidget) widgets!: QueryList<DashboardWidget>;
-  
-  onTabChange(activeIndex: number) {
-    this.widgets.forEach((widget, index) => {
-      if (index !== activeIndex) {
-        widget.detach(); // Stop change detection
-      } else {
-        widget.reattach(); // Resume change detection
-      }
-    });
-  }
-}
-
-// 4. Virtual Scrolling for Large Lists
-@Component({
-  template: `
-    <cdk-virtual-scroll-viewport itemSize="50">
-      <div *cdkVirtualFor="let item of items; trackBy: trackByFn">
-        {{item.data}}
-      </div>
-    </cdk-virtual-scroll-viewport>
-  `
-})
-
-// 5. Intelligent Update Scheduling
-class PerformanceManager {
-  private updateQueue = new Set<ChangeDetectorRef>();
-  
-  scheduleUpdate(cdr: ChangeDetectorRef) {
-    this.updateQueue.add(cdr);
-    
-    if (this.updateQueue.size === 1) {
-      requestIdleCallback(() => {
-        this.updateQueue.forEach(cd => cd.markForCheck());
-        this.updateQueue.clear();
-      });
-    }
-  }
-}
-
-// 6. Memory Management
-class ComponentCleanup implements OnDestroy {
-  private subscriptions = new Subscription();
-  
-  ngOnDestroy() {
-    this.subscriptions.unsubscribe();
-    this.cdr.detach(); // Ensure cleanup
-  }
-}
-```
-
-**Key optimization principles:**
-- Use OnPush everywhere possible
-- Implement proper trackBy functions
-- Batch updates using requestAnimationFrame
-- Detach non-visible components
-- Use virtual scrolling for large datasets
-- Implement proper cleanup strategies
+Use OnPush everywhere, virtual scrolling for lists, detach non-visible components, batch updates with `requestAnimationFrame`, implement proper trackBy functions.
 
 ---
 
