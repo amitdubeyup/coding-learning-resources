@@ -25,439 +25,140 @@ A comprehensive collection of advanced Angular interview questions focusing on d
 
 **Answer:**
 
-Angular compilation transforms your TypeScript and template code into optimized JavaScript that browsers can execute.
+**JIT vs AOT:**
+- **JIT**: Compiles in browser at runtime, larger bundles, slower initial load
+- **AOT**: Compiles during build, smaller bundles, faster rendering, better tree-shaking
+- **Ivy**: Angular 9+ renderer with improved compilation, smaller bundles, incremental builds
 
-**JIT (Just-In-Time) Compilation:**
-- Templates and components are compiled in the browser at runtime
-- Larger bundle sizes since the Angular compiler is included
-- Slower initial loading but faster development builds
-- Used primarily during development in older Angular versions
-
-**AOT (Ahead-Of-Time) Compilation:**
-- Templates and components are compiled during the build process
-- Smaller bundle sizes (no compiler needed in browser)
-- Faster rendering and earlier detection of template errors
-- Better tree-shaking and security
-- Default in Angular 9+ with Ivy
-
-**Ivy Renderer Impact:**
 ```typescript
-// Before Ivy - ViewEngine
-// Complex compilation with separate template and component compilation
-
-// With Ivy - Simplified
-@Component({
-  template: `<div>{{title}}</div>`
-})
+// Ivy generates optimized code
+@Component({ template: `<div>{{title}}</div>` })
 class MyComponent {
-  // Ivy generates simpler, more tree-shakable code
-  static ɵcmp = defineComponent({
-    // Compiled template function
-  });
+  static ɵcmp = defineComponent({ /* optimized template function */ });
 }
 ```
-
-Ivy benefits:
-- Smaller bundle sizes through better tree-shaking
-- Faster builds with incremental compilation
-- Improved runtime performance
-- Better debugging experience
-- Simplified mental model
 
 ### 2. Describe the complete lifecycle of an Angular application from bootstrap to component destruction, including the role of ApplicationRef and NgZone.
 
 **Answer:**
 
-**Application Bootstrap Process:**
-
-1. **Platform Creation**: Angular creates the platform-specific services
-2. **Module Bootstrap**: Root module is compiled and instantiated
-3. **ApplicationRef Creation**: Central registry for all application components
-4. **NgZone Initialization**: Manages change detection and async operations
-5. **Component Tree Creation**: Root component and its children are instantiated
+**Bootstrap Process:**
+Platform → Module → ApplicationRef → NgZone → Component Tree
 
 ```typescript
-// Bootstrap process
-platformBrowserDynamic()
-  .bootstrapModule(AppModule)
-  .then(moduleRef => {
-    const appRef = moduleRef.injector.get(ApplicationRef);
-    const ngZone = moduleRef.injector.get(NgZone);
-  });
+platformBrowserDynamic().bootstrapModule(AppModule);
 ```
 
-**ApplicationRef Role:**
-- Maintains list of component views
-- Triggers change detection cycles
-- Manages application lifecycle events
-
-```typescript
-class ApplicationRef {
-  tick() { /* Trigger change detection */ }
-  attachView(viewRef: ViewRef) { /* Add component to app */ }
-  detachView(viewRef: ViewRef) { /* Remove component */ }
-}
-```
-
-**NgZone Role:**
-- Patches async operations (setTimeout, Promise, events)
-- Notifies Angular when to run change detection
-- Provides execution contexts (inside/outside Angular zone)
+**ApplicationRef**: Manages component views, triggers change detection
+**NgZone**: Patches async operations, notifies when to run change detection
 
 **Component Lifecycle:**
-1. Constructor → OnChanges → OnInit → DoCheck → AfterContentInit → AfterContentChecked → AfterViewInit → AfterViewChecked
-2. During updates: OnChanges → DoCheck → AfterContentChecked → AfterViewChecked
-3. Destruction: OnDestroy
+Constructor → OnChanges → OnInit → DoCheck → AfterContentInit → AfterContentChecked → AfterViewInit → AfterViewChecked → OnDestroy
 
 ### 3. How does Angular's hierarchical injector system work? Explain the resolution strategy and how to create custom injectors programmatically.
 
 **Answer:**
 
-Angular's DI system creates a hierarchy of injectors that mirrors the component tree, enabling efficient dependency resolution and scope management.
+**Hierarchy:** Platform → Application → Module → Element Injectors
 
-**Injector Hierarchy:**
-```
-Platform Injector (top-level, singleton services)
-    ↓
-Application Injector (app-wide services)
-    ↓
-Module Injectors (lazy-loaded modules)
-    ↓
-Element Injectors (component/directive level)
-```
-
-**Resolution Strategy:**
-1. Start at the requesting element injector
-2. Walk up the component tree to parent injectors
-3. Continue to module injector, then application injector
-4. Finally check platform injector
-5. Throw error if not found
+**Resolution:** Element → Parent → Module → Application → Platform (bottom-up)
 
 ```typescript
-// Resolution example
-@Component({
-  providers: [ServiceA] // Element injector
-})
-class ChildComponent {
-  constructor(
-    private serviceA: ServiceA, // Found in element injector
-    private serviceB: ServiceB  // Found in parent/module injector
-  ) {}
-}
-```
-
-**Creating Custom Injectors:**
-
-```typescript
-// Programmatic injector creation
+// Custom injector
 const customInjector = Injector.create({
   providers: [
     { provide: MyService, useClass: MyService },
     { provide: CONFIG_TOKEN, useValue: config }
   ],
-  parent: this.injector // Optional parent
+  parent: this.injector
 });
 
-// Using in component creation
-const componentRef = this.viewContainer.createComponent(
-  MyComponent,
-  { injector: customInjector }
-);
-```
-
-**Advanced Patterns:**
-
-```typescript
-// Conditional service provision
-const providers = environment.production ? 
-  [{ provide: Logger, useClass: ProductionLogger }] :
-  [{ provide: Logger, useClass: DevLogger }];
-
-const injector = Injector.create({ providers });
+// Use in component creation
+this.viewContainer.createComponent(MyComponent, { injector: customInjector });
 ```
 
 ### 4. What is the difference between ViewChild, ContentChild, and their query counterparts? When would you use static vs dynamic queries?
 
 **Answer:**
 
-These decorators help access child elements, but they target different parts of the component tree.
-
-**ViewChild vs ContentChild:**
+**ViewChild**: Queries component's own template
+**ContentChild**: Queries projected content (ng-content)
+**ViewChildren/ContentChildren**: Query multiple elements
 
 ```typescript
 @Component({
-  template: `
-    <div #viewChildExample>View Child</div>
-    <ng-content></ng-content>
-  `
+  template: `<div #myView>View</div><ng-content></ng-content>`
 })
 class ParentComponent {
-  // ViewChild - queries component's own template
-  @ViewChild('viewChildExample') viewChild!: ElementRef;
-  
-  // ContentChild - queries projected content
-  @ContentChild('contentChildExample') contentChild!: ElementRef;
-}
-
-// Usage
-@Component({
-  template: `
-    <parent-component>
-      <div #contentChildExample>Content Child</div>
-    </parent-component>
-  `
-})
-class AppComponent {}
-```
-
-**Query Counterparts:**
-```typescript
-class MyComponent {
-  // Single queries
-  @ViewChild('single') singleView!: ElementRef;
-  @ContentChild('single') singleContent!: ElementRef;
-  
-  // Multiple queries
-  @ViewChildren('multiple') multipleViews!: QueryList<ElementRef>;
-  @ContentChildren('multiple') multipleContent!: QueryList<ElementRef>;
+  @ViewChild('myView') viewChild!: ElementRef;           // Own template
+  @ContentChild('projected') contentChild!: ElementRef;  // Projected content
+  @ViewChildren('items') items!: QueryList<ElementRef>;  // Multiple elements
 }
 ```
 
-**Static vs Dynamic Queries:**
-
-```typescript
-// Static query - available in ngOnInit
-@ViewChild('static', { static: true }) staticQuery!: ElementRef;
-
-// Dynamic query - available in ngAfterViewInit
-@ViewChild('dynamic', { static: false }) dynamicQuery!: ElementRef;
-
-ngOnInit() {
-  // staticQuery is available here
-  console.log(this.staticQuery.nativeElement);
-}
-
-ngAfterViewInit() {
-  // dynamicQuery is available here
-  console.log(this.dynamicQuery.nativeElement);
-}
-```
-
-**When to use static queries:**
-- Element always exists (no *ngIf)
-- Need access in ngOnInit
-- Performance-critical scenarios
-
-**When to use dynamic queries:**
-- Elements might not exist initially
-- Inside structural directives
-- Default behavior (safer)
+**Static vs Dynamic:**
+- **Static (true)**: Available in ngOnInit, for elements always present
+- **Dynamic (false)**: Available in ngAfterViewInit, for conditional elements (*ngIf)
 
 ### 5. Explain the concept of Angular Elements and how you would architect a micro-frontend solution using Angular Elements.
 
 **Answer:**
 
-Angular Elements allows you to package Angular components as custom elements (Web Components) that can be used in any HTML page or framework.
-
-**Basic Angular Element:**
+**Angular Elements**: Packages Angular components as Web Components (custom elements) for use in any framework.
 
 ```typescript
-// Create the element
 @Component({
-  selector: 'my-angular-element',
-  template: `<h1>{{title}}</h1>`,
-  inputs: ['title']
+  selector: 'my-element',
+  template: `<h1>{{title}}</h1>`
 })
 class MyElementComponent {
-  @Input() title = 'Default Title';
+  @Input() title = 'Default';
 }
 
 // Register as custom element
-@NgModule({
-  declarations: [MyElementComponent],
-  imports: [BrowserModule],
-  entryComponents: [MyElementComponent]
-})
-class MyElementModule {
-  constructor(private injector: Injector) {}
-  
-  ngDoBootstrap() {
-    const element = createCustomElement(MyElementComponent, { injector: this.injector });
-    customElements.define('my-angular-element', element);
-  }
-}
+const element = createCustomElement(MyElementComponent, { injector });
+customElements.define('my-element', element);
 ```
 
 **Micro-frontend Architecture:**
-
-```typescript
-// 1. Shell Application (Main Host)
-@Component({
-  template: `
-    <header-micro-app></header-micro-app>
-    <router-outlet></router-outlet>
-    <footer-micro-app></footer-micro-app>
-  `
-})
-class ShellComponent {}
-
-// 2. Micro-frontend Communication Service
-@Injectable({ providedIn: 'root' })
-class MicroFrontendBus {
-  private eventSubject = new Subject<any>();
-  
-  emit(event: string, data: any) {
-    this.eventSubject.next({ event, data });
-  }
-  
-  listen(event: string) {
-    return this.eventSubject.pipe(
-      filter(msg => msg.event === event),
-      map(msg => msg.data)
-    );
-  }
-}
-
-// 3. Lazy Loading Micro-frontends
-const routes: Routes = [
-  {
-    path: 'orders',
-    loadChildren: () => import('./micro-apps/orders/orders.module')
-      .then(m => m.OrdersModule)
-  }
-];
-
-// 4. Build Configuration (webpack.config.js)
-module.exports = {
-  entry: {
-    'header-app': './src/micro-apps/header/main.ts',
-    'orders-app': './src/micro-apps/orders/main.ts'
-  },
-  mode: 'production',
-  optimization: {
-    splitChunks: false // Each micro-app gets its own bundle
-  }
-};
-```
-
-**Benefits:**
-- Independent deployment
-- Technology diversity
-- Team autonomy
-- Scalable development
-
-**Challenges:**
-- Bundle size duplication
-- Runtime coordination
-- Shared state management
-- Testing complexity
+- Shell app hosts micro-apps as custom elements
+- Event bus for communication between micro-apps
+- Independent deployment and development
+- Shared dependencies managed at shell level
 
 ### 6. How does Angular's tree-shaking work with the module system? What are the implications of using providedIn: 'root' vs module providers?
 
 **Answer:**
 
-Tree-shaking eliminates unused code from your final bundle. Angular's module system and dependency injection work together to enable effective tree-shaking.
-
-**Tree-shaking Process:**
+**Tree-shaking**: Removes unused code from bundles.
 
 ```typescript
-// Tree-shakable service
+// Tree-shakable (recommended)
 @Injectable({ providedIn: 'root' })
-class TreeShakableService {
-  // This service is only included if injected somewhere
-}
+class MyService {} // Only included if used
 
-// Non-tree-shakable (old way)
+// Not tree-shakable
 @NgModule({
-  providers: [NonTreeShakableService] // Always included
+  providers: [MyService] // Always included
 })
 class MyModule {}
 ```
 
-**providedIn: 'root' vs Module Providers:**
-
-```typescript
-// 1. providedIn: 'root' - Tree-shakable
-@Injectable({ providedIn: 'root' })
-class GlobalService {
-  // Automatically removed if not used
-}
-
-// 2. Module providers - Not tree-shakable
-@NgModule({
-  providers: [
-    GlobalService // Always included in bundle
-  ]
-})
-class AppModule {}
-
-// 3. providedIn with feature modules
-@Injectable({ providedIn: FeatureModule })
-class FeatureService {
-  // Only included when FeatureModule is loaded
-}
-```
-
-**Advanced Tree-shaking Patterns:**
-
-```typescript
-// Factory providers for conditional services
-@Injectable({ 
-  providedIn: 'root',
-  useFactory: () => environment.production ? 
-    new ProductionService() : 
-    new DevelopmentService()
-})
-class ConfigurableService {}
-
-// Lazy-loaded services
-@Injectable()
-class LazyService {}
-
-@NgModule({
-  providers: [LazyService] // Only loaded with this module
-})
-class LazyModule {}
-```
-
 **Implications:**
-
-**providedIn: 'root' benefits:**
-- Automatic tree-shaking
-- Single instance across app
-- Cleaner module code
-- Better performance
-
-**Module providers use cases:**
-- Need multiple instances
-- Complex factory logic
-- Legacy compatibility
-- Explicit service scoping
-
-**Bundle Analysis:**
-```bash
-# Analyze bundle composition
-ng build --stats-json
-npx webpack-bundle-analyzer dist/stats.json
-```
+- **providedIn: 'root'**: Tree-shakable, singleton, cleaner code
+- **Module providers**: Always included, allows multiple instances, explicit scoping
 
 ### 7. Describe the role of ApplicationInitializer and how you would use it to implement complex application startup logic.
 
 **Answer:**
 
-APP_INITIALIZER is a multi-provider token that allows you to run initialization logic before your application starts. It's perfect for loading configuration, setting up authentication, or preparing essential services.
-
-**Basic Usage:**
+**APP_INITIALIZER**: Runs initialization logic before app starts (config loading, auth setup, etc.)
 
 ```typescript
-// Simple initializer
+// Basic usage
 function initializeApp(): Promise<void> {
-  return new Promise((resolve) => {
-    // Initialization logic
-    setTimeout(() => {
-      console.log('App initialized');
-      resolve();
-    }, 1000);
+  return fetch('/api/config').then(response => {
+    // Setup logic
   });
 }
 
@@ -471,134 +172,14 @@ function initializeApp(): Promise<void> {
   ]
 })
 class AppModule {}
-```
 
-**Complex Initialization Patterns:**
-
-```typescript
-// 1. Configuration loading
-@Injectable()
-class ConfigService {
-  private config: any;
-  
-  loadConfig(): Promise<void> {
-    return this.http.get('/api/config')
-      .pipe(
-        tap(config => this.config = config),
-        timeout(5000), // Timeout protection
-        retry(3), // Retry logic
-        catchError(this.handleConfigError)
-      ).toPromise();
-  }
-  
-  private handleConfigError = (error: any): Promise<void> => {
-    // Fallback to default config
-    this.config = DEFAULT_CONFIG;
-    return Promise.resolve();
-  }
-}
-
-// 2. Authentication initialization
-@Injectable()
-class AuthInitService {
-  constructor(
-    private auth: AuthService,
-    private router: Router
-  ) {}
-  
-  initialize(): Promise<boolean> {
-    return this.auth.checkAuthStatus()
-      .pipe(
-        map(isAuthenticated => {
-          if (!isAuthenticated) {
-            this.router.navigate(['/login']);
-          }
-          return isAuthenticated;
-        }),
-        catchError(() => of(false))
-      ).toPromise();
-  }
-}
-
-// 3. Multiple initializers with dependencies
-function initializerFactory(
-  configService: ConfigService,
-  authService: AuthInitService,
-  cacheService: CacheService
-) {
+// Multiple initializers
+function initializerFactory(configService: ConfigService, authService: AuthService) {
   return (): Promise<void> => {
     return Promise.all([
       configService.loadConfig(),
-      authService.initialize(),
-      cacheService.warmCache()
-    ]).then(() => {
-      console.log('All services initialized');
-    });
-  };
-}
-
-@NgModule({
-  providers: [
-    ConfigService,
-    AuthInitService,
-    CacheService,
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializerFactory,
-      deps: [ConfigService, AuthInitService, CacheService],
-      multi: true
-    }
-  ]
-})
-class AppModule {}
-```
-
-**Advanced Patterns:**
-
-```typescript
-// Sequential initialization
-@Injectable()
-class SequentialInitService {
-  async initialize(): Promise<void> {
-    try {
-      // Step 1: Load critical config
-      await this.loadCriticalConfig();
-      
-      // Step 2: Initialize auth (depends on config)
-      await this.initializeAuth();
-      
-      // Step 3: Load user preferences (depends on auth)
-      await this.loadUserPreferences();
-      
-    } catch (error) {
-      // Handle initialization failure
-      await this.handleInitError(error);
-    }
-  }
-}
-
-// Conditional initialization
-function conditionalInitializer(platform: PlatformService) {
-  return (): Promise<void> => {
-    if (platform.isBrowser()) {
-      return import('./browser-specific-init').then(m => m.initialize());
-    }
-    return Promise.resolve();
-  };
-}
-```
-
-**Error Handling:**
-```typescript
-function robustInitializer(service: MyService) {
-  return (): Promise<void> => {
-    return service.initialize().catch(error => {
-      console.error('Initialization failed:', error);
-      // Log to external service
-      // Show user-friendly error
-      // Provide fallback behavior
-      return Promise.resolve(); // Don't block app startup
-    });
+      authService.initialize()
+    ]).then(() => console.log('App ready'));
   };
 }
 ```
@@ -607,566 +188,114 @@ function robustInitializer(service: MyService) {
 
 **Answer:**
 
-Angular's Renderer abstraction provides a platform-agnostic way to manipulate the DOM, enabling Angular to work across different platforms (browser, server, mobile, etc.).
-
-**Renderer Architecture:**
+**Renderer2**: Platform-agnostic DOM manipulation (browser, server, mobile)
 
 ```typescript
-// Angular's renderer interface (simplified)
-abstract class Renderer2 {
-  abstract createElement(name: string, namespace?: string): any;
-  abstract createText(value: string): any;
-  abstract appendChild(parent: any, newChild: any): void;
-  abstract removeChild(parent: any, oldChild: any): void;
-  abstract setAttribute(el: any, name: string, value: string): void;
-  abstract listen(target: any, eventName: string, callback: () => void): () => void;
-}
-
-// Using renderer in components
-@Component({
-  template: '<div></div>'
-})
+@Component({ template: '<div></div>' })
 class MyComponent {
   constructor(private renderer: Renderer2, private el: ElementRef) {}
   
   ngOnInit() {
-    // Platform-safe DOM manipulation
     const div = this.renderer.createElement('div');
     this.renderer.appendChild(this.el.nativeElement, div);
-    this.renderer.setAttribute(div, 'class', 'dynamic-element');
+    this.renderer.setAttribute(div, 'class', 'dynamic');
   }
 }
-```
 
-**Default Renderers:**
-- **DomRenderer**: Browser DOM manipulation
-- **ServerRenderer**: Server-side rendering (Angular Universal)
-- **NativeScriptRenderer**: Mobile app rendering
-
-**Creating Custom Renderer:**
-
-```typescript
-// 1. Custom renderer for SVG manipulation
-@Injectable()
-class SvgRenderer extends Renderer2 {
-  private domRenderer: Renderer2;
-  
-  constructor(@Inject(DOCUMENT) private document: Document) {
-    super();
-    this.domRenderer = new DomRenderer(document);
-  }
-  
-  createElement(name: string): any {
-    if (this.isSvgElement(name)) {
-      return this.document.createElementNS('http://www.w3.org/2000/svg', name);
-    }
-    return this.domRenderer.createElement(name);
-  }
-  
-  setAttribute(el: any, name: string, value: string): void {
-    if (this.isSvgElement(el.tagName)) {
-      el.setAttributeNS(null, name, value);
-    } else {
-      this.domRenderer.setAttribute(el, name, value);
-    }
-  }
-  
-  private isSvgElement(tagName: string): boolean {
-    return ['svg', 'path', 'circle', 'rect'].includes(tagName?.toLowerCase());
-  }
-  
-  // Implement other required methods...
-}
-
-// 2. Logging renderer for debugging
+// Custom renderer example
 @Injectable()
 class LoggingRenderer extends Renderer2 {
-  constructor(private delegate: Renderer2) {
-    super();
-  }
+  constructor(private delegate: Renderer2) { super(); }
   
   createElement(name: string): any {
-    console.log(`Creating element: ${name}`);
+    console.log(`Creating: ${name}`);
     return this.delegate.createElement(name);
   }
-  
-  appendChild(parent: any, newChild: any): void {
-    console.log('Appending child to parent');
-    this.delegate.appendChild(parent, newChild);
-  }
-  
-  // Delegate all other methods with logging...
-}
-
-// 3. Canvas renderer for 2D graphics
-@Injectable()
-class CanvasRenderer extends Renderer2 {
-  private canvasContext: CanvasRenderingContext2D;
-  
-  constructor(private canvas: HTMLCanvasElement) {
-    super();
-    this.canvasContext = canvas.getContext('2d')!;
-  }
-  
-  createElement(name: string): any {
-    // Return virtual canvas objects
-    return {
-      type: name,
-      properties: {},
-      children: []
-    };
-  }
-  
-  setAttribute(el: any, name: string, value: string): void {
-    el.properties[name] = value;
-    this.renderToCanvas(el);
-  }
-  
-  private renderToCanvas(element: any): void {
-    // Custom canvas rendering logic
-    switch (element.type) {
-      case 'rect':
-        this.canvasContext.fillRect(
-          element.properties.x,
-          element.properties.y,
-          element.properties.width,
-          element.properties.height
-        );
-        break;
-      // Handle other canvas elements...
-    }
-  }
+  // ... delegate other methods with logging
 }
 ```
 
-**Use Cases for Custom Renderers:**
-1. **Platform-specific optimizations**
-2. **Custom graphics libraries**
-3. **Debugging and performance monitoring**
-4. **Legacy system integration**
-5. **Specialized UI frameworks**
-
-**Provider Configuration:**
-```typescript
-@NgModule({
-  providers: [
-    {
-      provide: Renderer2,
-      useClass: environment.production ? 
-        OptimizedRenderer : 
-        LoggingRenderer
-    }
-  ]
-})
-class AppModule {}
-```
+**Use Cases**: Platform optimizations, debugging, custom graphics, legacy integration
 
 ### 9. What are the internal differences between NgModules and standalone components? How does the dependency resolution differ?
 
 **Answer:**
 
-Standalone components (introduced in Angular 14) provide a simpler alternative to NgModules for component organization and dependency management.
-
-**NgModules Architecture:**
+**NgModules**: Traditional approach with module-level dependency management
+**Standalone Components**: Angular 14+ approach with component-level imports
 
 ```typescript
-// Traditional NgModule approach
+// NgModule approach
 @NgModule({
-  declarations: [ComponentA, ComponentB, DirectiveA],
-  imports: [CommonModule, FormsModule, FeatureModule],
-  providers: [ServiceA, ServiceB],
-  exports: [ComponentA]
+  declarations: [ComponentA],
+  imports: [CommonModule, FormsModule],
+  providers: [ServiceA]
 })
 class FeatureModule {}
 
+// Standalone approach
 @Component({
-  selector: 'app-component',
-  template: '<div>{{title}}</div>'
-})
-class ComponentA {
-  // Dependencies resolved through module's injector
-  constructor(private service: ServiceA) {}
-}
-```
-
-**Standalone Components:**
-
-```typescript
-// Standalone component approach
-@Component({
-  selector: 'app-standalone',
   standalone: true,
-  imports: [CommonModule, FormsModule, AnotherStandaloneComponent],
-  providers: [ServiceA], // Component-level providers
+  imports: [CommonModule, FormsModule, OtherComponent],
+  providers: [ServiceA],
   template: '<div>{{title}}</div>'
 })
-class StandaloneComponent {
-  constructor(private service: ServiceA) {}
-}
+class StandaloneComponent {}
 
-// Bootstrap standalone component
+// Bootstrap
 bootstrapApplication(StandaloneComponent, {
-  providers: [
-    // Global providers
-    ServiceB,
-    importProvidersFrom(HttpClientModule)
-  ]
+  providers: [GlobalService]
 });
 ```
 
-**Internal Differences:**
-
-**1. Compilation:**
-```typescript
-// NgModule compilation
-// Creates module factory + component factories
-// Complex dependency graph resolution
-
-// Standalone compilation  
-// Direct component compilation
-// Simplified dependency tree
-// Better tree-shaking
-```
-
-**2. Dependency Resolution:**
-
-```typescript
-// NgModule dependency resolution
-/*
-Component Injector
-    ↓
-Module Injector (declares providers from module)
-    ↓
-Parent Module Injectors
-    ↓
-Application Injector
-*/
-
-// Standalone dependency resolution
-/*
-Component Injector (includes component's imports/providers)
-    ↓
-Parent Component Injectors
-    ↓
-Application Injector (from bootstrapApplication)
-*/
-```
-
-**3. Bundle Size Impact:**
-```typescript
-// NgModule - includes entire module graph
-@NgModule({
-  imports: [
-    FeatureModule // Includes ALL module contents
-  ]
-})
-
-// Standalone - only imports what's needed
-@Component({
-  standalone: true,
-  imports: [
-    SpecificComponent, // Only this component
-    SpecificDirective   // Only this directive
-  ]
-})
-```
-
-**Migration Strategy:**
-
-```typescript
-// Step 1: Convert leaf components
-@Component({
-  standalone: true,
-  imports: [CommonModule], // Add necessary imports
-  // Remove from NgModule declarations
-})
-class LeafComponent {}
-
-// Step 2: Convert feature components
-@Component({
-  standalone: true,
-  imports: [
-    LeafComponent, // Import standalone components
-    SharedDirective
-  ]
-})
-class FeatureComponent {}
-
-// Step 3: Update routing
-const routes: Routes = [
-  {
-    path: 'feature',
-    loadComponent: () => import('./feature.component')
-      .then(m => m.FeatureComponent) // Load standalone component
-  }
-];
-```
-
-**Hybrid Approach:**
-```typescript
-// Use both in same application
-@NgModule({
-  imports: [
-    StandaloneComponent // Import standalone into module
-  ],
-  declarations: [ModuleComponent]
-})
-class HybridModule {}
-
-@Component({
-  standalone: true,
-  imports: [
-    ModuleComponent // Import module component (need wrapper)
-  ]
-})
-class HybridStandaloneComponent {}
-```
+**Differences**: 
+- **Compilation**: Standalone has simpler dependency tree, better tree-shaking
+- **Resolution**: Standalone uses component injector → parent → app (no module layer)
+- **Bundle size**: Standalone only imports what's needed vs entire module graph
 
 ### 10. How does Angular handle circular dependencies, and what strategies would you implement to avoid them in large applications?
 
 **Answer:**
 
-Circular dependencies occur when two or more modules, services, or components depend on each other directly or indirectly, creating a dependency loop.
+**Circular Dependencies**: When modules/services depend on each other, creating a loop.
 
-**Types of Circular Dependencies:**
-
-```typescript
-// 1. Direct Service Circular Dependency
-@Injectable()
-class ServiceA {
-  constructor(private serviceB: ServiceB) {} // ❌ Circular
-}
-
-@Injectable()
-class ServiceB {
-  constructor(private serviceA: ServiceA) {} // ❌ Circular
-}
-
-// 2. Module Circular Dependency
-@NgModule({
-  imports: [ModuleB] // ❌ Circular
-})
-class ModuleA {}
-
-@NgModule({
-  imports: [ModuleA] // ❌ Circular  
-})
-class ModuleB {}
-
-// 3. Component Circular Dependency
-@Component({
-  selector: 'comp-a',
-  template: '<comp-b></comp-b>' // ❌ Circular
-})
-class ComponentA {}
-
-@Component({
-  selector: 'comp-b', 
-  template: '<comp-a></comp-a>' // ❌ Circular
-})
-class ComponentB {}
-```
-
-**Detection and Angular's Handling:**
-
-```typescript
-// Angular detects and throws errors
-// "Circular dependency in DI detected"
-// Build-time error: "Module build failed: Error: Module not found"
-
-// Runtime detection
-import { Injector } from '@angular/core';
-
-class CircularDetector {
-  static detect(injector: Injector) {
-    // Angular internally maintains dependency chain
-    // Throws when circular reference found
-  }
-}
-```
+Angular detects and throws: "Circular dependency in DI detected"
 
 **Resolution Strategies:**
 
-**1. Dependency Injection Patterns:**
-
 ```typescript
-// ✅ Use forwardRef for component references
-@Component({
-  selector: 'parent',
-  template: '<child [parent]="this"></child>'
-})
-class ParentComponent {}
-
-@Component({
-  selector: 'child'
-})
-class ChildComponent {
-  @Input() parent!: ParentComponent;
-}
-
-// ✅ Use forwardRef in services
+// 1. Use forwardRef
 @Injectable()
 class ServiceA {
   constructor(@Inject(forwardRef(() => ServiceB)) private serviceB: ServiceB) {}
 }
 
-@Injectable()
-class ServiceB {
-  constructor(private serviceA: ServiceA) {}
-}
-```
-
-**2. Mediator Pattern:**
-
-```typescript
-// ✅ Create mediator service
+// 2. Mediator pattern
 @Injectable({ providedIn: 'root' })
 class MediatorService {
-  private communications = new Subject<{from: string, to: string, data: any}>();
+  private events = new Subject<{from: string, to: string, data: any}>();
   
   send(from: string, to: string, data: any) {
-    this.communications.next({ from, to, data });
+    this.events.next({ from, to, data });
   }
   
   listen(target: string) {
-    return this.communications.pipe(
-      filter(comm => comm.to === target)
-    );
+    return this.events.pipe(filter(msg => msg.to === target));
   }
 }
 
+// 3. Lazy injection
 @Injectable()
 class ServiceA {
-  constructor(private mediator: MediatorService) {
-    // Listen for messages instead of direct dependency
-    this.mediator.listen('ServiceA').subscribe(this.handleMessage);
-  }
-  
-  notifyServiceB(data: any) {
-    this.mediator.send('ServiceA', 'ServiceB', data);
-  }
-}
-
-@Injectable()
-class ServiceB {
-  constructor(private mediator: MediatorService) {
-    this.mediator.listen('ServiceB').subscribe(this.handleMessage);
-  }
-}
-```
-
-**3. Shared Abstraction:**
-
-```typescript
-// ✅ Create shared interface/abstract class
-abstract class SharedInterface {
-  abstract commonMethod(): void;
-}
-
-@Injectable()
-class ServiceA extends SharedInterface {
-  constructor(private shared: SharedInterface) {}
-  
-  commonMethod() {
-    // Implementation
-  }
-}
-
-@Injectable()
-class ServiceB extends SharedInterface {
-  constructor(private shared: SharedInterface) {}
-  
-  commonMethod() {
-    // Implementation  
-  }
-}
-
-// Provide at higher level
-@NgModule({
-  providers: [
-    { provide: SharedInterface, useClass: ServiceA }
-  ]
-})
-class SharedModule {}
-```
-
-**4. Lazy Injection:**
-
-```typescript
-// ✅ Inject Injector and resolve lazily
-@Injectable()
-class ServiceA {
-  private serviceB: ServiceB | null = null;
-  
   constructor(private injector: Injector) {}
   
   getServiceB(): ServiceB {
-    if (!this.serviceB) {
-      this.serviceB = this.injector.get(ServiceB);
-    }
-    return this.serviceB;
+    return this.injector.get(ServiceB);
   }
 }
 ```
 
-**5. Architecture Patterns:**
-
-```typescript
-// ✅ Layered architecture
-/*
-Presentation Layer (Components)
-    ↓
-Business Logic Layer (Services)
-    ↓
-Data Access Layer (Repositories)
-    ↓
-Infrastructure Layer (HTTP, Storage)
-*/
-
-// ✅ Domain-driven design
-interface UserRepository {
-  findById(id: string): Observable<User>;
-}
-
-@Injectable()
-class UserService {
-  constructor(private userRepo: UserRepository) {} // Depends on abstraction
-}
-
-@Injectable()
-class HttpUserRepository implements UserRepository {
-  constructor(private http: HttpClient) {} // No circular dependency
-}
-```
-
-**Prevention Strategies for Large Applications:**
-
-```typescript
-// 1. Module organization
-/*
-SharedModule (common utilities, no business logic)
-CoreModule (singletons, global services)  
-FeatureModules (isolated business domains)
-*/
-
-// 2. Dependency direction rules
-/*
-Components → Services (✅)
-Services → Repositories (✅)
-Repositories → Infrastructure (✅)
-Never: Infrastructure → Services (❌)
-*/
-
-// 3. Analysis tools
-// package.json
-{
-  "scripts": {
-    "analyze-deps": "madge --circular --extensions ts src/"
-  }
-}
-```
-
-These strategies help maintain clean architecture and prevent circular dependencies as applications grow in complexity.
+**Prevention**: Layered architecture (Components → Services → Repositories → Infrastructure), shared abstractions, dependency analysis tools
 
 ---
 
@@ -1174,23 +303,501 @@ These strategies help maintain clean architecture and prevent circular dependenc
 
 ### 11. Design a complex data synchronization system using RxJS that handles real-time updates, offline scenarios, and conflict resolution.
 
+**Answer:**
+
+Design with WebSocket for real-time updates, local queue for offline operations, and timestamp-based conflict resolution.
+
+```typescript
+@Injectable()
+class DataSyncService {
+  private onlineStatus$ = new BehaviorSubject<boolean>(navigator.onLine);
+  private localQueue$ = new BehaviorSubject<SyncOperation[]>([]);
+  
+  syncEntity<T>(id: string): Observable<T> {
+    return merge(
+      this.websocket.listen(`entity:${id}`),  // Real-time updates
+      this.fetchFromServer(id),               // Initial data
+      this.storage.watch(id)                  // Local changes
+    ).pipe(distinctUntilChanged());
+  }
+}
+```
+
 ### 12. Explain the difference between hot and cold observables. How would you implement a caching mechanism using shareReplay with custom cache invalidation?
+
+**Answer:**
+
+**Cold**: Creates new execution for each subscriber
+**Hot**: Shares single execution among all subscribers
+
+```typescript
+// Cold to Hot conversion with caching
+const cachedData$ = this.http.get('/api/data').pipe(
+  shareReplay({ bufferSize: 1, refCount: true }), // Cache last value
+  takeUntil(this.invalidation$)                   // Invalidate on trigger
+);
+
+// Cache invalidation
+private invalidation$ = new Subject<void>();
+invalidateCache() { this.invalidation$.next(); }
+```
 
 ### 13. How would you implement a retry mechanism with exponential backoff, jitter, and circuit breaker pattern using RxJS operators?
 
+**Answer:**
+
+```typescript
+function retryWithBackoff<T>(config: RetryConfig): MonoTypeOperatorFunction<T> {
+  return (source: Observable<T>) => source.pipe(
+    retryWhen(errors => 
+      errors.pipe(
+        scan((acc, error) => ({ count: acc.count + 1, error }), { count: 0 }),
+        mergeMap(({ count, error }) => {
+          if (count >= config.maxRetries) return throwError(error);
+          
+          // Exponential backoff with jitter
+          const delay = Math.min(
+            config.baseDelay * Math.pow(2, count) + Math.random() * 1000,
+            config.maxDelay
+          );
+          
+          return timer(delay);
+        })
+      )
+    )
+  );
+}
+```
+
 ### 14. Design a reactive state management solution using only RxJS (without NgRx) for a complex e-commerce application.
+
+**Answer:**
+
+```typescript
+@Injectable({ providedIn: 'root' })
+class ReactiveStore<T> {
+  private state$ = new BehaviorSubject<T>(this.initialState);
+  
+  select<K extends keyof T>(key: K): Observable<T[K]> {
+    return this.state$.pipe(
+      map(state => state[key]),
+      distinctUntilChanged()
+    );
+  }
+  
+  update(updateFn: (state: T) => T): void {
+    this.state$.next(updateFn(this.state$.value));
+  }
+}
+
+// Usage
+@Injectable()
+class CartStore extends ReactiveStore<CartState> {
+  addItem(item: CartItem) {
+    this.update(state => ({
+      ...state,
+      items: [...state.items, item]
+    }));
+  }
+}
+```
 
 ### 15. Explain memory leak scenarios in RxJS and implement a custom operator that automatically handles subscription cleanup based on component lifecycle.
 
+**Answer:**
+
+**Memory Leaks**: Unsubscribed observables, forgotten subscriptions, circular references
+
+```typescript
+// Automatic cleanup operator
+function takeUntilDestroyed<T>(component: any): MonoTypeOperatorFunction<T> {
+  return (source: Observable<T>) => {
+    const destroy$ = component.destroy$ || new Subject<void>();
+    
+    if (!component.ngOnDestroy) {
+      const originalDestroy = component.ngOnDestroy;
+      component.ngOnDestroy = function() {
+        destroy$.next();
+        destroy$.complete();
+        originalDestroy?.call(this);
+      };
+    }
+    
+    return source.pipe(takeUntil(destroy$));
+  };
+}
+
+// Usage
+this.data$ = this.service.getData().pipe(
+  takeUntilDestroyed(this)
+);
+```
+
 ### 16. How would you implement a complex search functionality with debouncing, cancellation of previous requests, and result caching using RxJS?
+
+**Answer:**
+
+```typescript
+@Injectable({ providedIn: 'root' })
+class SearchService {
+  private cache = new Map<string, any>();
+  private searchSubject = new Subject<string>();
+  
+  search$ = this.searchSubject.pipe(
+    debounceTime(300),                    // Debounce user input
+    distinctUntilChanged(),               // Avoid duplicate queries
+    switchMap(query => this.executeSearch(query)), // Cancel previous requests
+    shareReplay(1)                        // Cache latest result
+  );
+  
+  performSearch(query: string): void {
+    this.searchSubject.next(query);
+  }
+  
+  private executeSearch(query: string): Observable<any> {
+    const cached = this.cache.get(query);
+    if (cached) return of(cached);
+    
+    return this.http.get(`/api/search?q=${query}`).pipe(
+      tap(result => this.cache.set(query, result)),
+      timeout(5000),
+      retry(2)
+    );
+  }
+}
+```
 
 ### 17. Design a reactive form validation system that supports async validators, cross-field validation, and real-time error display.
 
+**Answer:**
+
+```typescript
+// Sync validators
+class Validators {
+  static required(message = 'Required'): ValidatorFn {
+    return (control: AbstractControl) => 
+      control.value ? null : { required: { message } };
+  }
+  
+  static email(): ValidatorFn {
+    return (control: AbstractControl) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(control.value) ? null : { email: { message: 'Invalid email' } };
+    };
+  }
+}
+
+// Async validator with caching
+createAsyncValidator(validatorFn: (value: any) => Observable<boolean>): AsyncValidatorFn {
+  const cache = new Map();
+  
+  return (control: AbstractControl): Observable<ValidationErrors | null> => {
+    const value = control.value;
+    if (!value) return of(null);
+    
+    const cached = cache.get(value);
+    if (cached) return of(cached);
+    
+    return of(value).pipe(
+      debounceTime(500),
+      switchMap(val => validatorFn(val)),
+      map(isValid => {
+        const result = isValid ? null : { invalid: { message: 'Invalid value' } };
+        cache.set(value, result);
+        return result;
+      })
+    );
+  };
+}
+
+// Cross-field validation
+static passwordMatch(passwordField: string, confirmField: string): ValidatorFn {
+  return (formGroup: AbstractControl) => {
+    const password = formGroup.get(passwordField);
+    const confirm = formGroup.get(confirmField);
+    
+    if (password?.value !== confirm?.value) {
+      confirm?.setErrors({ passwordMismatch: { message: 'Passwords do not match' } });
+      return { passwordMismatch: true };
+    }
+    return null;
+  };
+}
+```
+
 ### 18. Implement a custom RxJS operator that batches HTTP requests and handles rate limiting automatically.
+
+**Answer:**
+
+```typescript
+// Request batching operator
+function batchRequests<T, R>(config: BatchConfig<T, R>): OperatorFunction<T, R> {
+  const { batchSize = 10, batchWindow = 100, rateLimitDelay = 1000 } = config;
+  
+  return (source: Observable<T>) => source.pipe(
+    bufferTime(batchWindow, null, batchSize),
+    filter(batch => batch.length > 0),
+    concatMap((batch, index) => 
+      of(batch).pipe(
+        delay(index * rateLimitDelay),
+        mergeMap(batch => config.batchProcessor(batch))
+      )
+    )
+  );
+}
+
+// HTTP batching service
+@Injectable({ providedIn: 'root' })
+class HttpBatchingService {
+  private requestCounts: number[] = [];
+  private maxRequestsPerSecond = 10;
+  
+  batchHttp<T>(requests: HttpRequest[]): Observable<T[]> {
+    return from(requests).pipe(
+      batchRequests({
+        batchSize: 5,
+        batchWindow: 200,
+        rateLimitDelay: this.calculateDelay(),
+        batchProcessor: (batch) => this.processBatch(batch)
+      })
+    );
+  }
+  
+  private processBatch(requests: HttpRequest[]): Observable<any[]> {
+    // Check rate limiting
+    if (!this.canMakeRequest()) {
+      return timer(1000).pipe(
+        switchMap(() => this.processBatch(requests))
+      );
+    }
+    
+    this.recordRequest();
+    
+    // Execute batch request
+    return this.http.post('/api/batch', { requests }).pipe(
+      catchError(() => 
+        // Fallback to individual requests
+        from(requests).pipe(
+          mergeMap(req => this.http.request(req.method, req.url, { body: req.body })),
+          toArray()
+        )
+      )
+    );
+  }
+  
+  private canMakeRequest(): boolean {
+    return this.requestCounts.length < this.maxRequestsPerSecond;
+  }
+  
+  private recordRequest(): void {
+    this.requestCounts.push(Date.now());
+    // Cleanup old entries
+    const cutoff = Date.now() - 1000;
+    this.requestCounts = this.requestCounts.filter(time => time > cutoff);
+  }
+  
+  private calculateDelay(): number {
+    const load = this.requestCounts.length / this.maxRequestsPerSecond;
+    return Math.max(100, load * 1000);
+  }
+}
+```
 
 ### 19. How would you handle complex error scenarios in RxJS streams, including retry with different strategies based on error types?
 
+**Answer:**
+
+```typescript
+// Error classification and retry strategies
+@Injectable({ providedIn: 'root' })
+class ErrorHandlingService {
+  classifyError(error: any): 'network' | 'timeout' | 'server' | 'client' | 'auth' {
+    if (error.status === 0) return 'network';
+    if (error.name === 'TimeoutError') return 'timeout';
+    if (error.status >= 500) return 'server';
+    if (error.status === 401 || error.status === 403) return 'auth';
+    return 'client';
+  }
+  
+  getRetryStrategy(errorType: string) {
+    const strategies = {
+      network: { maxRetries: 3, delay: 1000, backoff: 2 },
+      timeout: { maxRetries: 2, delay: 2000, backoff: 1.5 },
+      server: { maxRetries: 2, delay: 1000, backoff: 2 },
+      auth: { maxRetries: 0, delay: 0 },
+      client: { maxRetries: 0, delay: 0 }
+    };
+    return strategies[errorType] || strategies.client;
+  }
+}
+
+// Smart retry operator
+function smartRetry<T>(errorHandler: ErrorHandlingService): MonoTypeOperatorFunction<T> {
+  return (source: Observable<T>) => source.pipe(
+    retryWhen(errors => 
+      errors.pipe(
+        scan((acc, error) => {
+          const errorType = errorHandler.classifyError(error);
+          const strategy = errorHandler.getRetryStrategy(errorType);
+          
+          if (acc.retryCount >= strategy.maxRetries) {
+            throw error;
+          }
+          
+          return { retryCount: acc.retryCount + 1, strategy };
+        }, { retryCount: 0, strategy: null }),
+        
+        mergeMap(({ retryCount, strategy }) => {
+          const delay = strategy.delay * Math.pow(strategy.backoff, retryCount - 1);
+          return timer(delay);
+        })
+      )
+    )
+  );
+}
+
+// Circuit breaker pattern
+function circuitBreaker<T>(name: string, config = { failureThreshold: 5, timeout: 60000 }): MonoTypeOperatorFunction<T> {
+  let failures = 0;
+  let state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  let lastFailureTime = 0;
+  
+  return (source: Observable<T>) => defer(() => {
+    if (state === 'OPEN' && Date.now() - lastFailureTime > config.timeout) {
+      state = 'HALF_OPEN';
+    }
+    
+    if (state === 'OPEN') {
+      return throwError(() => new Error(`Circuit breaker ${name} is OPEN`));
+    }
+    
+    return source.pipe(
+      tap(() => {
+        failures = 0;
+        state = 'CLOSED';
+      }),
+      catchError(error => {
+        failures++;
+        lastFailureTime = Date.now();
+        
+        if (failures >= config.failureThreshold) {
+          state = 'OPEN';
+        }
+        
+        return throwError(() => error);
+      })
+    );
+  });
+}
+
+// Error recovery with fallback
+function withErrorRecovery<T>(fallbackValue: T): MonoTypeOperatorFunction<T> {
+  return (source: Observable<T>) => source.pipe(
+    catchError(error => {
+      console.error('Error occurred, using fallback:', error);
+      return of(fallbackValue);
+    })
+  );
+}
+```
+
 ### 20. Design a reactive data pipeline that transforms, filters, and aggregates real-time data streams with backpressure handling.
+
+**Answer:**
+
+```typescript
+// Reactive data pipeline with backpressure handling
+@Injectable({ providedIn: 'root' })
+class ReactiveDataPipelineService {
+  createPipeline<T>(source: Observable<T>, config: PipelineConfig): Observable<T> {
+    let pipeline$ = source;
+    
+    // Apply backpressure strategy
+    pipeline$ = this.applyBackpressure(pipeline$, config.backpressureStrategy);
+    
+    // Apply transformation stages
+    config.stages.forEach(stage => {
+      pipeline$ = pipeline$.pipe(
+        stage.operator,
+        catchError(error => {
+          console.error(`Stage ${stage.name} failed:`, error);
+          return stage.continueOnError ? EMPTY : throwError(error);
+        })
+      );
+    });
+    
+    return pipeline$;
+  }
+  
+  private applyBackpressure<T>(source: Observable<T>, strategy: string): Observable<T> {
+    switch (strategy) {
+      case 'drop':
+        return source.pipe(throttleTime(100));
+      case 'buffer':
+        return source.pipe(
+          bufferTime(100, null, 1000),
+          mergeMap(buffer => from(buffer))
+        );
+      case 'sample':
+        return source.pipe(sampleTime(100));
+      default:
+        return source;
+    }
+  }
+}
+
+// Pipeline operators
+class PipelineOperators {
+  // Windowed aggregation
+  static windowedAggregate<T, R>(
+    windowSize: number, 
+    aggregator: (items: T[]) => R
+  ): OperatorFunction<T, R> {
+    return (source: Observable<T>) => source.pipe(
+      bufferCount(windowSize),
+      map(buffer => aggregator(buffer))
+    );
+  }
+  
+  // Real-time data enrichment
+  static enrich<T, E>(
+    enrichmentFn: (item: T) => Observable<E>
+  ): OperatorFunction<T, T & E> {
+    return (source: Observable<T>) => source.pipe(
+      mergeMap(item => 
+        enrichmentFn(item).pipe(
+          map(enrichment => ({ ...item, ...enrichment })),
+          catchError(() => of(item as T & E))
+        ),
+        5 // Concurrency limit
+      )
+    );
+  }
+}
+
+// Usage example
+const dataStream$ = this.pipelineService.createPipeline(rawData$, {
+  backpressureStrategy: 'buffer',
+  stages: [
+    {
+      name: 'filter',
+      operator: filter(item => item.isValid),
+      continueOnError: true
+    },
+    {
+      name: 'transform',
+      operator: map(item => ({ ...item, processed: true }))
+    },
+    {
+      name: 'aggregate',
+      operator: PipelineOperators.windowedAggregate(10, items => ({
+        count: items.length,
+        average: items.reduce((sum, item) => sum + item.value, 0) / items.length
+      }))
+    }
+  ]
+});
+```
 
 ---
 
@@ -1198,23 +805,540 @@ These strategies help maintain clean architecture and prevent circular dependenc
 
 ### 21. Explain Angular's change detection algorithm in detail. How does it differ between Default and OnPush strategies?
 
+**Answer:**
+
+Angular's change detection uses a tree traversal algorithm that checks every component for data changes.
+
+**Default Strategy:**
+- Checks all components on every change detection cycle
+- Triggered by events, HTTP responses, timers
+- Compares current vs previous values using `Object.is()`
+
+**OnPush Strategy:**
+- Only checks when:
+  - Input properties change (reference comparison)
+  - Event fires from this component
+  - `markForCheck()` is called manually
+  - Async pipe receives new value
+
+```typescript
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+class OptimizedComponent {
+  @Input() data: Data; // Only triggers on reference change
+  
+  constructor(private cdr: ChangeDetectorRef) {}
+  
+  updateData() {
+    // Need to manually trigger detection
+    this.cdr.markForCheck();
+  }
+}
+```
+
 ### 22. When and how would you implement a custom ChangeDetectionStrategy? Provide a real-world scenario.
+
+**Answer:**
+
+Custom change detection strategies are rarely needed, but useful for specific optimization scenarios.
+
+**Real-world scenario: High-frequency trading dashboard**
+
+```typescript
+// Custom strategy for components that only update on specific events
+class TradeDataStrategy implements ChangeDetectionStrategy {
+  detectChanges(component: any, context: any): boolean {
+    // Only update when trade data timestamp changes
+    return component.lastUpdateTime !== context.currentTime;
+  }
+}
+
+@Component({
+  changeDetection: TradeDataStrategy,
+  template: `<div>{{tradeData | json}}</div>`
+})
+class TradingComponent {
+  @Input() tradeData: TradeData;
+  lastUpdateTime: number;
+  
+  ngOnChanges() {
+    this.lastUpdateTime = this.tradeData.timestamp;
+  }
+}
+```
 
 ### 23. How does NgZone work internally, and when would you run code outside Angular's zone? What are the implications?
 
+**Answer:**
+
+NgZone patches asynchronous operations to trigger change detection automatically.
+
+**Internal working:**
+- Patches `setTimeout`, `Promise`, DOM events, etc.
+- Notifies Angular when async operations complete
+- Triggers change detection after patched operations
+
+**Running outside zone:**
+```typescript
+constructor(private ngZone: NgZone) {}
+
+// Heavy computations or frequent updates
+ngZone.runOutsideAngular(() => {
+  setInterval(() => {
+    // This won't trigger change detection
+    this.updateChart();
+  }, 16); // 60fps updates
+});
+
+// When you need to update UI
+ngZone.run(() => {
+  this.updateCounter++;
+});
+```
+
+**Use cases:**
+- High-frequency animations
+- Real-time data streams
+- Performance-critical operations
+- Third-party library integration
+
 ### 24. Explain the concept of change detection cycles and how to debug performance issues related to excessive change detection.
+
+**Answer:**
+
+**Change Detection Cycle:**
+1. Event triggers zone notification
+2. Angular checks all components (default) or marked components (OnPush)
+3. Updates DOM where changes detected
+4. Cycle completes
+
+**Debugging excessive change detection:**
+```typescript
+// Enable Angular debug mode
+import { enableDebugTools } from '@angular/platform-browser';
+
+// Profile change detection
+ng.profiler.timeChangeDetection(); // In browser console
+
+// Monitor change detection in components
+export class DebuggingComponent {
+  ngDoCheck() {
+    console.count('Change detection run');
+  }
+}
+
+// Use performance tools
+@Component({
+  template: `{{expensiveCalculation()}}` // ❌ Runs every cycle
+})
+class BadComponent {
+  expensiveCalculation() {
+    return this.data.reduce((sum, item) => sum + item.value, 0);
+  }
+}
+
+// Optimized version
+@Component({
+  template: `{{calculatedValue}}`
+})
+class GoodComponent {
+  calculatedValue: number;
+  
+  ngOnChanges() {
+    this.calculatedValue = this.data.reduce((sum, item) => sum + item.value, 0);
+  }
+}
+```
 
 ### 25. How would you implement manual change detection triggering in a large application with complex component hierarchies?
 
+**Answer:**
+
+**Strategic approaches:**
+
+```typescript
+// 1. Root-level change detection service
+@Injectable({ providedIn: 'root' })
+class ChangeDetectionService {
+  constructor(private appRef: ApplicationRef) {}
+  
+  triggerGlobalDetection() {
+    this.appRef.tick(); // Triggers full tree check
+  }
+  
+  scheduleDetection() {
+    // Batch multiple requests
+    if (!this.scheduled) {
+      this.scheduled = true;
+      requestAnimationFrame(() => {
+        this.appRef.tick();
+        this.scheduled = false;
+      });
+    }
+  }
+}
+
+// 2. Component-level optimization
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+class ParentComponent {
+  constructor(private cdr: ChangeDetectorRef) {}
+  
+  updateChildren() {
+    // Mark this and all children for check
+    this.cdr.markForCheck();
+    
+    // Or detach/reattach for fine control
+    this.cdr.detach();
+    // ... update data
+    this.cdr.reattach();
+  }
+}
+
+// 3. Zone-based batching
+class BatchedUpdates {
+  private pendingUpdates = new Set<ChangeDetectorRef>();
+  
+  scheduleUpdate(cdr: ChangeDetectorRef) {
+    this.pendingUpdates.add(cdr);
+    
+    NgZone.assertNotInAngularZone();
+    requestAnimationFrame(() => {
+      NgZone.run(() => {
+        this.pendingUpdates.forEach(cd => cd.markForCheck());
+        this.pendingUpdates.clear();
+      });
+    });
+  }
+}
+```
+
 ### 26. Describe scenarios where you'd use ChangeDetectorRef methods (detectChanges, markForCheck, detach, reattach) and their performance implications.
+
+**Answer:**
+
+**Method usage scenarios:**
+
+```typescript
+class ComponentOptimizations {
+  constructor(private cdr: ChangeDetectorRef) {}
+  
+  // detectChanges() - Force immediate check
+  onCriticalUpdate() {
+    this.criticalData = newData;
+    this.cdr.detectChanges(); // Immediate UI update
+  }
+  
+  // markForCheck() - Schedule check for OnPush components
+  onDataReceived() {
+    this.data = newData;
+    this.cdr.markForCheck(); // Will check on next cycle
+  }
+  
+  // detach() - Stop automatic checking
+  onHeavyAnimation() {
+    this.cdr.detach(); // Pause change detection
+    this.startAnimation();
+  }
+  
+  // reattach() - Resume automatic checking
+  onAnimationComplete() {
+    this.cdr.reattach(); // Resume change detection
+    this.cdr.markForCheck(); // Update if needed
+  }
+}
+
+// Real-world example: Data grid with virtual scrolling
+class VirtualGridComponent {
+  @Input() items: any[];
+  visibleItems: any[];
+  
+  constructor(private cdr: ChangeDetectorRef) {
+    this.cdr.detach(); // Manual control
+  }
+  
+  onScroll() {
+    this.updateVisibleItems();
+    this.cdr.detectChanges(); // Only update visible portion
+  }
+  
+  @Input() set data(value: any[]) {
+    this.items = value;
+    this.updateVisibleItems();
+    this.cdr.markForCheck();
+  }
+}
+```
 
 ### 27. How does Angular handle change detection with async operations, and how would you optimize it for real-time applications?
 
+**Answer:**
+
+**Angular's async handling:**
+- Zone.js patches async operations (setTimeout, Promise, XMLHttpRequest)
+- Each async completion triggers change detection
+- Can cause excessive checks in real-time apps
+
+**Optimization strategies:**
+
+```typescript
+// 1. Use OnPush with async pipe
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<div>{{data$ | async | json}}</div>`
+})
+class RealtimeComponent {
+  data$ = this.websocket.messages$; // Auto-optimized with async pipe
+}
+
+// 2. Batch real-time updates
+@Injectable()
+class RealTimeService {
+  private updates$ = new Subject();
+  
+  batchedUpdates$ = this.updates$.pipe(
+    bufferTime(100), // Batch updates every 100ms
+    filter(batch => batch.length > 0)
+  );
+  
+  sendUpdate(data: any) {
+    this.updates$.next(data);
+  }
+}
+
+// 3. Manual zone control for high-frequency updates
+class HighFrequencyComponent {
+  constructor(private ngZone: NgZone, private cdr: ChangeDetectorRef) {
+    this.cdr.detach(); // Take manual control
+    
+    // High-frequency updates outside zone
+    this.ngZone.runOutsideAngular(() => {
+      this.websocket.onMessage(data => {
+        this.processData(data);
+        
+        // Throttled UI updates
+        if (this.shouldUpdateUI()) {
+          this.ngZone.run(() => {
+            this.cdr.detectChanges();
+          });
+        }
+      });
+    });
+  }
+}
+```
+
 ### 28. Explain the relationship between Observables and change detection. How does the async pipe optimize this process?
+
+**Answer:**
+
+**Observable-Change Detection relationship:**
+- Observables don't automatically trigger change detection
+- Need manual triggering or async pipe
+- Subscription management affects performance
+
+**Async pipe optimizations:**
+
+```typescript
+// ❌ Manual subscription - triggers change detection on every emission
+class ManualComponent {
+  data: any;
+  
+  ngOnInit() {
+    this.dataService.getData().subscribe(data => {
+      this.data = data;
+      this.cdr.markForCheck(); // Manual trigger needed
+    });
+  }
+}
+
+// ✅ Async pipe - automatically optimized
+@Component({
+  template: `<div>{{data$ | async | json}}</div>`,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+class OptimizedComponent {
+  data$ = this.dataService.getData(); // No manual subscription
+}
+
+// Async pipe benefits:
+// 1. Automatic subscription/unsubscription
+// 2. Automatic markForCheck() calls
+// 3. Works perfectly with OnPush
+// 4. Prevents memory leaks
+
+// Advanced async pipe usage
+@Component({
+  template: `
+    <div *ngIf="data$ | async as data">
+      {{data.value}}
+    </div>
+  `
+})
+class AdvancedAsyncComponent {
+  data$ = this.service.getData().pipe(
+    distinctUntilChanged(),
+    shareReplay(1) // Cache for multiple async pipes
+  );
+}
+```
 
 ### 29. How would you implement a custom trackBy function for large lists with complex objects?
 
+**Answer:**
+
+**TrackBy function optimizes ngFor by identifying items uniquely:**
+
+```typescript
+@Component({
+  template: `
+    <div *ngFor="let item of items; trackBy: trackByFn">
+      {{item.name}} - {{item.value}}
+    </div>
+  `
+})
+class ListComponent {
+  items: ComplexItem[];
+  
+  // Simple ID tracking
+  trackByFn(index: number, item: ComplexItem): any {
+    return item.id; // Use unique identifier
+  }
+  
+  // Composite key tracking
+  trackByComposite(index: number, item: ComplexItem): string {
+    return `${item.category}-${item.id}-${item.version}`;
+  }
+  
+  // Hash-based tracking for objects without IDs
+  trackByHash(index: number, item: ComplexItem): string {
+    return this.generateHash(item);
+  }
+  
+  // Performance-optimized tracking
+  trackByOptimized = (index: number, item: ComplexItem) => {
+    // Cache hash values to avoid recalculation
+    if (!item._trackingHash) {
+      item._trackingHash = this.generateHash(item);
+    }
+    return item._trackingHash;
+  }
+  
+  private generateHash(obj: any): string {
+    return btoa(JSON.stringify(obj)).slice(0, 16);
+  }
+}
+
+// Advanced tracking for dynamic lists
+class DynamicListComponent {
+  trackByIndex = (index: number) => index; // For static order
+  trackByProperty = (index: number, item: any) => item.timestamp; // For time-based
+  
+  // Conditional tracking based on list type
+  getTrackByFn(listType: string) {
+    switch(listType) {
+      case 'users': return this.trackByUserId;
+      case 'messages': return this.trackByMessageId;
+      default: return this.trackByIndex;
+    }
+  }
+}
+```
+
 ### 30. Design a change detection optimization strategy for a data-heavy dashboard application with hundreds of components.
+
+**Answer:**
+
+**Comprehensive optimization strategy:**
+
+```typescript
+// 1. Global OnPush Strategy
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // Apply to all dashboard components
+})
+
+// 2. Smart Data Management
+@Injectable()
+class DashboardDataService {
+  private cache = new Map();
+  
+  // Immutable updates for OnPush
+  updateData(key: string, data: any) {
+    this.cache.set(key, Object.freeze({...data}));
+    this.notifyComponents(key);
+  }
+  
+  // Batch updates
+  batchUpdate(updates: Map<string, any>) {
+    updates.forEach((data, key) => this.cache.set(key, data));
+    this.notifyAllComponents();
+  }
+}
+
+// 3. Component Hierarchy Optimization
+class DashboardContainer {
+  // Detach non-visible components
+  @ViewChildren(DashboardWidget) widgets!: QueryList<DashboardWidget>;
+  
+  onTabChange(activeIndex: number) {
+    this.widgets.forEach((widget, index) => {
+      if (index !== activeIndex) {
+        widget.detach(); // Stop change detection
+      } else {
+        widget.reattach(); // Resume change detection
+      }
+    });
+  }
+}
+
+// 4. Virtual Scrolling for Large Lists
+@Component({
+  template: `
+    <cdk-virtual-scroll-viewport itemSize="50">
+      <div *cdkVirtualFor="let item of items; trackBy: trackByFn">
+        {{item.data}}
+      </div>
+    </cdk-virtual-scroll-viewport>
+  `
+})
+
+// 5. Intelligent Update Scheduling
+class PerformanceManager {
+  private updateQueue = new Set<ChangeDetectorRef>();
+  
+  scheduleUpdate(cdr: ChangeDetectorRef) {
+    this.updateQueue.add(cdr);
+    
+    if (this.updateQueue.size === 1) {
+      requestIdleCallback(() => {
+        this.updateQueue.forEach(cd => cd.markForCheck());
+        this.updateQueue.clear();
+      });
+    }
+  }
+}
+
+// 6. Memory Management
+class ComponentCleanup implements OnDestroy {
+  private subscriptions = new Subscription();
+  
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
+    this.cdr.detach(); // Ensure cleanup
+  }
+}
+```
+
+**Key optimization principles:**
+- Use OnPush everywhere possible
+- Implement proper trackBy functions
+- Batch updates using requestAnimationFrame
+- Detach non-visible components
+- Use virtual scrolling for large datasets
+- Implement proper cleanup strategies
 
 ---
 
@@ -1222,23 +1346,839 @@ These strategies help maintain clean architecture and prevent circular dependenc
 
 ### 31. Explain the differences between providedIn: 'root', 'platform', and 'any'. When would you use each?
 
+**Answer:**
+
+**providedIn: 'root':**
+- Creates singleton instance at application level
+- Tree-shakable (removed if not used)
+- Default choice for most services
+
+**providedIn: 'platform':**
+- Singleton across multiple Angular applications
+- Shared between main app and lazy-loaded apps
+- Use for cross-application services
+
+**providedIn: 'any':**
+- Creates separate instance for each lazy-loaded module
+- Non-singleton behavior
+- Use when you need module-specific instances
+
+```typescript
+// Root singleton
+@Injectable({ providedIn: 'root' })
+class DataService {}
+
+// Platform singleton (shared across apps)
+@Injectable({ providedIn: 'platform' })
+class PlatformConfigService {}
+
+// Module-specific instances
+@Injectable({ providedIn: 'any' })
+class ModuleSpecificService {}
+
+// Usage scenarios
+// - root: API services, global state
+// - platform: microfrontend shared services
+// - any: feature-specific configurations
+```
+
 ### 32. How would you implement a plugin architecture using Angular's DI system with dynamic service registration?
+
+**Answer:**
+
+```typescript
+// Plugin interface
+interface Plugin {
+  name: string;
+  initialize(): void;
+  execute(data: any): any;
+}
+
+// Plugin registry
+@Injectable({ providedIn: 'root' })
+class PluginRegistry {
+  private plugins = new Map<string, Plugin>();
+  
+  register(plugin: Plugin) {
+    this.plugins.set(plugin.name, plugin);
+  }
+  
+  get(name: string): Plugin | undefined {
+    return this.plugins.get(name);
+  }
+  
+  executeAll(data: any) {
+    return Array.from(this.plugins.values()).map(p => p.execute(data));
+  }
+}
+
+// Plugin implementation
+@Injectable()
+class EmailPlugin implements Plugin {
+  name = 'email';
+  
+  initialize() {
+    console.log('Email plugin initialized');
+  }
+  
+  execute(data: any) {
+    return this.sendEmail(data);
+  }
+}
+
+// Dynamic plugin loading
+@Injectable()
+class PluginLoader {
+  constructor(
+    private registry: PluginRegistry,
+    private injector: Injector
+  ) {}
+  
+  async loadPlugin(pluginClass: any) {
+    const plugin = this.injector.get(pluginClass);
+    plugin.initialize();
+    this.registry.register(plugin);
+  }
+  
+  // Load plugins from configuration
+  async loadFromConfig(pluginConfigs: any[]) {
+    for (const config of pluginConfigs) {
+      const module = await import(config.path);
+      await this.loadPlugin(module[config.className]);
+    }
+  }
+}
+```
 
 ### 33. Design a multi-tenant application where services behave differently based on tenant configuration using DI.
 
+**Answer:**
+
+```typescript
+// Tenant context
+export const TENANT_CONFIG = new InjectionToken<TenantConfig>('TENANT_CONFIG');
+
+interface TenantConfig {
+  id: string;
+  features: string[];
+  apiUrl: string;
+  theme: string;
+}
+
+// Tenant-aware service factory
+@Injectable()
+class TenantServiceFactory {
+  createApiService(config: TenantConfig): ApiService {
+    return new ApiService(config.apiUrl, config.features);
+  }
+  
+  createThemeService(config: TenantConfig): ThemeService {
+    return new ThemeService(config.theme);
+  }
+}
+
+// Multi-tenant module
+@NgModule({
+  providers: [
+    {
+      provide: TENANT_CONFIG,
+      useFactory: () => this.getTenantConfig(), // Load from URL/storage
+    },
+    {
+      provide: ApiService,
+      useFactory: (config: TenantConfig, factory: TenantServiceFactory) => 
+        factory.createApiService(config),
+      deps: [TENANT_CONFIG, TenantServiceFactory]
+    }
+  ]
+})
+class TenantModule {
+  static forTenant(tenantId: string): ModuleWithProviders<TenantModule> {
+    return {
+      ngModule: TenantModule,
+      providers: [
+        {
+          provide: TENANT_CONFIG,
+          useValue: { id: tenantId, /* ... tenant config */ }
+        }
+      ]
+    };
+  }
+}
+
+// Usage
+class AppComponent {
+  constructor(@Inject(TENANT_CONFIG) private config: TenantConfig) {
+    // Service behavior changes based on tenant
+  }
+}
+```
+
 ### 34. Explain injection tokens and how you'd use them to implement a configurable logging system.
+
+**Answer:**
+
+```typescript
+// Configuration interfaces
+interface LoggerConfig {
+  level: 'debug' | 'info' | 'warn' | 'error';
+  outputs: LogOutput[];
+  format: string;
+}
+
+interface LogOutput {
+  type: 'console' | 'file' | 'remote';
+  config: any;
+}
+
+// Injection tokens
+export const LOGGER_CONFIG = new InjectionToken<LoggerConfig>('LOGGER_CONFIG');
+export const LOG_OUTPUTS = new InjectionToken<LogOutput[]>('LOG_OUTPUTS');
+
+// Configurable logger
+@Injectable({ providedIn: 'root' })
+class ConfigurableLogger {
+  constructor(
+    @Inject(LOGGER_CONFIG) private config: LoggerConfig,
+    @Inject(LOG_OUTPUTS) private outputs: LogOutput[]
+  ) {}
+  
+  log(level: string, message: string) {
+    if (this.shouldLog(level)) {
+      const formatted = this.format(message);
+      this.outputs.forEach(output => this.writeToOutput(output, formatted));
+    }
+  }
+  
+  private shouldLog(level: string): boolean {
+    const levels = ['debug', 'info', 'warn', 'error'];
+    return levels.indexOf(level) >= levels.indexOf(this.config.level);
+  }
+}
+
+// Module configuration
+@NgModule({
+  providers: [
+    {
+      provide: LOGGER_CONFIG,
+      useValue: {
+        level: 'info',
+        outputs: [{ type: 'console', config: {} }],
+        format: '[{{timestamp}}] {{level}}: {{message}}'
+      }
+    },
+    {
+      provide: LOG_OUTPUTS,
+      useFactory: (config: LoggerConfig) => config.outputs,
+      deps: [LOGGER_CONFIG]
+    }
+  ]
+})
+class LoggingModule {}
+```
 
 ### 35. How would you implement service inheritance and composition patterns in Angular's DI system?
 
+**Answer:**
+
+```typescript
+// Base service
+@Injectable()
+abstract class BaseDataService<T> {
+  constructor(protected http: HttpClient) {}
+  
+  abstract getEndpoint(): string;
+  
+  findAll(): Observable<T[]> {
+    return this.http.get<T[]>(this.getEndpoint());
+  }
+  
+  findById(id: string): Observable<T> {
+    return this.http.get<T>(`${this.getEndpoint()}/${id}`);
+  }
+}
+
+// Inherited services
+@Injectable({ providedIn: 'root' })
+class UserService extends BaseDataService<User> {
+  getEndpoint(): string {
+    return '/api/users';
+  }
+  
+  // Additional user-specific methods
+  getCurrentUser(): Observable<User> {
+    return this.http.get<User>('/api/users/current');
+  }
+}
+
+// Composition pattern
+@Injectable({ providedIn: 'root' })
+class CompositeUserService {
+  constructor(
+    private userService: UserService,
+    private authService: AuthService,
+    private cacheService: CacheService
+  ) {}
+  
+  getUser(id: string): Observable<User> {
+    return this.cacheService.get(`user-${id}`) || 
+           this.userService.findById(id).pipe(
+             tap(user => this.cacheService.set(`user-${id}`, user))
+           );
+  }
+}
+
+// Mixin pattern for multiple inheritance
+interface Cacheable {
+  cache: CacheService;
+  getCacheKey(params: any): string;
+}
+
+interface Auditable {
+  audit: AuditService;
+  logAction(action: string): void;
+}
+
+class MixinService implements Cacheable, Auditable {
+  constructor(
+    public cache: CacheService,
+    public audit: AuditService
+  ) {}
+  
+  getCacheKey(params: any): string {
+    return JSON.stringify(params);
+  }
+  
+  logAction(action: string): void {
+    this.audit.log(action);
+  }
+}
+```
+
 ### 36. Design a caching service that can be configured differently for different modules while maintaining singleton behavior.
+
+**Answer:**
+
+```typescript
+// Cache configuration
+interface CacheConfig {
+  ttl: number;
+  maxSize: number;
+  strategy: 'lru' | 'fifo' | 'lfu';
+}
+
+// Multi-configured cache service
+@Injectable({ providedIn: 'root' })
+class ConfigurableCacheService {
+  private caches = new Map<string, Map<string, CacheEntry>>();
+  private configs = new Map<string, CacheConfig>();
+  
+  registerConfig(namespace: string, config: CacheConfig) {
+    this.configs.set(namespace, config);
+    this.caches.set(namespace, new Map());
+  }
+  
+  set(namespace: string, key: string, value: any): void {
+    const cache = this.getCache(namespace);
+    const config = this.configs.get(namespace)!;
+    
+    // Apply size limits
+    if (cache.size >= config.maxSize) {
+      this.evict(namespace, config.strategy);
+    }
+    
+    cache.set(key, {
+      value,
+      timestamp: Date.now(),
+      accessed: Date.now()
+    });
+  }
+  
+  get(namespace: string, key: string): any {
+    const cache = this.getCache(namespace);
+    const config = this.configs.get(namespace)!;
+    const entry = cache.get(key);
+    
+    if (!entry) return null;
+    
+    // Check TTL
+    if (Date.now() - entry.timestamp > config.ttl) {
+      cache.delete(key);
+      return null;
+    }
+    
+    entry.accessed = Date.now();
+    return entry.value;
+  }
+  
+  private getCache(namespace: string): Map<string, CacheEntry> {
+    if (!this.caches.has(namespace)) {
+      throw new Error(`Cache namespace '${namespace}' not configured`);
+    }
+    return this.caches.get(namespace)!;
+  }
+}
+
+// Module-specific cache providers
+@NgModule({
+  providers: [
+    {
+      provide: 'UserCache',
+      useFactory: (cache: ConfigurableCacheService) => {
+        cache.registerConfig('users', { ttl: 300000, maxSize: 100, strategy: 'lru' });
+        return cache;
+      },
+      deps: [ConfigurableCacheService]
+    }
+  ]
+})
+class UserModule {}
+
+// Usage
+@Injectable()
+class UserService {
+  constructor(@Inject('UserCache') private cache: ConfigurableCacheService) {}
+  
+  getUser(id: string): Observable<User> {
+    const cached = this.cache.get('users', id);
+    if (cached) return of(cached);
+    
+    return this.http.get<User>(`/api/users/${id}`).pipe(
+      tap(user => this.cache.set('users', id, user))
+    );
+  }
+}
+```
 
 ### 37. How would you implement aspect-oriented programming (AOP) concepts using Angular's DI and decorators?
 
+**Answer:**
+
+```typescript
+// Method decorator for logging
+function Log(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  const method = descriptor.value;
+  
+  descriptor.value = function (...args: any[]) {
+    console.log(`Calling ${propertyName} with args:`, args);
+    const start = performance.now();
+    
+    try {
+      const result = method.apply(this, args);
+      
+      if (result instanceof Promise) {
+        return result.then(res => {
+          console.log(`${propertyName} completed in ${performance.now() - start}ms`);
+          return res;
+        });
+      } else if (result instanceof Observable) {
+        return result.pipe(
+          tap(() => console.log(`${propertyName} completed in ${performance.now() - start}ms`))
+        );
+      }
+      
+      console.log(`${propertyName} completed in ${performance.now() - start}ms`);
+      return result;
+    } catch (error) {
+      console.error(`${propertyName} failed:`, error);
+      throw error;
+    }
+  };
+}
+
+// Caching decorator
+function Cache(ttl: number = 300000) {
+  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    const method = descriptor.value;
+    const cache = new Map<string, { value: any; timestamp: number }>();
+    
+    descriptor.value = function (...args: any[]) {
+      const key = JSON.stringify(args);
+      const cached = cache.get(key);
+      
+      if (cached && Date.now() - cached.timestamp < ttl) {
+        return cached.value;
+      }
+      
+      const result = method.apply(this, args);
+      cache.set(key, { value: result, timestamp: Date.now() });
+      return result;
+    };
+  };
+}
+
+// Service with AOP decorators
+@Injectable({ providedIn: 'root' })
+class UserService {
+  
+  @Log
+  @Cache(300000)
+  getUser(id: string): Observable<User> {
+    return this.http.get<User>(`/api/users/${id}`);
+  }
+  
+  @Log
+  updateUser(user: User): Observable<User> {
+    return this.http.put<User>(`/api/users/${user.id}`, user);
+  }
+}
+
+// Interceptor-based AOP
+@Injectable()
+class LoggingInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    console.log('HTTP Request:', req.method, req.url);
+    
+    return next.handle(req).pipe(
+      tap(event => {
+        if (event instanceof HttpResponse) {
+          console.log('HTTP Response:', event.status, event.url);
+        }
+      })
+    );
+  }
+}
+```
+
 ### 38. Explain optional dependencies and how you'd handle scenarios where services might not be available.
+
+**Answer:**
+
+```typescript
+// Optional dependency injection
+@Injectable({ providedIn: 'root' })
+class DataService {
+  constructor(
+    private http: HttpClient,
+    @Optional() private cache: CacheService,
+    @Optional() private logger: LoggerService,
+    @Optional() @Inject(FEATURE_FLAGS) private features: FeatureFlags
+  ) {}
+  
+  getData(id: string): Observable<any> {
+    // Check cache if available
+    if (this.cache) {
+      const cached = this.cache.get(id);
+      if (cached) {
+        this.logger?.info('Data served from cache');
+        return of(cached);
+      }
+    }
+    
+    // Log if logger is available
+    this.logger?.info(`Fetching data for ${id}`);
+    
+    return this.http.get(`/api/data/${id}`).pipe(
+      tap(data => {
+        // Cache if service is available
+        this.cache?.set(id, data);
+        
+        // Feature flag check
+        if (this.features?.analytics) {
+          this.trackDataAccess(id);
+        }
+      })
+    );
+  }
+}
+
+// Conditional service provision
+@NgModule({
+  providers: [
+    // Conditionally provide services
+    ...(environment.production ? [LoggerService] : []),
+    {
+      provide: CacheService,
+      useClass: environment.useRedis ? RedisCacheService : MemoryCacheService
+    },
+    {
+      provide: FEATURE_FLAGS,
+      useValue: environment.features || {}
+    }
+  ]
+})
+class AppModule {}
+
+// Service availability checking
+@Injectable()
+class ConditionalService {
+  constructor(private injector: Injector) {}
+  
+  performAction() {
+    // Check if service is available at runtime
+    try {
+      const analytics = this.injector.get(AnalyticsService, null);
+      analytics?.track('action_performed');
+    } catch (error) {
+      console.warn('Analytics service not available');
+    }
+  }
+  
+  // Alternative approach
+  isServiceAvailable<T>(token: Type<T> | InjectionToken<T>): boolean {
+    try {
+      return !!this.injector.get(token, null);
+    } catch {
+      return false;
+    }
+  }
+}
+
+// Default implementations for optional services
+const DEFAULT_LOGGER: LoggerService = {
+  info: () => {},
+  warn: () => {},
+  error: () => {}
+};
+
+@Injectable()
+class ServiceWithDefaults {
+  private logger: LoggerService;
+  
+  constructor(@Optional() logger?: LoggerService) {
+    this.logger = logger || DEFAULT_LOGGER;
+  }
+}
+```
 
 ### 39. How would you implement a factory pattern within Angular's DI system for creating services based on runtime conditions?
 
+**Answer:**
+
+```typescript
+// Factory interface
+interface ServiceFactory<T> {
+  create(config: any): T;
+}
+
+// Concrete factories
+@Injectable()
+class HttpClientFactory implements ServiceFactory<HttpClient> {
+  create(config: HttpConfig): HttpClient {
+    return new HttpClient(config.baseUrl, config.timeout);
+  }
+}
+
+@Injectable()
+class DatabaseFactory implements ServiceFactory<DatabaseService> {
+  create(config: DatabaseConfig): DatabaseService {
+    switch (config.type) {
+      case 'postgresql':
+        return new PostgreSQLService(config);
+      case 'mongodb':
+        return new MongoDBService(config);
+      default:
+        throw new Error(`Unsupported database type: ${config.type}`);
+    }
+  }
+}
+
+// Factory registry
+@Injectable({ providedIn: 'root' })
+class ServiceFactoryRegistry {
+  private factories = new Map<string, ServiceFactory<any>>();
+  
+  register<T>(key: string, factory: ServiceFactory<T>) {
+    this.factories.set(key, factory);
+  }
+  
+  create<T>(key: string, config: any): T {
+    const factory = this.factories.get(key);
+    if (!factory) {
+      throw new Error(`Factory not found: ${key}`);
+    }
+    return factory.create(config);
+  }
+}
+
+// Runtime service creation
+@Injectable()
+class DynamicServiceProvider {
+  constructor(
+    private factoryRegistry: ServiceFactoryRegistry,
+    private configService: ConfigService
+  ) {}
+  
+  async createService<T>(type: string): Promise<T> {
+    const config = await this.configService.getConfig(type);
+    return this.factoryRegistry.create<T>(type, config);
+  }
+}
+
+// Provider factory functions
+export function createDatabaseService(
+  factory: DatabaseFactory,
+  config: ConfigService
+): DatabaseService {
+  const dbConfig = config.getDatabaseConfig();
+  return factory.create(dbConfig);
+}
+
+// Module configuration
+@NgModule({
+  providers: [
+    DatabaseFactory,
+    {
+      provide: DatabaseService,
+      useFactory: createDatabaseService,
+      deps: [DatabaseFactory, ConfigService]
+    },
+    {
+      provide: 'DynamicHttpClient',
+      useFactory: (factory: HttpClientFactory, config: ConfigService) => {
+        return (endpoint: string) => factory.create(config.getHttpConfig(endpoint));
+      },
+      deps: [HttpClientFactory, ConfigService]
+    }
+  ]
+})
+class DataModule {}
+```
+
 ### 40. Design a service locator pattern that works efficiently with Angular's DI while avoiding anti-patterns.
+
+**Answer:**
+
+```typescript
+// Service locator interface
+interface ServiceLocator {
+  get<T>(token: Type<T> | InjectionToken<T>): T;
+  has<T>(token: Type<T> | InjectionToken<T>): boolean;
+}
+
+// Angular-integrated service locator
+@Injectable({ providedIn: 'root' })
+class AngularServiceLocator implements ServiceLocator {
+  constructor(private injector: Injector) {}
+  
+  get<T>(token: Type<T> | InjectionToken<T>): T {
+    return this.injector.get(token);
+  }
+  
+  has<T>(token: Type<T> | InjectionToken<T>): boolean {
+    try {
+      return !!this.injector.get(token, null);
+    } catch {
+      return false;
+    }
+  }
+  
+  // Safe get with fallback
+  getSafe<T>(token: Type<T> | InjectionToken<T>, fallback?: T): T | undefined {
+    try {
+      return this.injector.get(token, fallback);
+    } catch {
+      return fallback;
+    }
+  }
+}
+
+// Scoped service locator for modules
+@Injectable()
+class ScopedServiceLocator {
+  private services = new Map<any, any>();
+  
+  constructor(private parentLocator: AngularServiceLocator) {}
+  
+  register<T>(token: Type<T> | InjectionToken<T>, instance: T): void {
+    this.services.set(token, instance);
+  }
+  
+  get<T>(token: Type<T> | InjectionToken<T>): T {
+    // Check local scope first
+    if (this.services.has(token)) {
+      return this.services.get(token);
+    }
+    
+    // Fall back to parent (Angular's injector)
+    return this.parentLocator.get(token);
+  }
+}
+
+// Plugin system using service locator
+@Injectable()
+class PluginManager {
+  constructor(private serviceLocator: AngularServiceLocator) {}
+  
+  loadPlugin(pluginConfig: PluginConfig): void {
+    const dependencies = pluginConfig.dependencies.map(dep => 
+      this.serviceLocator.get(dep)
+    );
+    
+    const plugin = new pluginConfig.pluginClass(...dependencies);
+    plugin.initialize();
+  }
+  
+  // Conditional service access
+  getOptionalService<T>(token: Type<T>): T | null {
+    return this.serviceLocator.has(token) ? this.serviceLocator.get(token) : null;
+  }
+}
+
+// Best practices wrapper
+@Injectable({ providedIn: 'root' })
+class SafeServiceLocator {
+  private cache = new Map<any, any>();
+  
+  constructor(private injector: Injector) {}
+  
+  // Cached service access
+  getCached<T>(token: Type<T> | InjectionToken<T>): T {
+    if (!this.cache.has(token)) {
+      this.cache.set(token, this.injector.get(token));
+    }
+    return this.cache.get(token);
+  }
+  
+  // Typed service access with validation
+  getService<T>(token: Type<T>, validator?: (service: T) => boolean): T {
+    const service = this.injector.get(token);
+    
+    if (validator && !validator(service)) {
+      throw new Error(`Service validation failed for ${token.name}`);
+    }
+    
+    return service;
+  }
+  
+  // Lazy service access
+  getLazy<T>(token: Type<T>): () => T {
+    return () => this.injector.get(token);
+  }
+}
+
+// Usage example avoiding anti-patterns
+@Injectable()
+class ProperServiceUsage {
+  // ✅ Inject specific dependencies
+  constructor(
+    private userService: UserService,
+    private logger: LoggerService,
+    private serviceLocator: SafeServiceLocator // Only when necessary
+  ) {}
+  
+  // ✅ Use service locator for dynamic/optional services only
+  processWithOptionalFeatures(data: any) {
+    // Core functionality
+    const result = this.userService.process(data);
+    
+    // Optional features based on availability
+    const analytics = this.serviceLocator.getCached(AnalyticsService);
+    if (analytics) {
+      analytics.track('data_processed');
+    }
+    
+    return result;
+  }
+}
+```
+
+**Service Locator Best Practices:**
+- Use only for dynamic service resolution
+- Prefer constructor injection for known dependencies
+- Implement caching to avoid repeated lookups
+- Add proper error handling and validation
+- Avoid overuse - maintain dependency transparency
 
 ---
 
