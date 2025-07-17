@@ -992,837 +992,63 @@ Use OnPush everywhere, virtual scrolling for lists, detach non-visible component
 
 **Answer:**
 
-**providedIn: 'root':**
-- Creates singleton instance at application level
-- Tree-shakable (removed if not used)
-- Default choice for most services
-
-**providedIn: 'platform':**
-- Singleton across multiple Angular applications
-- Shared between main app and lazy-loaded apps
-- Use for cross-application services
-
-**providedIn: 'any':**
-- Creates separate instance for each lazy-loaded module
-- Non-singleton behavior
-- Use when you need module-specific instances
-
-```typescript
-// Root singleton
-@Injectable({ providedIn: 'root' })
-class DataService {}
-
-// Platform singleton (shared across apps)
-@Injectable({ providedIn: 'platform' })
-class PlatformConfigService {}
-
-// Module-specific instances
-@Injectable({ providedIn: 'any' })
-class ModuleSpecificService {}
-
-// Usage scenarios
-// - root: API services, global state
-// - platform: microfrontend shared services
-// - any: feature-specific configurations
-```
+- **'root'**: App-level singleton, tree-shakable
+- **'platform'**: Shared across multiple Angular apps  
+- **'any'**: Separate instance per lazy-loaded module
 
 ### 32. How would you implement a plugin architecture using Angular's DI system with dynamic service registration?
 
 **Answer:**
 
-```typescript
-// Plugin interface
-interface Plugin {
-  name: string;
-  initialize(): void;
-  execute(data: any): any;
-}
-
-// Plugin registry
-@Injectable({ providedIn: 'root' })
-class PluginRegistry {
-  private plugins = new Map<string, Plugin>();
-  
-  register(plugin: Plugin) {
-    this.plugins.set(plugin.name, plugin);
-  }
-  
-  get(name: string): Plugin | undefined {
-    return this.plugins.get(name);
-  }
-  
-  executeAll(data: any) {
-    return Array.from(this.plugins.values()).map(p => p.execute(data));
-  }
-}
-
-// Plugin implementation
-@Injectable()
-class EmailPlugin implements Plugin {
-  name = 'email';
-  
-  initialize() {
-    console.log('Email plugin initialized');
-  }
-  
-  execute(data: any) {
-    return this.sendEmail(data);
-  }
-}
-
-// Dynamic plugin loading
-@Injectable()
-class PluginLoader {
-  constructor(
-    private registry: PluginRegistry,
-    private injector: Injector
-  ) {}
-  
-  async loadPlugin(pluginClass: any) {
-    const plugin = this.injector.get(pluginClass);
-    plugin.initialize();
-    this.registry.register(plugin);
-  }
-  
-  // Load plugins from configuration
-  async loadFromConfig(pluginConfigs: any[]) {
-    for (const config of pluginConfigs) {
-      const module = await import(config.path);
-      await this.loadPlugin(module[config.className]);
-    }
-  }
-}
-```
+Use InjectionToken, plugin registry service, and dynamic imports. Register plugins at runtime via injector.get().
 
 ### 33. Design a multi-tenant application where services behave differently based on tenant configuration using DI.
 
 **Answer:**
 
-```typescript
-// Tenant context
-export const TENANT_CONFIG = new InjectionToken<TenantConfig>('TENANT_CONFIG');
-
-interface TenantConfig {
-  id: string;
-  features: string[];
-  apiUrl: string;
-  theme: string;
-}
-
-// Tenant-aware service factory
-@Injectable()
-class TenantServiceFactory {
-  createApiService(config: TenantConfig): ApiService {
-    return new ApiService(config.apiUrl, config.features);
-  }
-  
-  createThemeService(config: TenantConfig): ThemeService {
-    return new ThemeService(config.theme);
-  }
-}
-
-// Multi-tenant module
-@NgModule({
-  providers: [
-    {
-      provide: TENANT_CONFIG,
-      useFactory: () => this.getTenantConfig(), // Load from URL/storage
-    },
-    {
-      provide: ApiService,
-      useFactory: (config: TenantConfig, factory: TenantServiceFactory) => 
-        factory.createApiService(config),
-      deps: [TENANT_CONFIG, TenantServiceFactory]
-    }
-  ]
-})
-class TenantModule {
-  static forTenant(tenantId: string): ModuleWithProviders<TenantModule> {
-    return {
-      ngModule: TenantModule,
-      providers: [
-        {
-          provide: TENANT_CONFIG,
-          useValue: { id: tenantId, /* ... tenant config */ }
-        }
-      ]
-    };
-  }
-}
-
-// Usage
-class AppComponent {
-  constructor(@Inject(TENANT_CONFIG) private config: TenantConfig) {
-    // Service behavior changes based on tenant
-  }
-}
-```
+Use TENANT_CONFIG injection token, factory providers based on tenant ID, and conditional service provisioning.
 
 ### 34. Explain injection tokens and how you'd use them to implement a configurable logging system.
 
 **Answer:**
 
-```typescript
-// Configuration interfaces
-interface LoggerConfig {
-  level: 'debug' | 'info' | 'warn' | 'error';
-  outputs: LogOutput[];
-  format: string;
-}
-
-interface LogOutput {
-  type: 'console' | 'file' | 'remote';
-  config: any;
-}
-
-// Injection tokens
-export const LOGGER_CONFIG = new InjectionToken<LoggerConfig>('LOGGER_CONFIG');
-export const LOG_OUTPUTS = new InjectionToken<LogOutput[]>('LOG_OUTPUTS');
-
-// Configurable logger
-@Injectable({ providedIn: 'root' })
-class ConfigurableLogger {
-  constructor(
-    @Inject(LOGGER_CONFIG) private config: LoggerConfig,
-    @Inject(LOG_OUTPUTS) private outputs: LogOutput[]
-  ) {}
-  
-  log(level: string, message: string) {
-    if (this.shouldLog(level)) {
-      const formatted = this.format(message);
-      this.outputs.forEach(output => this.writeToOutput(output, formatted));
-    }
-  }
-  
-  private shouldLog(level: string): boolean {
-    const levels = ['debug', 'info', 'warn', 'error'];
-    return levels.indexOf(level) >= levels.indexOf(this.config.level);
-  }
-}
-
-// Module configuration
-@NgModule({
-  providers: [
-    {
-      provide: LOGGER_CONFIG,
-      useValue: {
-        level: 'info',
-        outputs: [{ type: 'console', config: {} }],
-        format: '[{{timestamp}}] {{level}}: {{message}}'
-      }
-    },
-    {
-      provide: LOG_OUTPUTS,
-      useFactory: (config: LoggerConfig) => config.outputs,
-      deps: [LOGGER_CONFIG]
-    }
-  ]
-})
-class LoggingModule {}
-```
+InjectionToken for type-safe DI without classes. Use for configuration objects, feature flags, and multi-provider scenarios.
 
 ### 35. How would you implement service inheritance and composition patterns in Angular's DI system?
 
 **Answer:**
 
-```typescript
-// Base service
-@Injectable()
-abstract class BaseDataService<T> {
-  constructor(protected http: HttpClient) {}
-  
-  abstract getEndpoint(): string;
-  
-  findAll(): Observable<T[]> {
-    return this.http.get<T[]>(this.getEndpoint());
-  }
-  
-  findById(id: string): Observable<T> {
-    return this.http.get<T>(`${this.getEndpoint()}/${id}`);
-  }
-}
-
-// Inherited services
-@Injectable({ providedIn: 'root' })
-class UserService extends BaseDataService<User> {
-  getEndpoint(): string {
-    return '/api/users';
-  }
-  
-  // Additional user-specific methods
-  getCurrentUser(): Observable<User> {
-    return this.http.get<User>('/api/users/current');
-  }
-}
-
-// Composition pattern
-@Injectable({ providedIn: 'root' })
-class CompositeUserService {
-  constructor(
-    private userService: UserService,
-    private authService: AuthService,
-    private cacheService: CacheService
-  ) {}
-  
-  getUser(id: string): Observable<User> {
-    return this.cacheService.get(`user-${id}`) || 
-           this.userService.findById(id).pipe(
-             tap(user => this.cacheService.set(`user-${id}`, user))
-           );
-  }
-}
-
-// Mixin pattern for multiple inheritance
-interface Cacheable {
-  cache: CacheService;
-  getCacheKey(params: any): string;
-}
-
-interface Auditable {
-  audit: AuditService;
-  logAction(action: string): void;
-}
-
-class MixinService implements Cacheable, Auditable {
-  constructor(
-    public cache: CacheService,
-    public audit: AuditService
-  ) {}
-  
-  getCacheKey(params: any): string {
-    return JSON.stringify(params);
-  }
-  
-  logAction(action: string): void {
-    this.audit.log(action);
-  }
-}
-```
+Abstract base services with template pattern, composition via constructor injection, mixins for multiple inheritance.
 
 ### 36. Design a caching service that can be configured differently for different modules while maintaining singleton behavior.
 
 **Answer:**
 
-```typescript
-// Cache configuration
-interface CacheConfig {
-  ttl: number;
-  maxSize: number;
-  strategy: 'lru' | 'fifo' | 'lfu';
-}
-
-// Multi-configured cache service
-@Injectable({ providedIn: 'root' })
-class ConfigurableCacheService {
-  private caches = new Map<string, Map<string, CacheEntry>>();
-  private configs = new Map<string, CacheConfig>();
-  
-  registerConfig(namespace: string, config: CacheConfig) {
-    this.configs.set(namespace, config);
-    this.caches.set(namespace, new Map());
-  }
-  
-  set(namespace: string, key: string, value: any): void {
-    const cache = this.getCache(namespace);
-    const config = this.configs.get(namespace)!;
-    
-    // Apply size limits
-    if (cache.size >= config.maxSize) {
-      this.evict(namespace, config.strategy);
-    }
-    
-    cache.set(key, {
-      value,
-      timestamp: Date.now(),
-      accessed: Date.now()
-    });
-  }
-  
-  get(namespace: string, key: string): any {
-    const cache = this.getCache(namespace);
-    const config = this.configs.get(namespace)!;
-    const entry = cache.get(key);
-    
-    if (!entry) return null;
-    
-    // Check TTL
-    if (Date.now() - entry.timestamp > config.ttl) {
-      cache.delete(key);
-      return null;
-    }
-    
-    entry.accessed = Date.now();
-    return entry.value;
-  }
-  
-  private getCache(namespace: string): Map<string, CacheEntry> {
-    if (!this.caches.has(namespace)) {
-      throw new Error(`Cache namespace '${namespace}' not configured`);
-    }
-    return this.caches.get(namespace)!;
-  }
-}
-
-// Module-specific cache providers
-@NgModule({
-  providers: [
-    {
-      provide: 'UserCache',
-      useFactory: (cache: ConfigurableCacheService) => {
-        cache.registerConfig('users', { ttl: 300000, maxSize: 100, strategy: 'lru' });
-        return cache;
-      },
-      deps: [ConfigurableCacheService]
-    }
-  ]
-})
-class UserModule {}
-
-// Usage
-@Injectable()
-class UserService {
-  constructor(@Inject('UserCache') private cache: ConfigurableCacheService) {}
-  
-  getUser(id: string): Observable<User> {
-    const cached = this.cache.get('users', id);
-    if (cached) return of(cached);
-    
-    return this.http.get<User>(`/api/users/${id}`).pipe(
-      tap(user => this.cache.set('users', id, user))
-    );
-  }
-}
-```
+Namespace-based cache with module-specific configurations, single CacheService with Map<namespace, cache>.
 
 ### 37. How would you implement aspect-oriented programming (AOP) concepts using Angular's DI and decorators?
 
 **Answer:**
 
-```typescript
-// Method decorator for logging
-function Log(target: any, propertyName: string, descriptor: PropertyDescriptor) {
-  const method = descriptor.value;
-  
-  descriptor.value = function (...args: any[]) {
-    console.log(`Calling ${propertyName} with args:`, args);
-    const start = performance.now();
-    
-    try {
-      const result = method.apply(this, args);
-      
-      if (result instanceof Promise) {
-        return result.then(res => {
-          console.log(`${propertyName} completed in ${performance.now() - start}ms`);
-          return res;
-        });
-      } else if (result instanceof Observable) {
-        return result.pipe(
-          tap(() => console.log(`${propertyName} completed in ${performance.now() - start}ms`))
-        );
-      }
-      
-      console.log(`${propertyName} completed in ${performance.now() - start}ms`);
-      return result;
-    } catch (error) {
-      console.error(`${propertyName} failed:`, error);
-      throw error;
-    }
-  };
-}
-
-// Caching decorator
-function Cache(ttl: number = 300000) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
-    const cache = new Map<string, { value: any; timestamp: number }>();
-    
-    descriptor.value = function (...args: any[]) {
-      const key = JSON.stringify(args);
-      const cached = cache.get(key);
-      
-      if (cached && Date.now() - cached.timestamp < ttl) {
-        return cached.value;
-      }
-      
-      const result = method.apply(this, args);
-      cache.set(key, { value: result, timestamp: Date.now() });
-      return result;
-    };
-  };
-}
-
-// Service with AOP decorators
-@Injectable({ providedIn: 'root' })
-class UserService {
-  
-  @Log
-  @Cache(300000)
-  getUser(id: string): Observable<User> {
-    return this.http.get<User>(`/api/users/${id}`);
-  }
-  
-  @Log
-  updateUser(user: User): Observable<User> {
-    return this.http.put<User>(`/api/users/${user.id}`, user);
-  }
-}
-
-// Interceptor-based AOP
-@Injectable()
-class LoggingInterceptor implements HttpInterceptor {
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    console.log('HTTP Request:', req.method, req.url);
-    
-    return next.handle(req).pipe(
-      tap(event => {
-        if (event instanceof HttpResponse) {
-          console.log('HTTP Response:', event.status, event.url);
-        }
-      })
-    );
-  }
-}
-```
+Method decorators for cross-cutting concerns (logging, caching), interceptors for HTTP aspects, proxy services.
 
 ### 38. Explain optional dependencies and how you'd handle scenarios where services might not be available.
 
 **Answer:**
 
-```typescript
-// Optional dependency injection
-@Injectable({ providedIn: 'root' })
-class DataService {
-  constructor(
-    private http: HttpClient,
-    @Optional() private cache: CacheService,
-    @Optional() private logger: LoggerService,
-    @Optional() @Inject(FEATURE_FLAGS) private features: FeatureFlags
-  ) {}
-  
-  getData(id: string): Observable<any> {
-    // Check cache if available
-    if (this.cache) {
-      const cached = this.cache.get(id);
-      if (cached) {
-        this.logger?.info('Data served from cache');
-        return of(cached);
-      }
-    }
-    
-    // Log if logger is available
-    this.logger?.info(`Fetching data for ${id}`);
-    
-    return this.http.get(`/api/data/${id}`).pipe(
-      tap(data => {
-        // Cache if service is available
-        this.cache?.set(id, data);
-        
-        // Feature flag check
-        if (this.features?.analytics) {
-          this.trackDataAccess(id);
-        }
-      })
-    );
-  }
-}
-
-// Conditional service provision
-@NgModule({
-  providers: [
-    // Conditionally provide services
-    ...(environment.production ? [LoggerService] : []),
-    {
-      provide: CacheService,
-      useClass: environment.useRedis ? RedisCacheService : MemoryCacheService
-    },
-    {
-      provide: FEATURE_FLAGS,
-      useValue: environment.features || {}
-    }
-  ]
-})
-class AppModule {}
-
-// Service availability checking
-@Injectable()
-class ConditionalService {
-  constructor(private injector: Injector) {}
-  
-  performAction() {
-    // Check if service is available at runtime
-    try {
-      const analytics = this.injector.get(AnalyticsService, null);
-      analytics?.track('action_performed');
-    } catch (error) {
-      console.warn('Analytics service not available');
-    }
-  }
-  
-  // Alternative approach
-  isServiceAvailable<T>(token: Type<T> | InjectionToken<T>): boolean {
-    try {
-      return !!this.injector.get(token, null);
-    } catch {
-      return false;
-    }
-  }
-}
-
-// Default implementations for optional services
-const DEFAULT_LOGGER: LoggerService = {
-  info: () => {},
-  warn: () => {},
-  error: () => {}
-};
-
-@Injectable()
-class ServiceWithDefaults {
-  private logger: LoggerService;
-  
-  constructor(@Optional() logger?: LoggerService) {
-    this.logger = logger || DEFAULT_LOGGER;
-  }
-}
-```
+Use @Optional() decorator, null checks, fallback implementations, and conditional service access.
 
 ### 39. How would you implement a factory pattern within Angular's DI system for creating services based on runtime conditions?
 
 **Answer:**
 
-```typescript
-// Factory interface
-interface ServiceFactory<T> {
-  create(config: any): T;
-}
-
-// Concrete factories
-@Injectable()
-class HttpClientFactory implements ServiceFactory<HttpClient> {
-  create(config: HttpConfig): HttpClient {
-    return new HttpClient(config.baseUrl, config.timeout);
-  }
-}
-
-@Injectable()
-class DatabaseFactory implements ServiceFactory<DatabaseService> {
-  create(config: DatabaseConfig): DatabaseService {
-    switch (config.type) {
-      case 'postgresql':
-        return new PostgreSQLService(config);
-      case 'mongodb':
-        return new MongoDBService(config);
-      default:
-        throw new Error(`Unsupported database type: ${config.type}`);
-    }
-  }
-}
-
-// Factory registry
-@Injectable({ providedIn: 'root' })
-class ServiceFactoryRegistry {
-  private factories = new Map<string, ServiceFactory<any>>();
-  
-  register<T>(key: string, factory: ServiceFactory<T>) {
-    this.factories.set(key, factory);
-  }
-  
-  create<T>(key: string, config: any): T {
-    const factory = this.factories.get(key);
-    if (!factory) {
-      throw new Error(`Factory not found: ${key}`);
-    }
-    return factory.create(config);
-  }
-}
-
-// Runtime service creation
-@Injectable()
-class DynamicServiceProvider {
-  constructor(
-    private factoryRegistry: ServiceFactoryRegistry,
-    private configService: ConfigService
-  ) {}
-  
-  async createService<T>(type: string): Promise<T> {
-    const config = await this.configService.getConfig(type);
-    return this.factoryRegistry.create<T>(type, config);
-  }
-}
-
-// Provider factory functions
-export function createDatabaseService(
-  factory: DatabaseFactory,
-  config: ConfigService
-): DatabaseService {
-  const dbConfig = config.getDatabaseConfig();
-  return factory.create(dbConfig);
-}
-
-// Module configuration
-@NgModule({
-  providers: [
-    DatabaseFactory,
-    {
-      provide: DatabaseService,
-      useFactory: createDatabaseService,
-      deps: [DatabaseFactory, ConfigService]
-    },
-    {
-      provide: 'DynamicHttpClient',
-      useFactory: (factory: HttpClientFactory, config: ConfigService) => {
-        return (endpoint: string) => factory.create(config.getHttpConfig(endpoint));
-      },
-      deps: [HttpClientFactory, ConfigService]
-    }
-  ]
-})
-class DataModule {}
-```
+Factory functions with useFactory, abstract factories, and service registry for dynamic creation.
 
 ### 40. Design a service locator pattern that works efficiently with Angular's DI while avoiding anti-patterns.
 
 **Answer:**
 
-```typescript
-// Service locator interface
-interface ServiceLocator {
-  get<T>(token: Type<T> | InjectionToken<T>): T;
-  has<T>(token: Type<T> | InjectionToken<T>): boolean;
-}
-
-// Angular-integrated service locator
-@Injectable({ providedIn: 'root' })
-class AngularServiceLocator implements ServiceLocator {
-  constructor(private injector: Injector) {}
-  
-  get<T>(token: Type<T> | InjectionToken<T>): T {
-    return this.injector.get(token);
-  }
-  
-  has<T>(token: Type<T> | InjectionToken<T>): boolean {
-    try {
-      return !!this.injector.get(token, null);
-    } catch {
-      return false;
-    }
-  }
-  
-  // Safe get with fallback
-  getSafe<T>(token: Type<T> | InjectionToken<T>, fallback?: T): T | undefined {
-    try {
-      return this.injector.get(token, fallback);
-    } catch {
-      return fallback;
-    }
-  }
-}
-
-// Scoped service locator for modules
-@Injectable()
-class ScopedServiceLocator {
-  private services = new Map<any, any>();
-  
-  constructor(private parentLocator: AngularServiceLocator) {}
-  
-  register<T>(token: Type<T> | InjectionToken<T>, instance: T): void {
-    this.services.set(token, instance);
-  }
-  
-  get<T>(token: Type<T> | InjectionToken<T>): T {
-    // Check local scope first
-    if (this.services.has(token)) {
-      return this.services.get(token);
-    }
-    
-    // Fall back to parent (Angular's injector)
-    return this.parentLocator.get(token);
-  }
-}
-
-// Plugin system using service locator
-@Injectable()
-class PluginManager {
-  constructor(private serviceLocator: AngularServiceLocator) {}
-  
-  loadPlugin(pluginConfig: PluginConfig): void {
-    const dependencies = pluginConfig.dependencies.map(dep => 
-      this.serviceLocator.get(dep)
-    );
-    
-    const plugin = new pluginConfig.pluginClass(...dependencies);
-    plugin.initialize();
-  }
-  
-  // Conditional service access
-  getOptionalService<T>(token: Type<T>): T | null {
-    return this.serviceLocator.has(token) ? this.serviceLocator.get(token) : null;
-  }
-}
-
-// Best practices wrapper
-@Injectable({ providedIn: 'root' })
-class SafeServiceLocator {
-  private cache = new Map<any, any>();
-  
-  constructor(private injector: Injector) {}
-  
-  // Cached service access
-  getCached<T>(token: Type<T> | InjectionToken<T>): T {
-    if (!this.cache.has(token)) {
-      this.cache.set(token, this.injector.get(token));
-    }
-    return this.cache.get(token);
-  }
-  
-  // Typed service access with validation
-  getService<T>(token: Type<T>, validator?: (service: T) => boolean): T {
-    const service = this.injector.get(token);
-    
-    if (validator && !validator(service)) {
-      throw new Error(`Service validation failed for ${token.name}`);
-    }
-    
-    return service;
-  }
-  
-  // Lazy service access
-  getLazy<T>(token: Type<T>): () => T {
-    return () => this.injector.get(token);
-  }
-}
-
-// Usage example avoiding anti-patterns
-@Injectable()
-class ProperServiceUsage {
-  // ✅ Inject specific dependencies
-  constructor(
-    private userService: UserService,
-    private logger: LoggerService,
-    private serviceLocator: SafeServiceLocator // Only when necessary
-  ) {}
-  
-  // ✅ Use service locator for dynamic/optional services only
-  processWithOptionalFeatures(data: any) {
-    // Core functionality
-    const result = this.userService.process(data);
-    
-    // Optional features based on availability
-    const analytics = this.serviceLocator.getCached(AnalyticsService);
-    if (analytics) {
-      analytics.track('data_processed');
-    }
-    
-    return result;
-  }
-}
-```
-
-**Service Locator Best Practices:**
-- Use only for dynamic service resolution
-- Prefer constructor injection for known dependencies
-- Implement caching to avoid repeated lookups
-- Add proper error handling and validation
-- Avoid overuse - maintain dependency transparency
+Wrapper around Injector, cached lookups, use only for dynamic/optional services, prefer constructor injection.
 
 ---
 
@@ -1830,23 +1056,63 @@ class ProperServiceUsage {
 
 ### 41. Implement a higher-order component pattern in Angular that adds common functionality to multiple components.
 
+**Answer:**
+
+Mixin functions, base classes with generics, decorators for behavior injection, composition over inheritance.
+
 ### 42. Design a complex data table component with virtual scrolling, dynamic column configuration, and inline editing capabilities.
+
+**Answer:**
+
+CDK Virtual Scroll, column config service, cell renderers, edit mode state management, trackBy optimization.
 
 ### 43. How would you implement the compound component pattern in Angular (similar to React's compound components)?
 
-### 44. Create a flexible modal system that supports stacking, custom animations, and dynamic content projection.
+**Answer:**
+
+Content projection with ng-content, component communication via services, template references, shared context.
+
+### 44. Create a flexible modal system that supports stacking, modal chaining, and dynamic content projection.
+
+**Answer:**
+
+CDK Overlay, z-index management, modal stack service, component factory for dynamic content, backdrop handling.
 
 ### 45. Design a form builder component that generates forms dynamically from JSON schema with custom validation rules.
 
+**Answer:**
+
+Reactive forms, FormBuilder, dynamic component rendering, custom validators, schema-to-form mapping.
+
 ### 46. Implement a complex drag-and-drop system with multiple zones, constraints, and undo/redo functionality.
+
+**Answer:**
+
+CDK Drag Drop, zone management, constraint functions, command pattern for undo/redo, state snapshots.
 
 ### 47. How would you create a component that adapts its behavior based on its container's size (element queries)?
 
+**Answer:**
+
+ResizeObserver API, BreakpointObserver, CSS container queries, responsive directive, size-based rendering.
+
 ### 48. Design a reusable chart component that supports multiple chart types, real-time updates, and responsive behavior.
+
+**Answer:**
+
+Strategy pattern for chart types, Observable data binding, resize detection, chart library abstraction.
 
 ### 49. Implement a virtual scroller component that handles variable item heights and horizontal scrolling.
 
+**Answer:**
+
+CDK Virtual Scroll with itemSize function, scroll position tracking, viewport calculations, buffer management.
+
 ### 50. Create a complex wizard component with conditional steps, validation, and save/resume functionality.
+
+**Answer:**
+
+Step registry, state machine, conditional navigation, form state persistence, step validation guards.
 
 ---
 
@@ -1854,23 +1120,63 @@ class ProperServiceUsage {
 
 ### 51. Design a complex routing architecture for a multi-module application with lazy loading and role-based access control.
 
+**Answer:**
+
+Feature modules, route guards, role-based canActivate, lazy loading with preloading strategies, route data.
+
 ### 52. How would you implement nested routing with independent navigation states for different sections of an application?
+
+**Answer:**
+
+Router outlets, auxiliary routes, independent router states, outlet-specific navigation, route synchronization.
 
 ### 53. Create a custom route guard that handles complex authorization scenarios including role hierarchies and resource-based permissions.
 
+**Answer:**
+
+CanActivate with role service, permission matrix, resource ownership checks, async permission resolution.
+
 ### 54. Implement a navigation system that supports undo/redo functionality and maintains navigation history.
+
+**Answer:**
+
+Location service, navigation stack, route state snapshots, history manipulation, custom navigation service.
 
 ### 55. How would you handle route preloading strategies in a large application with hundreds of routes?
 
+**Answer:**
+
+Custom PreloadingStrategy, priority-based loading, user behavior analytics, selective preloading, bandwidth detection.
+
 ### 56. Design a routing solution that supports A/B testing with different component implementations for the same routes.
+
+**Answer:**
+
+Dynamic component loading, feature flags, route data for variants, component mapping service.
 
 ### 57. Implement deep linking support for complex component states including form data and filter configurations.
 
+**Answer:**
+
+Query parameters, route state, URL serialization, state restoration, bookmark-friendly URLs.
+
 ### 58. How would you handle route transitions with complex animations and state preservation?
+
+**Answer:**
+
+Router animations, state transfer, animation triggers, component lifecycle management, transition guards.
 
 ### 59. Create a custom route resolver that handles complex data dependencies and error scenarios.
 
+**Answer:**
+
+Resolve interface, dependency chain resolution, error handling, loading states, data caching.
+
 ### 60. Design a routing architecture that supports microfrontend integration with independent routing contexts.
+
+**Answer:**
+
+Module federation, route delegation, independent router instances, cross-app navigation, shared routing state.
 
 ---
 
@@ -1878,23 +1184,63 @@ class ProperServiceUsage {
 
 ### 61. Design a complex form validation system that supports async validation, cross-field dependencies, and conditional validation rules.
 
+**Answer:**
+
+Custom validators, FormGroup cross-validation, conditional validation with form state, debounced async validators.
+
 ### 62. Implement a dynamic form generator that creates forms from JSON schema with custom component mappings.
+
+**Answer:**
+
+Schema parser, component registry, FormBuilder integration, custom form controls, validation mapping.
 
 ### 63. How would you handle large forms with thousands of fields while maintaining performance?
 
+**Answer:**
+
+Virtual scrolling, lazy field rendering, OnPush change detection, form partitioning, efficient validation.
+
 ### 64. Create a form state management system that supports undo/redo, auto-save, and conflict resolution.
+
+**Answer:**
+
+State snapshots, command pattern, periodic saves, conflict detection, merge strategies.
 
 ### 65. Design a multi-step form with complex branching logic and validation that only occurs at specific steps.
 
+**Answer:**
+
+Step-based FormGroups, conditional navigation, step-specific validators, progress tracking, state persistence.
+
 ### 66. Implement a form array system that handles dynamic addition/removal of complex nested forms.
+
+**Answer:**
+
+FormArray with FormGroup items, dynamic validators, index tracking, efficient rendering with trackBy.
 
 ### 67. How would you create a form validation system that works with both reactive and template-driven forms?
 
+**Answer:**
+
+Shared validator functions, directive-based validation, common validation service, cross-approach compatibility.
+
 ### 68. Design a form component that supports multiple data sources and real-time synchronization.
+
+**Answer:**
+
+Observable data binding, conflict resolution, optimistic updates, sync status indicators.
 
 ### 69. Implement a custom form control that integrates with Angular's validation system for complex input types.
 
+**Answer:**
+
+ControlValueAccessor interface, Validator interface, onChange/onTouched callbacks, validation integration.
+
 ### 70. Create a form builder that supports conditional field visibility and dynamic validation rule assignment.
+
+**Answer:**
+
+Field config objects, visibility rules engine, dynamic validator assignment, reactive field updates.
 
 ---
 
@@ -1902,23 +1248,63 @@ class ProperServiceUsage {
 
 ### 71. Design a comprehensive testing strategy for a large Angular application including unit, integration, and e2e tests.
 
+**Answer:**
+
+Test pyramid: unit (70%), integration (20%), e2e (10%). TestBed, mocking strategies, continuous testing.
+
 ### 72. How would you test components that heavily rely on RxJS observables and complex async operations?
+
+**Answer:**
+
+fakeAsync/tick, marble testing, subscription testing, async/await patterns, mock observables.
 
 ### 73. Implement a custom testing utility that simplifies testing of components with complex dependencies.
 
+**Answer:**
+
+Test harness pattern, component page objects, shared mocking utilities, setup helpers.
+
 ### 74. How would you test Angular services that interact with external APIs and handle various error scenarios?
+
+**Answer:**
+
+HttpClientTestingModule, mock responses, error simulation, spy functions, isolated unit tests.
 
 ### 75. Design a mocking strategy for complex service dependencies in unit tests.
 
+**Answer:**
+
+Jasmine spies, mock implementations, dependency injection overrides, test doubles, stub services.
+
 ### 76. How would you test custom directives and pipes with complex logic and edge cases?
+
+**Answer:**
+
+Component test hosts, isolated testing, edge case scenarios, input/output testing, DOM manipulation.
 
 ### 77. Implement a testing approach for components that use OnPush change detection strategy.
 
+**Answer:**
+
+Manual change detection triggering, fixture.detectChanges(), OnPush-aware test setup, input simulation.
+
 ### 78. How would you test complex routing scenarios including guards, resolvers, and nested routes?
+
+**Answer:**
+
+RouterTestingModule, navigation testing, guard testing, resolver mocking, route parameter testing.
 
 ### 79. Design a performance testing strategy for Angular applications including change detection and memory usage.
 
+**Answer:**
+
+Performance profiling, memory leak detection, change detection monitoring, bundle size tracking.
+
 ### 80. How would you implement visual regression testing for a component library?
+
+**Answer:**
+
+Screenshot comparison, Storybook integration, visual diff tools, automated visual testing.
 
 ---
 
@@ -1926,23 +1312,63 @@ class ProperServiceUsage {
 
 ### 81. Design a comprehensive performance optimization strategy for a large-scale Angular application.
 
+**Answer:**
+
+Lazy loading, OnPush, trackBy, virtual scrolling, tree shaking, code splitting, caching strategies.
+
 ### 82. How would you implement code splitting and lazy loading for optimal bundle sizes?
+
+**Answer:**
+
+Route-based splitting, dynamic imports, shared chunks, preloading strategies, webpack optimization.
 
 ### 83. Create a performance monitoring system that tracks key metrics in production Angular applications.
 
+**Answer:**
+
+Performance API, Core Web Vitals, custom metrics, real user monitoring, analytics integration.
+
 ### 84. How would you optimize Angular applications for mobile devices with limited resources?
+
+**Answer:**
+
+Reduced bundle sizes, efficient animations, touch optimizations, memory management, PWA features.
 
 ### 85. Implement a caching strategy that works across different layers (HTTP, component state, service layer).
 
+**Answer:**
+
+HTTP interceptors, in-memory caching, localStorage, service worker caching, cache invalidation.
+
 ### 86. Design a strategy for optimizing large lists and tables with thousands of items.
+
+**Answer:**
+
+Virtual scrolling, pagination, OnPush components, trackBy functions, efficient data structures.
 
 ### 87. How would you optimize Angular applications for SEO while maintaining rich interactivity?
 
+**Answer:**
+
+Angular Universal SSR, meta tags, structured data, dynamic rendering, crawlable navigation.
+
 ### 88. Implement a progressive loading strategy for complex dashboard applications.
+
+**Answer:**
+
+Skeleton screens, incremental loading, priority-based rendering, lazy components, loading states.
 
 ### 89. How would you handle memory leaks in long-running Angular applications?
 
+**Answer:**
+
+Subscription management, event listener cleanup, OnDestroy lifecycle, memory profiling, weak references.
+
 ### 90. Design a strategy for optimizing third-party library usage in Angular applications.
+
+**Answer:**
+
+Tree shaking, dynamic imports, library alternatives, bundle analysis, selective imports.
 
 ---
 
@@ -1950,13 +1376,33 @@ class ProperServiceUsage {
 
 ### 91. Design a comprehensive security strategy for Angular applications including XSS prevention and CSRF protection.
 
+**Answer:**
+
+Content Security Policy, sanitization, HTTP interceptors, secure communication, input validation.
+
 ### 92. How would you implement secure authentication and authorization in a single-page Angular application?
+
+**Answer:**
+
+JWT tokens, secure storage, route guards, token refresh, HTTPS enforcement, session management.
 
 ### 93. Create a content security policy (CSP) implementation for Angular applications with dynamic content.
 
+**Answer:**
+
+CSP headers, nonce-based scripts, trusted types, dynamic content sanitization, CSP reporting.
+
 ### 94. How would you handle sensitive data in Angular applications to prevent exposure in client-side code?
 
+**Answer:**
+
+Backend data filtering, token-based access, environment variables, secure API design, data minimization.
+
 ### 95. Design a secure communication pattern between Angular frontend and backend APIs.
+
+**Answer:**
+
+HTTPS, authentication headers, request signing, CORS configuration, API rate limiting.
 
 ---
 
@@ -1964,13 +1410,33 @@ class ProperServiceUsage {
 
 ### 96. Design a microfrontend architecture using Angular that supports independent deployment and development teams.
 
+**Answer:**
+
+Module federation, shared libraries, independent builds, communication patterns, consistent UX.
+
 ### 97. How would you structure a large Angular monorepo with multiple applications and shared libraries?
+
+**Answer:**
+
+Nx workspace, library structure, dependency graphs, build optimization, shared tooling.
 
 ### 98. Create an architecture that supports multiple Angular versions running simultaneously in the same application.
 
+**Answer:**
+
+Angular Elements, version isolation, shared dependencies, compatibility layers, migration strategies.
+
 ### 99. Design a plugin system that allows third-party developers to extend Angular applications safely.
 
+**Answer:**
+
+Plugin interfaces, sandboxing, dynamic loading, extension points, security boundaries.
+
 ### 100. How would you implement a scalable state management solution for enterprise-level Angular applications with complex data flows and multiple user roles?
+
+**Answer:**
+
+NgRx with feature stores, normalized state, role-based reducers, effect composition, state persistence.
 
 ---
 
