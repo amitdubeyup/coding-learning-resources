@@ -807,19 +807,8 @@ const dataStream$ = this.pipelineService.createPipeline(rawData$, {
 
 **Answer:**
 
-Angular's change detection uses a tree traversal algorithm that checks every component for data changes.
-
-**Default Strategy:**
-- Checks all components on every change detection cycle
-- Triggered by events, HTTP responses, timers
-- Compares current vs previous values using `Object.is()`
-
-**OnPush Strategy:**
-- Only checks when:
-  - Input properties change (reference comparison)
-  - Event fires from this component
-  - `markForCheck()` is called manually
-  - Async pipe receives new value
+**Default**: Checks all components on every change detection cycle (events, HTTP, timers)
+**OnPush**: Only checks when inputs change (reference), events fire, or `markForCheck()` called
 
 ```typescript
 @Component({
@@ -828,11 +817,8 @@ Angular's change detection uses a tree traversal algorithm that checks every com
 class OptimizedComponent {
   @Input() data: Data; // Only triggers on reference change
   
-  constructor(private cdr: ChangeDetectorRef) {}
-  
   updateData() {
-    // Need to manually trigger detection
-    this.cdr.markForCheck();
+    this.cdr.markForCheck(); // Manual trigger
   }
 }
 ```
@@ -841,30 +827,21 @@ class OptimizedComponent {
 
 **Answer:**
 
-Custom change detection strategies are rarely needed, but useful for specific optimization scenarios.
-
-**Real-world scenario: High-frequency trading dashboard**
+Custom strategies are rarely needed. Use case: High-frequency trading dashboard that only updates on timestamp changes.
 
 ```typescript
-// Custom strategy for components that only update on specific events
 class TradeDataStrategy implements ChangeDetectionStrategy {
   detectChanges(component: any, context: any): boolean {
-    // Only update when trade data timestamp changes
     return component.lastUpdateTime !== context.currentTime;
   }
 }
 
 @Component({
-  changeDetection: TradeDataStrategy,
-  template: `<div>{{tradeData | json}}</div>`
+  changeDetection: TradeDataStrategy
 })
 class TradingComponent {
   @Input() tradeData: TradeData;
   lastUpdateTime: number;
-  
-  ngOnChanges() {
-    this.lastUpdateTime = this.tradeData.timestamp;
-  }
 }
 ```
 
@@ -872,73 +849,41 @@ class TradingComponent {
 
 **Answer:**
 
-NgZone patches asynchronous operations to trigger change detection automatically.
+**NgZone**: Patches async operations (setTimeout, Promise, events) to trigger change detection automatically.
 
-**Internal working:**
-- Patches `setTimeout`, `Promise`, DOM events, etc.
-- Notifies Angular when async operations complete
-- Triggers change detection after patched operations
+**Outside zone**: Use for high-frequency updates, animations, or performance-critical operations.
 
-**Running outside zone:**
 ```typescript
 constructor(private ngZone: NgZone) {}
 
-// Heavy computations or frequent updates
+// Heavy operations outside zone
 ngZone.runOutsideAngular(() => {
   setInterval(() => {
-    // This won't trigger change detection
-    this.updateChart();
-  }, 16); // 60fps updates
+    this.updateChart(); // Won't trigger change detection
+  }, 16);
 });
 
-// When you need to update UI
+// Update UI when needed
 ngZone.run(() => {
   this.updateCounter++;
 });
 ```
 
-**Use cases:**
-- High-frequency animations
-- Real-time data streams
-- Performance-critical operations
-- Third-party library integration
-
 ### 24. Explain the concept of change detection cycles and how to debug performance issues related to excessive change detection.
 
 **Answer:**
 
-**Change Detection Cycle:**
-1. Event triggers zone notification
-2. Angular checks all components (default) or marked components (OnPush)
-3. Updates DOM where changes detected
-4. Cycle completes
+**Cycle**: Event → Check components → Update DOM → Complete
 
-**Debugging excessive change detection:**
+**Debug**: Use `ng.profiler.timeChangeDetection()` in console, avoid method calls in templates
+
 ```typescript
-// Enable Angular debug mode
-import { enableDebugTools } from '@angular/platform-browser';
-
-// Profile change detection
-ng.profiler.timeChangeDetection(); // In browser console
-
-// Monitor change detection in components
-export class DebuggingComponent {
-  ngDoCheck() {
-    console.count('Change detection run');
-  }
-}
-
-// Use performance tools
+// ❌ Bad: Runs every cycle
 @Component({
-  template: `{{expensiveCalculation()}}` // ❌ Runs every cycle
+  template: `{{expensiveCalculation()}}`
 })
-class BadComponent {
-  expensiveCalculation() {
-    return this.data.reduce((sum, item) => sum + item.value, 0);
-  }
-}
 
-// Optimized version
+// ✅ Good: Calculate once
 @Component({
   template: `{{calculatedValue}}`
 })
@@ -955,63 +900,25 @@ class GoodComponent {
 
 **Answer:**
 
-**Strategic approaches:**
-
 ```typescript
-// 1. Root-level change detection service
+// Global detection service
 @Injectable({ providedIn: 'root' })
 class ChangeDetectionService {
   constructor(private appRef: ApplicationRef) {}
   
   triggerGlobalDetection() {
-    this.appRef.tick(); // Triggers full tree check
+    this.appRef.tick(); // Full tree check
   }
   
   scheduleDetection() {
-    // Batch multiple requests
-    if (!this.scheduled) {
-      this.scheduled = true;
-      requestAnimationFrame(() => {
-        this.appRef.tick();
-        this.scheduled = false;
-      });
-    }
+    requestAnimationFrame(() => this.appRef.tick()); // Batched
   }
 }
 
-// 2. Component-level optimization
-@Component({
-  changeDetection: ChangeDetectionStrategy.OnPush
-})
-class ParentComponent {
-  constructor(private cdr: ChangeDetectorRef) {}
-  
-  updateChildren() {
-    // Mark this and all children for check
-    this.cdr.markForCheck();
-    
-    // Or detach/reattach for fine control
-    this.cdr.detach();
-    // ... update data
-    this.cdr.reattach();
-  }
-}
-
-// 3. Zone-based batching
-class BatchedUpdates {
-  private pendingUpdates = new Set<ChangeDetectorRef>();
-  
-  scheduleUpdate(cdr: ChangeDetectorRef) {
-    this.pendingUpdates.add(cdr);
-    
-    NgZone.assertNotInAngularZone();
-    requestAnimationFrame(() => {
-      NgZone.run(() => {
-        this.pendingUpdates.forEach(cd => cd.markForCheck());
-        this.pendingUpdates.clear();
-      });
-    });
-  }
+// Component-level control
+updateChildren() {
+  this.cdr.markForCheck(); // OnPush components
+  // or this.cdr.detach() / this.cdr.reattach() for fine control
 }
 ```
 
@@ -1019,58 +926,30 @@ class BatchedUpdates {
 
 **Answer:**
 
-**Method usage scenarios:**
-
 ```typescript
 class ComponentOptimizations {
   constructor(private cdr: ChangeDetectorRef) {}
   
-  // detectChanges() - Force immediate check
   onCriticalUpdate() {
-    this.criticalData = newData;
-    this.cdr.detectChanges(); // Immediate UI update
+    this.cdr.detectChanges(); // Force immediate check
   }
   
-  // markForCheck() - Schedule check for OnPush components
   onDataReceived() {
-    this.data = newData;
-    this.cdr.markForCheck(); // Will check on next cycle
+    this.cdr.markForCheck(); // Schedule check for OnPush
   }
   
-  // detach() - Stop automatic checking
   onHeavyAnimation() {
-    this.cdr.detach(); // Pause change detection
-    this.startAnimation();
+    this.cdr.detach(); // Stop automatic checking
   }
   
-  // reattach() - Resume automatic checking
   onAnimationComplete() {
-    this.cdr.reattach(); // Resume change detection
-    this.cdr.markForCheck(); // Update if needed
-  }
-}
-
-// Real-world example: Data grid with virtual scrolling
-class VirtualGridComponent {
-  @Input() items: any[];
-  visibleItems: any[];
-  
-  constructor(private cdr: ChangeDetectorRef) {
-    this.cdr.detach(); // Manual control
-  }
-  
-  onScroll() {
-    this.updateVisibleItems();
-    this.cdr.detectChanges(); // Only update visible portion
-  }
-  
-  @Input() set data(value: any[]) {
-    this.items = value;
-    this.updateVisibleItems();
+    this.cdr.reattach(); // Resume checking
     this.cdr.markForCheck();
   }
 }
 ```
+
+**Use cases**: `detectChanges()` for immediate updates, `markForCheck()` for OnPush components, `detach()`/`reattach()` for performance control
 
 ### 27. How does Angular handle change detection with async operations, and how would you optimize it for real-time applications?
 
