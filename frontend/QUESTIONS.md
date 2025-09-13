@@ -54,6 +54,52 @@
 - What is the Context API in React?
 - What are `super`, `constructor`, and `render` functions in React?
 
+## React.js (Additional)
+- How is React.js different from other libraries/frameworks?
+- What is the difference between JSX and TSX in React.js?
+- What is the Shadow DOM in React.js?
+- How is the virtual DOM different from the real DOM?
+- What are the different types of components in React.js?
+- What is the state in React.js?
+- What are props and the difference between props and state?
+- How does re-rendering happen when state changes in React.js?
+- What happens if you try to update the state directly in React.js?
+- How do you share data among sibling components?
+- What are styled components? Have you implemented theming in React.js?
+- What is a React server component?
+- How do functional components handle the lifecycle methods of class components?
+- How do you handle side effects in class and functional components?
+- List out hooks you have used in React so far.
+- What are the rules of hooks in React?
+- What are custom hooks? Provide an example.
+- What is the difference between useState and useRef in form handling?
+- What are the differences between useState, useContext, and useReducer?
+- What is the difference between useCallback and useMemo?
+- What is the difference between Context API and Redux?
+- What is Redux Toolkit? How does it simplify Redux?
+- How would you implement a global state without Redux?
+- What is a synthetic event in React?
+- What is the difference between a synthetic event and a real DOM event?
+- How do you pass arguments to event handlers in React?
+- How do you handle dynamic routing in React?
+- How do you manage form validation in React? Give examples.
+- How would you implement a multistep form with conditional rendering?
+- How do you optimize forms with hundreds of input fields in React?
+- What are keys in React lists and why are they important?
+- What is React.memo and how does it work?
+- What is virtualization in React?
+- How do you optimize rendering of large lists in React?
+- How do you avoid unnecessary re-rendering in React?
+- What is the purpose of error boundaries in React?
+- How do you handle errors in async operations in React?
+- How do you fetch data in React? Give examples.
+- What is Axios and how is it different from fetch API?
+- How do you securely store API keys in React?
+- How would you implement retry logic for failed API requests in React?
+- How do you identify and fix memory leaks in React?
+- How do you build React applications for production?
+- What is the purpose of the .env file in React?
+
 ## HTML
 - What is `<!DOCTYPE html>` in HTML5?
 - What is the difference between `<div>` and `<span>`?
@@ -66,18 +112,8 @@
 - What is an attribute in HTML?
 - What are block-level and inline elements?
 
-## CSS
-- What is the difference between CSS and CSS3?
-- What are selectors in CSS?
-- What is a media query?
-- What are the different position values in CSS?
-- What is the BOM in CSS?
-- What is the difference between px, unit, em, and rem?
-- What is Flexbox?
-- What are pseudo-selectors?
-- How do you make a website responsive?
-- What are breakpoints for viewport responsive devices?
-- Why do we use `box-sizing` in CSS?
+## HTML
+- Difference between CSS BEM methodology and normal CSS?
 
 ## JavaScript & TypeScript
 - What is ECMAScript?
@@ -102,51 +138,13 @@
 - What is execution context, event loop, stack, call queue, and microtask queue?
 - What are `setTimeout` and `setInterval`?
 - What are `Object.seal` and `Object.freeze`?
-- What is the difference between `Map` and `Set`?
+## React.js
 - What are `WeakMap` and `WeakSet`?
+
 - What are `sessionStorage`, `localStorage`, and cookies?
+
 - Write a program to sort an array.
+
 - What is the use of `JSON.stringify` and `JSON.parse()`?
+
 - What are `map`, `filter`, and `reduce` in JavaScript?
-- What is a generator function?
-- How do you stop event propagation?
-- What is a closure?
-- What is hoisting in JavaScript?
-- What is the temporal dead zone?
-- What is function currying?
-- What is a mutation observer?
-- What is memoization?
-
-## Frontend Architecture & Design Patterns
-- How do you architect a micro-frontend system with independent deployments?
-- Explain the trade-offs between different state management patterns (Redux, Zustand, Context API).
-- How do you implement a design system that scales across multiple teams?
-- What's your approach to handling shared dependencies in a monorepo?
-
-## Advanced React & Performance
-- How do you implement server-side rendering with hydration for complex applications?
-- Explain React 18's concurrent features and how they impact application architecture.
-- How do you optimize bundle splitting for maximum performance across different routes?
-- What strategies do you use for implementing efficient data fetching patterns?
-
-## Build Systems & Developer Experience
-- How do you design a CI/CD pipeline for frontend applications with multiple environments?
-- What's your approach to implementing feature flags in large frontend applications?
-- How do you set up monitoring and error tracking for production frontend apps?
-- Explain your strategy for A/B testing in React applications.
-
-## Cross-Platform & Modern Web
-- How do you implement progressive web app features for better user experience?
-- What's your approach to building responsive applications that work across all devices?
-- How do you handle offline functionality and data synchronization?
-- Explain your strategy for implementing real-time features (WebSockets, Server-Sent Events).
-
-## Team Leadership & Code Quality
-- How do you establish code review processes and maintain code quality standards?
-- What's your approach to technical debt management in large codebases?
-- How do you mentor junior developers and conduct technical interviews?
-- Explain your strategy for migrating legacy frontend applications to modern tech stacks.
-
-
-
-
