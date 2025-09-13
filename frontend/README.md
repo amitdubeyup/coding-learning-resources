@@ -1,9 +1,2359 @@
 # Frontend Interview Questions & Answers
 
+## Table of Contents
+- [React.js](#reactjs)
+  - [Fundamentals](#react-fundamentals)
+  - [Hooks & Advanced Patterns](#react-hooks--advanced-patterns)
+  - [State Management](#react-state-management)
+  - [Performance & Optimization](#react-performance--optimization)
+- [JavaScript & TypeScript](#javascript--typescript)
+  - [Core JavaScript](#core-javascript)
+  - [ES6+ Features](#es6-features)
+  - [TypeScript](#typescript)
+  - [Async Programming](#async-programming)
+- [HTML & CSS](#html--css)
+  - [HTML Fundamentals](#html-fundamentals)
+  - [CSS Layout & Styling](#css-layout--styling)
+  - [Responsive Design](#responsive-design)
+- [Modern Frontend Ecosystem](#modern-frontend-ecosystem)
+  - [Build Tools & Bundlers](#build-tools--bundlers)
+  - [Testing](#testing)
+  - [Performance & Optimization](#performance--optimization)
+  - [Security](#security)
+- [Accessibility & Internationalization](#accessibility--internationalization)
+- [Team Leadership & Architecture](#team-leadership--architecture)
+
+---
+
+## React.js
+
+### React Fundamentals
+
+**Q: What is React.js and how is it different from other libraries/frameworks?**
+A: React.js is a JavaScript library for building user interfaces, especially single-page applications. Key differences:
+- **Component-based**: Encapsulated components that manage their own state
+- **Virtual DOM**: Efficient updates through virtual representation
+- **One-way data flow**: Predictable data flow from parent to child
+- **Library vs Framework**: React is a library (view layer only) vs Angular (full framework)
+```jsx
+// React Component Example
+function UserCard({ user }) {
+  return (
+    <div className="user-card">
+      <h2>{user.name}</h2>
+      <p>{user.email}</p>
+    </div>
+  );
+}
+```
+
+**Q: What is the difference between Virtual DOM, Shadow DOM, and the real DOM?**
+A: 
+- **Real DOM**: Browser's actual document structure, expensive to manipulate
+- **Virtual DOM**: React's lightweight JS representation, enables efficient updates
+- **Shadow DOM**: Browser technology for encapsulation (Web Components)
+```jsx
+// Virtual DOM process:
+// 1. State changes trigger virtual DOM creation
+// 2. React diffs virtual DOM with previous version
+// 3. Only changed elements update in real DOM
+```
+
+**Q: What are controlled and uncontrolled components?**
+A: 
+- **Controlled**: Form data handled by React state
+- **Uncontrolled**: Form data handled by DOM itself
+```jsx
+// Controlled Component
+function ControlledInput() {
+  const [value, setValue] = useState('');
+  return (
+    <input 
+      value={value} 
+      onChange={(e) => setValue(e.target.value)} 
+    />
+  );
+}
+
+// Uncontrolled Component
+function UncontrolledInput() {
+  const inputRef = useRef();
+  const handleSubmit = () => {
+    console.log(inputRef.current.value);
+  };
+  return <input ref={inputRef} />;
+}
+```
+
+**Q: What are the different types of components in React.js?**
+A: 
+1. **Functional Components** (preferred): Use hooks for state and lifecycle
+2. **Class Components**: Use ES6 classes and lifecycle methods
+```jsx
+// Functional Component
+function FunctionalComponent({ name }) {
+  const [count, setCount] = useState(0);
+  return <div>Hello {name}, Count: {count}</div>;
+}
+
+// Class Component
+class ClassComponent extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { count: 0 };
+  }
+  render() {
+    return <div>Hello {this.props.name}, Count: {this.state.count}</div>;
+  }
+}
+```
+
+### React Hooks & Advanced Patterns
+
+**Q: What are hooks in React? List hooks you have used and explain the rules.**
+A: Hooks let you use state and lifecycle features in functional components.
+
+**Common Hooks:**
+- `useState` - Local state management
+- `useEffect` - Side effects and lifecycle
+- `useContext` - Access context values
+- `useReducer` - Complex state logic
+- `useMemo` - Memoize expensive calculations
+- `useCallback` - Memoize functions
+- `useRef` - Mutable refs and DOM access
+- `useLayoutEffect` - Synchronous effects
+
+**Rules of Hooks:**
+1. Only call hooks at the top level
+2. Only call hooks from React functions
+3. Use ESLint plugin to enforce rules
+
+```jsx
+// Custom Hook Example
+function useCounter(initialValue = 0) {
+  const [count, setCount] = useState(initialValue);
+  
+  const increment = useCallback(() => setCount(c => c + 1), []);
+  const decrement = useCallback(() => setCount(c => c - 1), []);
+  const reset = useCallback(() => setCount(initialValue), [initialValue]);
+  
+  return { count, increment, decrement, reset };
+}
+
+// Usage
+function Counter() {
+  const { count, increment, decrement, reset } = useCounter(10);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={increment}>+</button>
+      <button onClick={decrement}>-</button>
+      <button onClick={reset}>Reset</button>
+    </div>
+  );
+}
+```
+
+**Q: Explain `useEffect`, `useState`, `useMemo`, `useCallback`, and `useRef` in detail.**
+
+**useState:**
+```jsx
+function UserProfile() {
+  const [user, setUser] = useState({ name: '', email: '' });
+  
+  const updateUser = (field, value) => {
+    setUser(prev => ({ ...prev, [field]: value }));
+  };
+  
+  return (
+    <form>
+      <input 
+        value={user.name}
+        onChange={(e) => updateUser('name', e.target.value)}
+        placeholder="Name"
+      />
+      <input 
+        value={user.email}
+        onChange={(e) => updateUser('email', e.target.value)}
+        placeholder="Email"
+      />
+    </form>
+  );
+}
+```
+
+**useEffect:**
+```jsx
+function DataFetcher({ userId }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    let cancelled = false;
+    
+    async function fetchUser() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/users/${userId}`);
+        const userData = await response.json();
+        
+        if (!cancelled) {
+          setUser(userData);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to fetch user:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+    
+    fetchUser();
+    
+    // Cleanup function
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]); // Dependency array
+  
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>User not found</div>;
+  
+  return <div>Hello, {user.name}!</div>;
+}
+```
+
+**useMemo & useCallback:**
+```jsx
+function ExpensiveComponent({ items, filter, onItemClick }) {
+  // useMemo: Memoize expensive calculations
+  const filteredItems = useMemo(() => {
+    console.log('Filtering items...'); // Only logs when items or filter changes
+    return items.filter(item => item.name.includes(filter));
+  }, [items, filter]);
+  
+  // useCallback: Memoize functions to prevent unnecessary re-renders
+  const handleItemClick = useCallback((item) => {
+    onItemClick(item.id);
+  }, [onItemClick]);
+  
+  return (
+    <div>
+      {filteredItems.map(item => (
+        <ItemComponent 
+          key={item.id} 
+          item={item} 
+          onClick={handleItemClick}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Child component wrapped with React.memo
+const ItemComponent = React.memo(({ item, onClick }) => {
+  console.log('Rendering item:', item.name); // Only logs when item or onClick changes
+  return (
+    <div onClick={() => onClick(item)}>
+      {item.name}
+    </div>
+  );
+});
+```
+
+**useRef:**
+```jsx
+function FocusInput() {
+  const inputRef = useRef(null);
+  const renderCount = useRef(0);
+  
+  useEffect(() => {
+    renderCount.current += 1;
+  });
+  
+  const focusInput = () => {
+    inputRef.current?.focus();
+  };
+  
+  return (
+    <div>
+      <p>Render count: {renderCount.current}</p>
+      <input ref={inputRef} />
+      <button onClick={focusInput}>Focus Input</button>
+    </div>
+  );
+}
+```
+
+**Q: What is the difference between useEffect and useLayoutEffect?**
+A: 
+- **useEffect**: Runs asynchronously after DOM paint (most common)
+- **useLayoutEffect**: Runs synchronously before DOM paint (use for DOM measurements)
+
+```jsx
+function LayoutExample() {
+  const [width, setWidth] = useState(0);
+  const elementRef = useRef();
+  
+  // useLayoutEffect prevents visual flicker
+  useLayoutEffect(() => {
+    setWidth(elementRef.current.offsetWidth);
+  }, []);
+  
+  return (
+    <div ref={elementRef}>
+      Width: {width}px
+    </div>
+  );
+}
+```
+
+**Q: What are custom hooks and how do you create them?**
+A: Custom hooks are functions that use React hooks and enable reusable stateful logic.
+
+```jsx
+// useLocalStorage custom hook
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+      return initialValue;
+    }
+  });
+  
+  const setValue = useCallback((value) => {
+    try {
+      setStoredValue(value);
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error writing to localStorage:', error);
+    }
+  }, [key]);
+  
+  return [storedValue, setValue];
+}
+
+// useDebounce custom hook
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
+
+// Usage
+function SearchComponent() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useLocalStorage('searchResults', []);
+  const debouncedQuery = useDebounce(query, 300);
+  
+  useEffect(() => {
+    if (debouncedQuery) {
+      // Perform search
+      searchAPI(debouncedQuery).then(setResults);
+    }
+  }, [debouncedQuery]);
+  
+  return (
+    <div>
+      <input 
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search..."
+      />
+      {/* Render results */}
+    </div>
+  );
+}
+```
+
+### React State Management
+
+**Q: What is Redux? Explain reducer, action, store, and Redux Toolkit.**
+A: Redux is a predictable state container for JavaScript apps.
+
+**Core Concepts:**
+```jsx
+// Action
+const increment = () => ({ type: 'INCREMENT' });
+const addTodo = (text) => ({ 
+  type: 'ADD_TODO', 
+  payload: { id: Date.now(), text, completed: false } 
+});
+
+// Reducer
+function counterReducer(state = { count: 0 }, action) {
+  switch (action.type) {
+    case 'INCREMENT':
+      return { count: state.count + 1 };
+    case 'DECREMENT':
+      return { count: state.count - 1 };
+    default:
+      return state;
+  }
+}
+
+// Store
+const store = createStore(counterReducer);
+```
+
+**Redux Toolkit (Modern Approach):**
+```jsx
+import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+// Slice
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: { value: 0 },
+  reducers: {
+    increment: (state) => {
+      state.value += 1; // Immer allows direct mutation
+    },
+    decrement: (state) => {
+      state.value -= 1;
+    },
+    incrementByAmount: (state, action) => {
+      state.value += action.payload;
+    }
+  }
+});
+
+export const { increment, decrement, incrementByAmount } = counterSlice.actions;
+
+// Store
+const store = configureStore({
+  reducer: {
+    counter: counterSlice.reducer
+  }
+});
+
+// Component
+function Counter() {
+  const count = useSelector(state => state.counter.value);
+  const dispatch = useDispatch();
+  
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => dispatch(increment())}>+</button>
+      <button onClick={() => dispatch(decrement())}>-</button>
+    </div>
+  );
+}
+```
+
+**Q: What is the Context API and how does it compare to Redux?**
+A: Context API provides a way to share values between components without prop drilling.
+
+```jsx
+// Context API Example
+const ThemeContext = createContext();
+const UserContext = createContext();
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  const [user, setUser] = useState(null);
+  
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      <UserContext.Provider value={{ user, setUser }}>
+        <Header />
+        <Main />
+      </UserContext.Provider>
+    </ThemeContext.Provider>
+  );
+}
+
+// Custom hook for theme
+function useTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within ThemeProvider');
+  }
+  return context;
+}
+
+// Usage
+function Header() {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <header className={`header ${theme}`}>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+        Toggle Theme
+      </button>
+    </header>
+  );
+}
+```
+
+**Context API vs Redux:**
+- **Context API**: Built-in, simple state sharing, good for theming/auth
+- **Redux**: More powerful, time-travel debugging, middleware support, better for complex state
+
+**Q: What are modern state management alternatives to Redux?**
+A: 
+1. **Zustand**: Minimal and flexible
+2. **Jotai**: Atomic approach
+3. **Valtio**: Proxy-based reactivity
+
+```jsx
+// Zustand Example
+import { create } from 'zustand';
+
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+  decrement: () => set((state) => ({ count: state.count - 1 })),
+}));
+
+function Counter() {
+  const { count, increment, decrement } = useStore();
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={increment}>+</button>
+      <button onClick={decrement}>-</button>
+    </div>
+  );
+}
+
+// Jotai Example
+import { atom, useAtom } from 'jotai';
+
+const countAtom = atom(0);
+
+function Counter() {
+  const [count, setCount] = useAtom(countAtom);
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(c => c + 1)}>+</button>
+    </div>
+  );
+}
+```
+
+### React Performance & Optimization
+
+**Q: How do you optimize React app performance?**
+A: Multiple strategies for optimization:
+
+**1. Prevent Unnecessary Re-renders:**
+```jsx
+// React.memo for functional components
+const ExpensiveComponent = React.memo(({ data, onUpdate }) => {
+  return <div>{/* Complex rendering logic */}</div>;
+});
+
+// Custom comparison function
+const MyComponent = React.memo(({ user, posts }) => {
+  return <div>{/* Component */}</div>;
+}, (prevProps, nextProps) => {
+  // Return true if props are equal (skip re-render)
+  return prevProps.user.id === nextProps.user.id && 
+         prevProps.posts.length === nextProps.posts.length;
+});
+```
+
+**2. Code Splitting & Lazy Loading:**
+```jsx
+import { lazy, Suspense } from 'react';
+
+// Lazy load components
+const Dashboard = lazy(() => import('./Dashboard'));
+const Profile = lazy(() => import('./Profile'));
+
+function App() {
+  return (
+    <Router>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </Suspense>
+    </Router>
+  );
+}
+
+// Dynamic imports for other resources
+const loadChartLibrary = () => import('chart.js');
+```
+
+**3. Virtualization for Large Lists:**
+```jsx
+import { FixedSizeList } from 'react-window';
+
+function VirtualizedList({ items }) {
+  const Row = ({ index, style }) => (
+    <div style={style}>
+      {items[index].name}
+    </div>
+  );
+  
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={items.length}
+      itemSize={50}
+    >
+      {Row}
+    </FixedSizeList>
+  );
+}
+```
+
+**4. Optimize Heavy Computations:**
+```jsx
+function DataProcessor({ data, filter }) {
+  // Expensive computation
+  const processedData = useMemo(() => {
+    return data
+      .filter(item => item.category === filter)
+      .map(item => ({
+        ...item,
+        processed: expensiveProcessing(item)
+      }))
+      .sort((a, b) => a.priority - b.priority);
+  }, [data, filter]);
+  
+  return <DataVisualization data={processedData} />;
+}
+```
+
+**Q: What are React DevTools and how do you use them for performance debugging?**
+A: React DevTools help identify performance bottlenecks.
+
+```jsx
+// Enable Profiler in development
+function App() {
+  return (
+    <Profiler id="App" onRender={onRenderCallback}>
+      <Router>
+        <Routes>
+          {/* Routes */}
+        </Routes>
+      </Router>
+    </Profiler>
+  );
+}
+
+function onRenderCallback(id, phase, actualDuration, baseDuration, startTime, commitTime) {
+  console.log('Component:', id);
+  console.log('Phase:', phase); // "mount" or "update"
+  console.log('Duration:', actualDuration);
+}
+```
+
+**Performance Debugging Tips:**
+1. Use Profiler tab to identify slow components
+2. Look for unnecessary re-renders
+3. Check component update reasons
+4. Analyze bundle size with webpack-bundle-analyzer
+
+**Q: What is React 18's Concurrent Features?**
+A: React 18 introduces concurrent features for better user experience.
+
+```jsx
+// Automatic Batching
+function App() {
+  const [count, setCount] = useState(0);
+  const [flag, setFlag] = useState(false);
+  
+  const handleClick = () => {
+    // These updates are automatically batched
+    setCount(c => c + 1);
+    setFlag(f => !f);
+    // Only one re-render happens
+  };
+  
+  return <button onClick={handleClick}>Update</button>;
+}
+
+// Suspense for Data Fetching
+function ProfilePage({ userId }) {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <UserProfile userId={userId} />
+      <Suspense fallback={<PostsSkeleton />}>
+        <UserPosts userId={userId} />
+      </Suspense>
+    </Suspense>
+  );
+}
+
+// useTransition for Non-urgent Updates
+function SearchResults() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [isPending, startTransition] = useTransition();
+  
+  const handleSearch = (newQuery) => {
+    setQuery(newQuery); // Urgent update
+    
+    startTransition(() => {
+      // Non-urgent update - can be interrupted
+      setResults(performExpensiveSearch(newQuery));
+    });
+  };
+  
+  return (
+    <div>
+      <SearchInput onChange={handleSearch} />
+      {isPending ? <Spinner /> : <ResultsList results={results} />}
+    </div>
+  );
+}
+```
+
+## Modern Frontend Ecosystem
+
+### Build Tools & Bundlers
+
+**Q: What is the difference between Webpack, Vite, and other modern build tools?**
+A: Modern build tools have different approaches to bundling and development.
+
+**Webpack:**
+```javascript
+// webpack.config.js
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: 'babel-loader',
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+    }),
+  ],
+};
+```
+
+**Vite (Modern Alternative):**
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
+});
+```
+
+**Key Differences:**
+- **Webpack**: Mature, extensive plugin ecosystem, slower dev server
+- **Vite**: Fast dev server (ES modules), faster builds (esbuild), better DX
+- **Parcel**: Zero-config, automatic optimization
+- **Rollup**: Optimized for libraries, tree-shaking focused
+
+**Q: What is TypeScript and how do you use it with React?**
+A: TypeScript adds static typing to JavaScript, catching errors at compile time.
+
+**Basic TypeScript with React:**
+```typescript
+// types.ts
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
+export interface UserCardProps {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (id: number) => void;
+}
+
+// UserCard.tsx
+import React from 'react';
+import { UserCardProps } from './types';
+
+const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
+  const handleEdit = () => onEdit(user);
+  const handleDelete = () => onDelete(user.id);
+  
+  return (
+    <div className="user-card">
+      <img src={user.avatar || '/default-avatar.png'} alt={user.name} />
+      <h3>{user.name}</h3>
+      <p>{user.email}</p>
+      <button onClick={handleEdit}>Edit</button>
+      <button onClick={handleDelete}>Delete</button>
+    </div>
+  );
+};
+
+export default UserCard;
+```
+
+**Advanced TypeScript Patterns:**
+```typescript
+// Utility Types
+type UserUpdate = Partial<Pick<User, 'name' | 'email'>>;
+type UserCreate = Omit<User, 'id'>;
+
+// Generic Components
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+  keyExtractor: (item: T) => string | number;
+}
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={keyExtractor(item)}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Custom Hooks with TypeScript
+function useApi<T>(url: string): {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+} {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.json())
+      .then(setData)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [url]);
+  
+  return { data, loading, error };
+}
+
+// Usage
+function UserList() {
+  const { data: users, loading, error } = useApi<User[]>('/api/users');
+  
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  
+  return (
+    <List
+      items={users || []}
+      renderItem={(user) => <UserCard user={user} onEdit={...} onDelete={...} />}
+      keyExtractor={(user) => user.id}
+    />
+  );
+}
+```
+
+### Testing
+
+**Q: How do you test React components? Explain different testing strategies.**
+A: Multiple testing approaches for React applications.
+
+**Unit Testing with React Testing Library:**
+```typescript
+// UserCard.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import UserCard from './UserCard';
+
+const mockUser = {
+  id: 1,
+  name: 'John Doe',
+  email: 'john@example.com',
+};
+
+describe('UserCard', () => {
+  it('renders user information', () => {
+    const onEdit = jest.fn();
+    const onDelete = jest.fn();
+    
+    render(<UserCard user={mockUser} onEdit={onEdit} onDelete={onDelete} />);
+    
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+  
+  it('calls onEdit when edit button is clicked', () => {
+    const onEdit = jest.fn();
+    const onDelete = jest.fn();
+    
+    render(<UserCard user={mockUser} onEdit={onEdit} onDelete={onDelete} />);
+    
+    fireEvent.click(screen.getByText('Edit'));
+    expect(onEdit).toHaveBeenCalledWith(mockUser);
+  });
+});
+```
+
+**Integration Testing:**
+```typescript
+// App.test.tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import App from './App';
+
+const server = setupServer(
+  rest.get('/api/users', (req, res, ctx) => {
+    return res(ctx.json([mockUser]));
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('displays users after loading', async () => {
+  render(<App />);
+  
+  expect(screen.getByText('Loading...')).toBeInTheDocument();
+  
+  await waitFor(() => {
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+  });
+});
+```
+
+**E2E Testing with Cypress:**
+```typescript
+// cypress/e2e/user-management.cy.ts
+describe('User Management', () => {
+  beforeEach(() => {
+    cy.visit('/users');
+    cy.intercept('GET', '/api/users', { fixture: 'users.json' });
+  });
+  
+  it('should display users and allow editing', () => {
+    cy.get('[data-testid="user-card"]').should('have.length', 3);
+    
+    cy.get('[data-testid="edit-user-1"]').click();
+    cy.get('[data-testid="name-input"]').clear().type('Jane Doe');
+    cy.get('[data-testid="save-button"]').click();
+    
+    cy.get('[data-testid="user-card"]').first().should('contain', 'Jane Doe');
+  });
+});
+```
+
+**Custom Testing Utilities:**
+```typescript
+// test-utils.tsx
+import { render, RenderOptions } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from 'styled-components';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider theme={mockTheme}>
+          {children}
+        </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
+
+const customRender = (
+  ui: React.ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>,
+) => render(ui, { wrapper: AllTheProviders, ...options });
+
+export * from '@testing-library/react';
+export { customRender as render };
+```
+
+### Performance & Optimization
+
+**Q: What are Core Web Vitals and how do you optimize them?**
+A: Core Web Vitals are Google's metrics for user experience.
+
+**1. Largest Contentful Paint (LCP) - Loading Performance:**
+```typescript
+// Image optimization
+function OptimizedImage({ src, alt, ...props }) {
+  return (
+    <picture>
+      <source srcSet={`${src}.webp`} type="image/webp" />
+      <source srcSet={`${src}.avif`} type="image/avif" />
+      <img 
+        src={src} 
+        alt={alt} 
+        loading="lazy"
+        decoding="async"
+        {...props}
+      />
+    </picture>
+  );
+}
+
+// Resource preloading
+function App() {
+  useEffect(() => {
+    // Preload critical resources
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.href = '/critical-font.woff2';
+    link.as = 'font';
+    link.type = 'font/woff2';
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }, []);
+  
+  return <div>{/* App content */}</div>;
+}
+```
+
+**2. First Input Delay (FID) - Interactivity:**
+```typescript
+// Use React.memo to prevent unnecessary re-renders
+const HeavyComponent = React.memo(({ data }) => {
+  const processedData = useMemo(() => {
+    return heavyDataProcessing(data);
+  }, [data]);
+  
+  return <div>{/* Render processed data */}</div>;
+});
+
+// Code splitting for better interaction timing
+const LazyDashboard = lazy(() => 
+  import('./Dashboard').then(module => ({
+    default: module.Dashboard
+  }))
+);
+```
+
+**3. Cumulative Layout Shift (CLS) - Visual Stability:**
+```typescript
+// Reserve space for dynamic content
+function ImageWithPlaceholder({ src, alt, width, height }) {
+  const [loaded, setLoaded] = useState(false);
+  
+  return (
+    <div 
+      style={{ 
+        width, 
+        height, 
+        backgroundColor: loaded ? 'transparent' : '#f0f0f0',
+        position: 'relative'
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          width: '100%',
+          height: '100%',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.3s'
+        }}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+```
+
+**Performance Monitoring:**
+```typescript
+// Web Vitals measurement
+import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+
+function sendToAnalytics(metric) {
+  // Send to your analytics service
+  analytics.track('Web Vital', {
+    name: metric.name,
+    value: metric.value,
+    id: metric.id,
+  });
+}
+
+getCLS(sendToAnalytics);
+getFID(sendToAnalytics);
+getFCP(sendToAnalytics);
+getLCP(sendToAnalytics);
+getTTFB(sendToAnalytics);
+```
+
+### Security
+
+**Q: What are common frontend security vulnerabilities and how do you prevent them?**
+A: Multiple security concerns in frontend development.
+
+**1. Cross-Site Scripting (XSS):**
+```typescript
+// BAD - Vulnerable to XSS
+function UserComment({ comment }) {
+  return <div dangerouslySetInnerHTML={{ __html: comment }} />;
+}
+
+// GOOD - Safe rendering
+function UserComment({ comment }) {
+  return <div>{comment}</div>; // React automatically escapes
+}
+
+// For rich text, use a sanitization library
+import DOMPurify from 'dompurify';
+
+function RichTextComment({ html }) {
+  const sanitizedHTML = DOMPurify.sanitize(html);
+  return <div dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />;
+}
+```
+
+**2. Content Security Policy (CSP):**
+```html
+<!-- Add to HTML head -->
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               script-src 'self' 'unsafe-inline' https://trusted-cdn.com;
+               style-src 'self' 'unsafe-inline';
+               img-src 'self' data: https:;">
+```
+
+**3. Secure API Communication:**
+```typescript
+// Environment-based API configuration
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://api.yourapp.com'
+  : 'http://localhost:3001';
+
+// Secure token handling
+class AuthService {
+  private static TOKEN_KEY = 'auth_token';
+  
+  static setToken(token: string) {
+    // Use httpOnly cookies in production
+    if (process.env.NODE_ENV === 'production') {
+      // Set via secure API call
+      this.setHttpOnlyCookie(token);
+    } else {
+      localStorage.setItem(this.TOKEN_KEY, token);
+    }
+  }
+  
+  static getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+  
+  static removeToken() {
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+}
+
+// Secure API client
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = AuthService.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+**4. Input Validation & Sanitization:**
+```typescript
+import { z } from 'zod';
+
+// Schema validation
+const UserSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  age: z.number().min(0).max(120),
+});
+
+function UserForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    age: 0,
+  });
+  const [errors, setErrors] = useState({});
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    try {
+      const validatedData = UserSchema.parse(formData);
+      // Submit validated data
+      submitUser(validatedData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setErrors(error.flatten().fieldErrors);
+      }
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields with validation */}
+    </form>
+  );
+}
+```
+
+**Q: How do you implement authentication and authorization in React?**
+A: Secure authentication patterns for React applications.
+
+```typescript
+// Auth Context
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Check for existing session
+    const token = AuthService.getToken();
+    if (token) {
+      verifyToken(token)
+        .then(setUser)
+        .catch(() => AuthService.removeToken())
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+  
+  const login = async (email: string, password: string) => {
+    const { user, token } = await authAPI.login(email, password);
+    AuthService.setToken(token);
+    setUser(user);
+  };
+  
+  const logout = () => {
+    AuthService.removeToken();
+    setUser(null);
+  };
+  
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Protected Route Component
+function ProtectedRoute({ children, requiredRole }: {
+  children: React.ReactNode;
+  requiredRole?: string;
+}) {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <LoadingSpinner />;
+  
+  if (!user) return <Navigate to="/login" replace />;
+  
+  if (requiredRole && !user.roles.includes(requiredRole)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
+// Usage
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
+```
+
 ## Accessibility & Internationalization
 
 **Q: What are accessibility (a11y) best practices in frontend development?**
-A: Accessibility best practices include using semantic HTML, providing alt text for images, ensuring sufficient color contrast, supporting keyboard navigation, using ARIA attributes where necessary, and testing with screen readers. Example: Use `<button>` for actions instead of clickable `<div>`s.
+A: Accessibility ensures your application is usable by everyone, including people with disabilities. Best practices include:
+
+**1. Semantic HTML:**
+```html
+<!-- Good: Semantic structure -->
+<header>
+  <nav aria-label="Main navigation">
+    <ul>
+      <li><a href="/home">Home</a></li>
+      <li><a href="/about">About</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <section aria-labelledby="news-heading">
+    <h1 id="news-heading">Latest News</h1>
+    <article>
+      <h2>Article Title</h2>
+      <p>Article content...</p>
+    </article>
+  </section>
+</main>
+
+<!-- Bad: Non-semantic -->
+<div class="header">
+  <div class="nav">
+    <div class="nav-item">Home</div>
+  </div>
+</div>
+```
+
+**2. ARIA Attributes and Focus Management:**
+```jsx
+function AccessibleModal({ isOpen, onClose, title, children }) {
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+      modalRef.current?.focus();
+    } else {
+      previousFocusRef.current?.focus();
+    }
+  }, [isOpen]);
+  
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div 
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div 
+        ref={modalRef}
+        className="modal-content"
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="modal-title">{title}</h2>
+        <button 
+          onClick={onClose}
+          aria-label="Close modal"
+          className="close-button"
+        >
+          ×
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+**3. Form Accessibility:**
+```jsx
+function AccessibleForm() {
+  const [errors, setErrors] = useState({});
+  
+  return (
+    <form aria-labelledby="form-title">
+      <h2 id="form-title">Contact Form</h2>
+      
+      <div className="field-group">
+        <label htmlFor="name">
+          Name <span aria-label="required">*</span>
+        </label>
+        <input
+          id="name"
+          type="text"
+          required
+          aria-describedby={errors.name ? "name-error" : undefined}
+          aria-invalid={!!errors.name}
+        />
+        {errors.name && (
+          <div id="name-error" role="alert" className="error">
+            {errors.name}
+          </div>
+        )}
+      </div>
+      
+      <fieldset>
+        <legend>Preferred Contact Method</legend>
+        <label>
+          <input type="radio" name="contact" value="email" />
+          Email
+        </label>
+        <label>
+          <input type="radio" name="contact" value="phone" />
+          Phone
+        </label>
+      </fieldset>
+    </form>
+  );
+}
+```
+
+**Q: How do you implement internationalization (i18n) in React applications?**
+A: i18n enables your app to support multiple languages and locales.
+
+```jsx
+// i18n setup with react-i18next
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import Backend from 'i18next-http-backend';
+import LanguageDetector from 'i18next-browser-languagedetector';
+
+i18n
+  .use(Backend)
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: 'en',
+    interpolation: {
+      escapeValue: false,
+    },
+    backend: {
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
+    },
+  });
+
+// Translation files
+// /public/locales/en/translation.json
+{
+  "welcome": "Welcome, {{name}}!",
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email"
+  }
+}
+
+// /public/locales/es/translation.json
+{
+  "welcome": "¡Bienvenido, {{name}}!",
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  }
+}
+
+// React components with i18n
+import { useTranslation } from 'react-i18next';
+
+function Navigation() {
+  const { t } = useTranslation();
+  
+  return (
+    <nav>
+      <a href="/">{t('navigation.home')}</a>
+      <a href="/about">{t('navigation.about')}</a>
+      <a href="/contact">{t('navigation.contact')}</a>
+    </nav>
+  );
+}
+
+function WelcomeMessage({ userName }) {
+  const { t } = useTranslation();
+  
+  return (
+    <h1>{t('welcome', { name: userName })}</h1>
+  );
+}
+
+// Language switcher
+function LanguageSwitcher() {
+  const { i18n } = useTranslation();
+  
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+  
+  return (
+    <div>
+      <button onClick={() => changeLanguage('en')}>English</button>
+      <button onClick={() => changeLanguage('es')}>Español</button>
+      <button onClick={() => changeLanguage('fr')}>Français</button>
+    </div>
+  );
+}
+```
+
+**Advanced i18n Features:**
+```jsx
+// Date and number formatting
+import { format } from 'date-fns';
+import { enUS, es, fr } from 'date-fns/locale';
+
+const locales = { en: enUS, es, fr };
+
+function LocalizedDate({ date }) {
+  const { i18n } = useTranslation();
+  const locale = locales[i18n.language] || locales.en;
+  
+  return (
+    <time dateTime={date.toISOString()}>
+      {format(date, 'PPP', { locale })}
+    </time>
+  );
+}
+
+// Currency formatting
+function Price({ amount, currency = 'USD' }) {
+  const { i18n } = useTranslation();
+  
+  const formatter = new Intl.NumberFormat(i18n.language, {
+    style: 'currency',
+    currency,
+  });
+  
+  return <span>{formatter.format(amount)}</span>;
+}
+
+// Pluralization
+function ItemCount({ count }) {
+  const { t } = useTranslation();
+  
+  return (
+    <p>
+      {t('items', { count })} {/* Uses pluralization rules */}
+    </p>
+  );
+}
+
+// Translation file with plurals
+{
+  "items_zero": "No items",
+  "items_one": "{{count}} item",
+  "items_other": "{{count}} items"
+}
+```
+
+## JavaScript & TypeScript
+
+### Core JavaScript
+
+**Q: What is the difference between `let`, `const`, and `var`? Explain hoisting and scope.**
+A: These keywords have different scoping rules and behaviors.
+
+```javascript
+// var: function-scoped, hoisted, can be redeclared
+function varExample() {
+  console.log(x); // undefined (hoisted but not initialized)
+  
+  if (true) {
+    var x = 1;
+    var x = 2; // No error, redeclaration allowed
+  }
+  
+  console.log(x); // 2 (accessible outside block)
+}
+
+// let: block-scoped, temporal dead zone, cannot be redeclared
+function letExample() {
+  // console.log(y); // ReferenceError: Cannot access before initialization
+  
+  if (true) {
+    let y = 1;
+    // let y = 2; // SyntaxError: Identifier 'y' has already been declared
+    y = 3; // OK, reassignment allowed
+  }
+  
+  // console.log(y); // ReferenceError: y is not defined
+}
+
+// const: block-scoped, must be initialized, cannot be reassigned
+function constExample() {
+  // const z; // SyntaxError: Missing initializer
+  const z = { name: 'John' };
+  
+  // z = {}; // TypeError: Assignment to constant variable
+  z.name = 'Jane'; // OK, object mutation allowed
+  
+  const arr = [1, 2, 3];
+  arr.push(4); // OK, array mutation allowed
+  // arr = []; // TypeError: Assignment to constant variable
+}
+```
+
+**Q: Explain closures with practical examples.**
+A: Closures occur when a function retains access to its outer scope even after the outer function returns.
+
+```javascript
+// Basic closure
+function createCounter() {
+  let count = 0;
+  
+  return function() {
+    return ++count;
+  };
+}
+
+const counter1 = createCounter();
+const counter2 = createCounter();
+
+console.log(counter1()); // 1
+console.log(counter1()); // 2
+console.log(counter2()); // 1 (separate closure)
+
+// Module pattern with closures
+const userModule = (function() {
+  let users = [];
+  let currentId = 1;
+  
+  return {
+    addUser(name, email) {
+      const user = {
+        id: currentId++,
+        name,
+        email,
+        createdAt: new Date()
+      };
+      users.push(user);
+      return user;
+    },
+    
+    getUser(id) {
+      return users.find(user => user.id === id);
+    },
+    
+    getAllUsers() {
+      return [...users]; // Return copy to prevent mutation
+    },
+    
+    updateUser(id, updates) {
+      const userIndex = users.findIndex(user => user.id === id);
+      if (userIndex !== -1) {
+        users[userIndex] = { ...users[userIndex], ...updates };
+        return users[userIndex];
+      }
+      return null;
+    }
+  };
+})();
+
+// Event handlers with closures
+function setupEventHandlers() {
+  const buttons = document.querySelectorAll('.btn');
+  
+  for (let i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener('click', function() {
+      console.log(`Button ${i} clicked`); // 'i' is captured by closure
+    });
+  }
+}
+```
+
+**Q: What is the Event Loop? Explain with examples.**
+A: The Event Loop manages asynchronous operations in JavaScript's single-threaded environment.
+
+```javascript
+// Event Loop visualization
+console.log('1'); // Synchronous - Call Stack
+
+setTimeout(() => {
+  console.log('2'); // Macro task - Task Queue
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log('3'); // Micro task - Microtask Queue
+});
+
+console.log('4'); // Synchronous - Call Stack
+
+// Output: 1, 4, 3, 2
+// Explanation:
+// 1. Synchronous code executes first (1, 4)
+// 2. Microtasks have priority over macrotasks (3)
+// 3. Macrotasks execute last (2)
+
+// Complex example
+function eventLoopExample() {
+  console.log('Start');
+  
+  setTimeout(() => console.log('Timeout 1'), 0);
+  
+  Promise.resolve()
+    .then(() => console.log('Promise 1'))
+    .then(() => console.log('Promise 2'));
+  
+  setTimeout(() => console.log('Timeout 2'), 0);
+  
+  Promise.resolve()
+    .then(() => {
+      console.log('Promise 3');
+      return Promise.resolve();
+    })
+    .then(() => console.log('Promise 4'));
+  
+  console.log('End');
+}
+
+// Output: Start, End, Promise 1, Promise 3, Promise 2, Promise 4, Timeout 1, Timeout 2
+```
+
+### ES6+ Features
+
+**Q: Explain destructuring, spread/rest operators, and template literals with examples.**
+A: ES6+ introduces powerful syntax features for cleaner code.
+
+```javascript
+// Destructuring
+const user = {
+  id: 1,
+  name: 'John Doe',
+  email: 'john@example.com',
+  address: {
+    street: '123 Main St',
+    city: 'New York'
+  }
+};
+
+// Object destructuring
+const { name, email } = user;
+const { name: userName, email: userEmail } = user; // Rename
+const { address: { city } } = user; // Nested destructuring
+const { phone = 'Not provided' } = user; // Default value
+
+// Array destructuring
+const numbers = [1, 2, 3, 4, 5];
+const [first, second, ...rest] = numbers;
+const [, , third] = numbers; // Skip elements
+
+// Function parameter destructuring
+function createUser({ name, email, age = 18 }) {
+  return {
+    id: Math.random(),
+    name,
+    email,
+    age,
+    createdAt: new Date()
+  };
+}
+
+// Spread operator
+const originalArray = [1, 2, 3];
+const newArray = [...originalArray, 4, 5]; // [1, 2, 3, 4, 5]
+
+const originalObject = { a: 1, b: 2 };
+const newObject = { ...originalObject, c: 3 }; // { a: 1, b: 2, c: 3 }
+
+// Combining arrays
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+const combined = [...arr1, ...arr2]; // [1, 2, 3, 4]
+
+// Rest parameters
+function sum(...numbers) {
+  return numbers.reduce((total, num) => total + num, 0);
+}
+
+sum(1, 2, 3, 4); // 10
+
+// Template literals
+const template = `
+  <div class="user-card">
+    <h2>${user.name}</h2>
+    <p>Email: ${user.email}</p>
+    <p>Joined: ${new Date().getFullYear()}</p>
+  </div>
+`;
+
+// Tagged template literals
+function highlight(strings, ...values) {
+  return strings.reduce((result, string, i) => {
+    const value = values[i] ? `<mark>${values[i]}</mark>` : '';
+    return result + string + value;
+  }, '');
+}
+
+const highlighted = highlight`Hello ${name}, you have ${5} messages`;
+```
+
+### Async Programming
+
+**Q: Explain Promises, async/await, and error handling patterns.**
+A: Modern JavaScript provides multiple ways to handle asynchronous operations.
+
+```javascript
+// Promise creation and chaining
+function fetchUser(id) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (id > 0) {
+        resolve({ id, name: `User ${id}`, email: `user${id}@example.com` });
+      } else {
+        reject(new Error('Invalid user ID'));
+      }
+    }, 1000);
+  });
+}
+
+// Promise chaining
+fetchUser(1)
+  .then(user => {
+    console.log('User:', user);
+    return fetch(`/api/users/${user.id}/posts`);
+  })
+  .then(response => response.json())
+  .then(posts => {
+    console.log('Posts:', posts);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  })
+  .finally(() => {
+    console.log('Cleanup');
+  });
+
+// async/await
+async function getUserData(id) {
+  try {
+    const user = await fetchUser(id);
+    const postsResponse = await fetch(`/api/users/${user.id}/posts`);
+    const posts = await postsResponse.json();
+    
+    return {
+      user,
+      posts,
+      totalPosts: posts.length
+    };
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    throw error; // Re-throw if needed
+  } finally {
+    console.log('Request completed');
+  }
+}
+
+// Concurrent operations
+async function fetchMultipleUsers(ids) {
+  try {
+    // Parallel execution
+    const userPromises = ids.map(id => fetchUser(id));
+    const users = await Promise.all(userPromises);
+    
+    return users;
+  } catch (error) {
+    console.error('One or more requests failed:', error);
+    return [];
+  }
+}
+
+// Advanced Promise patterns
+async function fetchWithRetry(url, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.log(`Attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve => 
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
+    }
+  }
+}
+
+// Promise.allSettled for handling mixed results
+async function fetchAllUserData(ids) {
+  const promises = ids.map(async (id) => {
+    const user = await fetchUser(id);
+    const posts = await fetch(`/api/users/${id}/posts`).then(r => r.json());
+    return { user, posts };
+  });
+  
+  const results = await Promise.allSettled(promises);
+  
+  const successful = results
+    .filter(result => result.status === 'fulfilled')
+    .map(result => result.value);
+    
+  const failed = results
+    .filter(result => result.status === 'rejected')
+    .map(result => result.reason);
+  
+  return { successful, failed };
+}
+```
+
+### TypeScript
+
+**Q: What are TypeScript's advanced type features? Explain generics, utility types, and type guards.**
+A: TypeScript provides powerful type system features for better code quality.
+
+```typescript
+// Generics
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message: string;
+}
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  authorId: number;
+}
+
+// Generic functions
+async function fetchData<T>(url: string): Promise<ApiResponse<T>> {
+  const response = await fetch(url);
+  return response.json();
+}
+
+// Usage with type inference
+const userResponse = await fetchData<User[]>('/api/users');
+const postResponse = await fetchData<Post[]>('/api/posts');
+
+// Generic constraints
+interface Identifiable {
+  id: number;
+}
+
+function updateEntity<T extends Identifiable>(
+  entity: T, 
+  updates: Partial<Omit<T, 'id'>>
+): T {
+  return { ...entity, ...updates };
+}
+
+// Utility Types
+type UserCreate = Omit<User, 'id'>; // { name: string; email: string; }
+type UserUpdate = Partial<Pick<User, 'name' | 'email'>>; // { name?: string; email?: string; }
+type UserKeys = keyof User; // 'id' | 'name' | 'email'
+
+// Advanced utility types
+type NonNullable<T> = T extends null | undefined ? never : T;
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : any;
+
+// Custom utility types
+type DeepReadonly<T> = {
+  readonly [P in keyof T]: T[P] extends object ? DeepReadonly<T[P]> : T[P];
+};
+
+type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+// Type guards
+function isUser(obj: any): obj is User {
+  return obj && 
+         typeof obj.id === 'number' && 
+         typeof obj.name === 'string' && 
+         typeof obj.email === 'string';
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+// Discriminated unions
+interface LoadingState {
+  status: 'loading';
+}
+
+interface SuccessState {
+  status: 'success';
+  data: any;
+}
+
+interface ErrorState {
+  status: 'error';
+  error: string;
+}
+
+type AsyncState = LoadingState | SuccessState | ErrorState;
+
+function handleState(state: AsyncState) {
+  switch (state.status) {
+    case 'loading':
+      return <Spinner />;
+    case 'success':
+      return <div>{state.data}</div>; // TypeScript knows 'data' exists
+    case 'error':
+      return <div>Error: {state.error}</div>; // TypeScript knows 'error' exists
+  }
+}
+
+// Conditional types
+type ApiResult<T> = T extends string 
+  ? { message: T } 
+  : T extends number 
+    ? { count: T } 
+    : { data: T };
+
+// Mapped types
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+};
+
+type UserGetters = Getters<User>;
+// { getId: () => number; getName: () => string; getEmail: () => string; }
+```
+
+## HTML & CSS
+
+### HTML Fundamentals
+
+**Q: What are semantic HTML elements and why are they important?**
+A: Semantic HTML provides meaning to web content, improving accessibility and SEO.
+
+```html
+<!-- Semantic HTML structure -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog Post - My Website</title>
+  <meta name="description" content="A comprehensive guide to semantic HTML">
+</head>
+<body>
+  <header>
+    <nav aria-label="Main navigation">
+      <ul>
+        <li><a href="/" aria-current="page">Home</a></li>
+        <li><a href="/blog">Blog</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <main>
+    <article>
+      <header>
+        <h1>Understanding Semantic HTML</h1>
+        <p>
+          Published on <time datetime="2023-12-01">December 1, 2023</time>
+          by <address>John Doe</address>
+        </p>
+      </header>
+      
+      <section>
+        <h2>Introduction</h2>
+        <p>Semantic HTML elements clearly describe their meaning...</p>
+      </section>
+      
+      <section>
+        <h2>Benefits</h2>
+        <ul>
+          <li>Better accessibility</li>
+          <li>Improved SEO</li>
+          <li>Cleaner code structure</li>
+        </ul>
+      </section>
+      
+      <aside>
+        <h3>Related Articles</h3>
+        <ul>
+          <li><a href="/accessibility-guide">Accessibility Guide</a></li>
+          <li><a href="/seo-tips">SEO Best Practices</a></li>
+        </ul>
+      </aside>
+    </article>
+  </main>
+  
+  <footer>
+    <p>&copy; 2023 My Website. All rights reserved.</p>
+  </footer>
+</body>
+</html>
+```
+
+**Benefits of Semantic HTML:**
+1. **Accessibility**: Screen readers understand content structure
+2. **SEO**: Search engines better understand content hierarchy
+3. **Maintainability**: Code is self-documenting
+4. **Styling**: CSS can target semantic elements directly
+
+### CSS Layout & Styling
+
+**Q: Explain Flexbox and CSS Grid. When would you use each?**
+A: Flexbox and Grid are powerful layout systems with different strengths.
+
+```css
+/* Flexbox - 1D layouts */
+.flex-container {
+  display: flex;
+  flex-direction: row; /* or column */
+  justify-content: space-between; /* main axis */
+  align-items: center; /* cross axis */
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.flex-item {
+  flex: 1; /* grow equally */
+  /* flex: 0 0 200px; grow shrink basis */
+}
+
+/* Common Flexbox patterns */
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.card {
+  flex: 1 1 300px; /* responsive cards */
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* CSS Grid - 2D layouts */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header header header"
+    "sidebar main aside"
+    "footer footer footer";
+  gap: 1rem;
+  min-height: 100vh;
+}
+
+.header { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main { grid-area: main; }
+.aside { grid-area: aside; }
+.footer { grid-area: footer; }
+
+/* Advanced Grid patterns */
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-rows: 200px;
+  gap: 1rem;
+}
+
+.photo-gallery .featured {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+/* Responsive grid */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1rem;
+}
+```
+
+**When to use Flexbox vs Grid:**
+- **Flexbox**: Navigation bars, card layouts, centering, 1D arrangements
+- **Grid**: Page layouts, complex 2D arrangements, overlapping content
+
+### Responsive Design
+
+**Q: How do you implement responsive design? Explain mobile-first approach.**
+A: Responsive design ensures your site works on all device sizes.
+
+```css
+/* Mobile-first approach */
+/* Base styles (mobile) */
+.container {
+  padding: 1rem;
+  max-width: 100%;
+}
+
+.navigation {
+  flex-direction: column;
+}
+
+.grid {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+    max-width: 750px;
+    margin: 0 auto;
+  }
+  
+  .navigation {
+    flex-direction: row;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1200px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1400px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Common responsive patterns */
+.responsive-text {
+  font-size: clamp(1rem, 2.5vw, 2rem);
+}
+
+.responsive-spacing {
+  padding: clamp(1rem, 5vw, 3rem);
+}
+
+.responsive-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Container queries (modern browsers) */
+@container (min-width: 400px) {
+  .card {
+    display: flex;
+    gap: 1rem;
+  }
+}
+
+/* Responsive utilities */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+  
+  .hide-desktop {
+    display: none;
+  }
+}
+```
+
+**Responsive Design Principles:**
+1. **Mobile-first**: Start with mobile, enhance for larger screens
+2. **Flexible grids**: Use relative units (%, fr, em, rem)
+3. **Flexible images**: Scale with container
+4. **Media queries**: Apply styles based on device characteristics
+
+## Team Leadership & Architecture
 
 **Q: What are ARIA roles and how do you use them?**
 A: ARIA (Accessible Rich Internet Applications) roles and attributes help make web content more accessible to people with disabilities. Use roles like `role="button"` or `role="navigation"` to describe elements' purposes to assistive technologies. Example:
