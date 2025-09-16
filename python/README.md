@@ -1022,3 +1022,190 @@
 	  name = 'Bob'
 	  print(f'Hello, {name}')
 	  ```
+
+### Networking
+1. **How do you create a TCP client and server in Python?**
+   - Use the `socket` module.
+   - Example (TCP server):
+	 ```python
+	 import socket
+	 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	 s.bind(('localhost', 12345))
+	 s.listen(1)
+	 conn, addr = s.accept()
+	 print('Connected by', addr)
+	 data = conn.recv(1024)
+	 conn.sendall(data)
+	 conn.close()
+	 ```
+
+2. **How do you make HTTP requests in Python?**
+   - Use the `requests` library.
+   - Example:
+	 ```python
+	 import requests
+	 r = requests.get('https://api.github.com')
+	 print(r.status_code, r.json())
+	 ```
+
+3. **How do you perform web scraping in Python?**
+   - Use `requests` and `BeautifulSoup`.
+   - Example:
+	 ```python
+	 import requests
+	 from bs4 import BeautifulSoup
+	 r = requests.get('https://example.com')
+	 soup = BeautifulSoup(r.text, 'html.parser')
+	 print(soup.title.text)
+	 ```
+
+### Database
+4. **How do you connect to a SQLite database in Python?**
+   - Use the `sqlite3` module.
+   - Example:
+	 ```python
+	 import sqlite3
+	 conn = sqlite3.connect('example.db')
+	 c = conn.cursor()
+	 c.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER, name TEXT)')
+	 conn.commit()
+	 conn.close()
+	 ```
+
+5. **What is SQLAlchemy?**
+   - A popular ORM (Object Relational Mapper) for Python.
+   - Example:
+	 ```python
+	 from sqlalchemy import create_engine, Column, Integer, String, declarative_base
+	 Base = declarative_base()
+	 class User(Base):
+		 __tablename__ = 'users'
+		 id = Column(Integer, primary_key=True)
+		 name = Column(String)
+	 engine = create_engine('sqlite:///example.db')
+	 Base.metadata.create_all(engine)
+	 ```
+
+### Security
+6. **How do you hash a password in Python?**
+   - Use the `hashlib` or `bcrypt` library.
+   - Example:
+	 ```python
+	 import hashlib
+	 password = 'secret'.encode()
+	 hashed = hashlib.sha256(password).hexdigest()
+	 print(hashed)
+	 ```
+
+7. **How do you encrypt and decrypt data in Python?**
+   - Use the `cryptography` library.
+   - Example:
+	 ```python
+	 from cryptography.fernet import Fernet
+	 key = Fernet.generate_key()
+	 f = Fernet(key)
+	 token = f.encrypt(b'secret data')
+	 print(f.decrypt(token))
+	 ```
+
+8. **What are some security best practices in Python?**
+   - Never store plain-text passwords.
+   - Validate and sanitize user input.
+   - Use virtual environments and keep dependencies updated.
+   - Avoid using `eval()` on untrusted input.
+
+### Design Patterns
+9. **What is the Singleton pattern?**
+   - Ensures a class has only one instance.
+   - Example:
+	 ```python
+	 class Singleton:
+		 _instance = None
+		 def __new__(cls, *args, **kwargs):
+			 if not cls._instance:
+				 cls._instance = super().__new__(cls)
+			 return cls._instance
+	 ```
+
+10. **What is the Factory pattern?**
+	- Provides a way to create objects without specifying the exact class.
+	- Example:
+	  ```python
+	  class Dog:
+		  def speak(self): return 'Woof'
+	  class Cat:
+		  def speak(self): return 'Meow'
+	  def animal_factory(kind):
+		  return Dog() if kind == 'dog' else Cat()
+	  ```
+
+11. **What is the Observer pattern?**
+	- Allows objects to be notified of state changes in other objects.
+	- Example:
+	  ```python
+	  class Subject:
+		  def __init__(self):
+			  self._observers = []
+		  def attach(self, obs):
+			  self._observers.append(obs)
+		  def notify(self, msg):
+			  for obs in self._observers:
+				  obs.update(msg)
+	  class Observer:
+		  def update(self, msg):
+			  print('Received:', msg)
+	  ```
+
+### Interview Coding Problems
+12. **How do you reverse a linked list in Python?**
+	- Example:
+	  ```python
+	  class Node:
+		  def __init__(self, val):
+			  self.val = val
+			  self.next = None
+	  def reverse(head):
+		  prev = None
+		  curr = head
+		  while curr:
+			  nxt = curr.next
+			  curr.next = prev
+			  prev = curr
+			  curr = nxt
+		  return prev
+	  ```
+
+13. **How do you find duplicates in a list?**
+	- Example:
+	  ```python
+	  def find_duplicates(lst):
+		  seen = set()
+		  dupes = set()
+		  for x in lst:
+			  if x in seen:
+				  dupes.add(x)
+			  seen.add(x)
+		  return list(dupes)
+	  ```
+
+### Python Internals
+14. **How does Python manage memory?**
+	- Python uses reference counting and a cyclic garbage collector to manage memory.
+
+15. **What is the difference between CPython, PyPy, and Jython?**
+	- CPython: standard Python implementation in C.
+	- PyPy: fast Python implementation with JIT compilation.
+	- Jython: Python implemented in Java, runs on JVM.
+
+16. **How does garbage collection work in Python?**
+	- Python automatically frees memory by reference counting and detecting cycles with the `gc` module.
+---
+
+## Additional Advanced Topics Not Yet Covered
+
+- **Networking:** No questions on socket, HTTP requests, or web scraping.
+- **Database:** No questions on SQLite, SQLAlchemy, or database connections.
+- **Security:** No questions on security best practices, encryption, or safe coding.
+- **Design Patterns:** No explicit coverage of Singleton, Factory, Observer, etc.
+- **Interview Coding Problems:** No algorithmic/coding challenge questions (e.g., reverse a linked list, find duplicates, etc.).
+- **Python internals:** No deep-dive on memory management, garbage collection, or CPython internals.
