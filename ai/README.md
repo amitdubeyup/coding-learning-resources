@@ -764,6 +764,151 @@ graph TD
 
 ## 11. Further Improvements & Best Practices
 
+---
+
+## 12. Stump-the-Candidate: Deep-Dive Interview Q&A
+
+### Q66: How would you handle cross-service failures or partial outages (e.g., Redis down, DB slow)?
+**Answer:**
+- Implement retries with exponential backoff for transient errors.
+- Use circuit breakers to prevent cascading failures.
+- Gracefully degrade features (e.g., fallback to cached data if DB is slow, or serve partial results).
+- Monitor service health and alert on failures.
+- Example: If Redis is down, temporarily disable caching and log the event for later investigation.
+
+### Q67: What are the trade-offs of using microservices vs. a monolith for this agent?
+**Answer:**
+- **Microservices:** Pros: independent scaling, fault isolation, technology diversity. Cons: increased complexity, network overhead, distributed tracing required.
+- **Monolith:** Pros: simpler deployment, easier local development, less network latency. Cons: harder to scale parts independently, risk of large blast radius on failure.
+- Choose based on team size, scaling needs, and operational maturity.
+
+### Q68: How do you debug or trace errors in complex agent workflows (LangChain/LangGraph)?
+**Answer:**
+- Use structured logging at each workflow step.
+- Assign unique request IDs for tracing.
+- Use visualization tools (e.g., LangSmith, OpenTelemetry) to map execution paths.
+- Add assertions and type checks in custom nodes/tools.
+
+### Q69: How would you implement custom memory or tool modules in LangChain?
+**Answer:**
+- Subclass the relevant LangChain base class (e.g., `BaseMemory`, `BaseTool`).
+- Implement required methods (e.g., `load_memory_variables`, `save_context`).
+- Register your module in the agent’s workflow.
+- Example:
+```python
+from langchain.memory import BaseMemory
+class MyMemory(BaseMemory):
+	def load_memory_variables(self, inputs): ...
+	def save_context(self, inputs, outputs): ...
+```
+
+### Q70: How do you handle vector drift or embedding model upgrades in FAISS?
+**Answer:**
+- Version your embeddings and store the version with each vector.
+- Re-embed all data with the new model and build a new index.
+- Gradually switch queries to the new index, monitor results, and roll back if needed.
+- Keep old and new indices side-by-side during migration.
+
+### Q71: What are the limitations of FAISS and how do you overcome them?
+**Answer:**
+- FAISS is not distributed natively (single-node). For large-scale, use sharding or distributed wrappers (e.g., Faiss-gRPC, Milvus, Weaviate).
+- Limited support for metadata filtering—combine with external DB for hybrid search.
+- Memory-bound: use quantization or IVF indices to reduce RAM usage.
+
+### Q72: How do you securely rotate secrets in production without downtime?
+**Answer:**
+- Use secret managers that support versioning and atomic updates.
+- Update application config to reload secrets on change (hot reload or rolling restart).
+- Test new secrets in staging before production.
+- Never log secrets or expose them in error messages.
+
+### Q73: How would you detect and mitigate a supply chain attack in your dependencies?
+**Answer:**
+- Use dependency scanning tools (Dependabot, Snyk) and monitor for CVEs.
+- Pin dependencies and use checksums (hashes) in requirements files.
+- Review and restrict use of transitive dependencies.
+- Monitor for unusual behavior after upgrades.
+
+### Q74: How do you handle scaling WebSocket connections across multiple servers?
+**Answer:**
+- Use a shared pub/sub backend (e.g., Redis, NATS) to broadcast messages to all server instances.
+- Use sticky sessions or a connection manager to route clients to the same server.
+- Monitor connection counts and autoscale horizontally.
+
+### Q75: What are the security risks of WebSockets and how do you mitigate them?
+**Answer:**
+- Risks: lack of built-in authentication, CSRF, message injection, denial of service.
+- Mitigations: authenticate on connect, use secure tokens, validate all messages, set max message size, use WSS (TLS).
+
+### Q76: How do you estimate and monitor the cost of LLM API calls or vector DB storage?
+**Answer:**
+- Track API usage and cost per call (e.g., via OpenAI/Azure billing dashboards).
+- Log and aggregate call counts, input/output token sizes.
+- Monitor vector DB storage size and query frequency.
+- Set alerts for budget thresholds.
+
+### Q77: What would you do if your spot instances are suddenly revoked during peak load?
+**Answer:**
+- Use a mix of spot and on-demand instances for critical workloads.
+- Implement autoscaling to replace lost capacity.
+- Queue non-urgent jobs and prioritize real-time traffic.
+- Use managed services with built-in failover if possible.
+
+### Q78: How do you measure and mitigate bias in your agent’s outputs?
+**Answer:**
+- Use test sets with known bias cases and measure disparate impact.
+- Regularly audit outputs for fairness and harmful content.
+- Use prompt engineering and post-processing to reduce bias.
+- Allow user feedback and flagging of problematic responses.
+
+### Q79: How would you provide real-time explanations for LLM decisions to end users?
+**Answer:**
+- Log and expose the context, retrieved documents, and reasoning steps used for each answer.
+- Use chain-of-thought prompting and return intermediate steps.
+- Example:
+```python
+def explain_llm_decision(query, context, steps, answer):
+	return {
+		"query": query,
+		"context": context,
+		"steps": steps,
+		"answer": answer
+	}
+```
+
+### Q80: How do you debug intermittent bugs that only appear in production?
+**Answer:**
+- Enable detailed logging and distributed tracing in production.
+- Use feature flags to enable/disable code paths.
+- Capture and analyze error reports and stack traces.
+- Reproduce with production data in a staging environment.
+
+### Q81: How do you trace memory leaks in async Python code?
+**Answer:**
+- Use `tracemalloc` or `objgraph` to track object allocations.
+- Profile with `aiomonitor` or `async-profiler`.
+- Check for unawaited coroutines, lingering references, or event loop issues.
+
+### Q82: What are the cold start implications for serverless agent endpoints?
+**Answer:**
+- Cold starts add latency (seconds) for the first request after idle.
+- Mitigate by keeping functions warm (scheduled pings), using provisioned concurrency, or minimizing package size.
+- Monitor and optimize startup time.
+
+### Q83: How do you manage stateful workflows in a stateless serverless environment?
+**Answer:**
+- Store state in external systems (DB, Redis, S3).
+- Pass state between invocations via event payloads or context objects.
+- Use orchestrators (e.g., AWS Step Functions, Durable Functions) for complex flows.
+
+### Q84: Can you give a real example where a lack of monitoring caused a major issue?
+**Answer:**
+- Example: A background job failed silently due to missing error logging, causing data loss for several hours before detection. Solution: added error alerts and dashboard monitoring.
+
+### Q85: What’s the hardest bug you’ve fixed in this stack, and how did you approach it?
+**Answer:**
+- Example: Debugged a memory leak in async DB connections by using `tracemalloc` and reviewing connection pool usage. Fixed by ensuring all connections were properly closed and adding connection pool limits.
+
 ### Q60: How do you manage secrets and prevent API abuse in production?
 **Answer:**
 - **Secrets Management:** Use environment variables and secret managers (e.g., HashiCorp Vault, AWS Secrets Manager, Azure Key Vault). Never hard-code secrets in code or config files. Rotate secrets regularly and restrict access by least privilege.
