@@ -543,6 +543,109 @@ Use requirements.txt/poetry for Python dependencies, automate updates with CI/CD
 **Answer:**
 Maintain clear README, API docs (OpenAPI), architecture diagrams, and inline code comments. Provide onboarding guides and example workflows.
 
----
+### Q51: How would you implement distributed task processing for long-running agent tasks?
+**Answer:**
+Use a task queue like Celery with Redis or RabbitMQ as the broker. Offload long-running or resource-intensive tasks (e.g., document ingestion, batch embedding) to background workers, allowing FastAPI to remain responsive.
 
-*End of Interview Questions & Answers*
+**Example (Celery with FastAPI):**
+```python
+from celery import Celery
+
+celery_app = Celery('tasks', broker='redis://localhost:6379/0')
+
+@celery_app.task
+def embed_document(doc_id):
+	# Embed and store document
+	...
+
+# In FastAPI endpoint
+embed_document.delay(doc_id)
+```
+
+**Diagram:**
+```
+Client -> FastAPI -> [Task Queue] -> Celery Worker -> DB/VectorDB
+```
+
+### Q52: How would you implement audit logging for sensitive operations?
+**Answer:**
+Log all sensitive actions (e.g., data access, admin changes) with user, timestamp, and action details. Store logs in PostgreSQL or a centralized logging system (e.g., ELK stack) for compliance and traceability.
+
+**Example:**
+```python
+def log_action(user_id, action, details):
+	db.execute(
+		"INSERT INTO audit_log (user_id, action, details, ts) VALUES (%s, %s, %s, NOW())",
+		(user_id, action, details)
+	)
+```
+
+**Diagram:**
+```
+User Action -> FastAPI -> [Audit Log Table]
+```
+
+### Q53: How would you implement blue/green deployment for zero-downtime upgrades?
+**Answer:**
+Deploy new versions (green) alongside the current (blue), switch traffic gradually using a load balancer, and roll back if issues are detected. This ensures zero downtime and safe rollouts.
+
+**Diagram (Mermaid):**
+```mermaid
+graph LR
+	LB[Load Balancer] --> Blue[Blue Deployment]
+	LB --> Green[Green Deployment]
+	User --> LB
+```
+
+### Q54: How would you implement multi-modal retrieval (text, image, code) in your agent?
+**Answer:**
+Use separate embedding models for each modality (e.g., CLIP for images, CodeBERT for code, LLM for text). Store all embeddings in a multi-index VectorDB and query the relevant index based on input type.
+
+**Example:**
+```python
+from sentence_transformers import SentenceTransformer
+clip_model = SentenceTransformer('clip-ViT-B-32')
+code_model = SentenceTransformer('microsoft/codebert-base')
+text_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+def embed(input, type):
+	if type == 'image':
+		return clip_model.encode(input)
+	elif type == 'code':
+		return code_model.encode(input)
+	else:
+		return text_model.encode(input)
+```
+
+**Diagram:**
+```
+Input (text/image/code) -> [Embedder] -> [Multi-Index VectorDB] -> Retrieval
+```
+
+### Q55: How would you implement real-time analytics and monitoring for your agent?
+**Answer:**
+Instrument your code with metrics (e.g., request count, latency, error rate) using Prometheus client libraries. Expose a /metrics endpoint in FastAPI and visualize with Grafana.
+
+**Example:**
+```python
+from prometheus_client import Counter, Histogram, start_http_server
+
+REQUEST_COUNT = Counter('request_count', 'Total requests')
+LATENCY = Histogram('request_latency_seconds', 'Request latency')
+
+@app.middleware('http')
+async def metrics_middleware(request, call_next):
+	REQUEST_COUNT.inc()
+	with LATENCY.time():
+		response = await call_next(request)
+	return response
+
+# Start Prometheus metrics server
+start_http_server(8001)
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	FastAPI-->|/metrics|Prometheus-->|Dashboard|Grafana
+```
