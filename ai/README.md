@@ -649,3 +649,249 @@ start_http_server(8001)
 graph TD
 	FastAPI-->|/metrics|Prometheus-->|Dashboard|Grafana
 ```
+
+---
+
+## 10. Specialized & Advanced Topics
+
+### Q56: What is the BERT algorithm and how can you use it in your agent?
+**Answer:**
+BERT (Bidirectional Encoder Representations from Transformers) is a transformer-based model for natural language understanding. It is pre-trained on large corpora and can be fine-tuned for tasks like classification, question answering, and semantic search.
+
+**Example (using HuggingFace Transformers):**
+```python
+from transformers import BertTokenizer, BertModel
+import torch
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertModel.from_pretrained('bert-base-uncased')
+inputs = tokenizer("Hello, how are you?", return_tensors="pt")
+outputs = model(**inputs)
+embedding = outputs.last_hidden_state.mean(dim=1)  # Sentence embedding
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	Input[Text Input] --> Tokenizer
+	Tokenizer --> BERT[BERT Model]
+	BERT --> Embedding[Vector Embedding]
+```
+
+### Q57: How do you evaluate the performance of your AI agent?
+**Answer:**
+Evaluation depends on the task. For retrieval, use metrics like precision, recall, F1, and MRR. For generation, use BLEU, ROUGE, or human evaluation. For classification, use accuracy, confusion matrix, etc.
+
+**Example (retrieval evaluation):**
+```python
+from sklearn.metrics import precision_score, recall_score
+
+y_true = [1, 0, 1, 1]
+y_pred = [1, 0, 0, 1]
+precision = precision_score(y_true, y_pred)
+recall = recall_score(y_true, y_pred)
+print(f"Precision: {precision}, Recall: {recall}")
+```
+
+**Diagram:**
+```
+Query -> Agent -> Retrieved Results
+		 |                |
+	 Ground Truth      Compare
+		 |                |
+	 Compute Metrics (Precision, Recall, etc.)
+```
+
+### Q58: What is Model Context Protocol (MCP) and how is it used?
+**Answer:**
+Model Context Protocol (MCP) is a standard for structuring and exchanging context between AI models and systems. It enables interoperability, traceability, and modularity in complex AI workflows.
+
+**Example (MCP context structure):**
+```json
+{
+  "user": "user123",
+  "session": "abc-xyz",
+  "history": [
+	{"role": "user", "content": "Hi"},
+	{"role": "agent", "content": "Hello! How can I help?"}
+  ],
+  "metadata": {"source": "web", "lang": "en"}
+}
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	UserInput --> MCP[Model Context Protocol]
+	MCP --> Agent
+	Agent --> MCP
+	MCP --> Response
+```
+
+### Q59: How do you process and work with audio files in your agent?
+**Answer:**
+To process audio, use speech-to-text (STT) to transcribe audio to text, then pass the text to the agent. For output, use text-to-speech (TTS) to convert agent responses to audio. Libraries like `speech_recognition` and `gTTS` or cloud APIs (Google, Azure) are commonly used.
+
+**Example (audio transcription and response):**
+```python
+import speech_recognition as sr
+from gtts import gTTS
+
+# Speech to text
+r = sr.Recognizer()
+with sr.AudioFile('audio.wav') as source:
+	audio = r.record(source)
+	text = r.recognize_google(audio)
+
+# Pass text to agent and get response
+response = agent.arun(text)
+
+# Text to speech
+tts = gTTS(response)
+tts.save('response.mp3')
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	AudioFile --> STT[Speech-to-Text]
+	STT --> Agent
+	Agent --> TTS[Text-to-Speech]
+	TTS --> AudioResponse
+```
+
+---
+
+## 11. Further Improvements & Best Practices
+
+### Q60: How do you manage secrets and prevent API abuse in production?
+**Answer:**
+- **Secrets Management:** Use environment variables and secret managers (e.g., HashiCorp Vault, AWS Secrets Manager, Azure Key Vault). Never hard-code secrets in code or config files. Rotate secrets regularly and restrict access by least privilege.
+- **API Abuse Prevention:** Implement rate limiting (e.g., with Redis), input validation (Pydantic, schema checks), and monitoring for unusual patterns. Use API gateways or WAFs for additional protection.
+- **Supply Chain Security:** Use dependency scanning tools (e.g., Dependabot, Snyk) and pin dependencies in requirements files. Regularly update and audit dependencies.
+
+**Example (secrets):**
+```python
+import os
+db_password = os.environ['DB_PASSWORD']
+```
+
+**Example (rate limiting with Redis):**
+```python
+def is_rate_limited(user_id):
+	key = f"rate:{user_id}"
+	count = redis.incr(key)
+	if count == 1:
+		redis.expire(key, 60)  # 60 seconds window
+	return count > 100  # limit: 100 req/min
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	App --> SecretsManager[Secrets Manager]
+	App --> Redis[Redis Rate Limiter]
+	App --> SCA[Dependency Scanner]
+```
+
+### Q61: How would you debug a memory leak or performance bottleneck in your agent?
+**Answer:**
+1. **Monitor resource usage:** Use tools like `htop`, `psutil`, or cloud dashboards to spot abnormal memory/CPU usage.
+2. **Add logging and tracing:** Use Python logging, OpenTelemetry, or Jaeger for distributed tracing.
+3. **Profile the code:** Use profilers (e.g., `py-spy`, `cProfile`, `memory_profiler`) to find slow or leaky functions.
+4. **Reproduce and isolate:** Create minimal test cases to reproduce the issue. Use unit/integration tests.
+5. **Fix and validate:** Patch the code, redeploy, and monitor to confirm resolution.
+
+**Example (profiling):**
+```python
+import cProfile
+pr = cProfile.Profile()
+pr.enable()
+# ... run agent code ...
+pr.disable()
+pr.print_stats(sort='cumtime')
+```
+
+**Diagram:**
+```
+Request -> [Logging/Tracing] -> [Profiler/Monitor] -> Developer
+```
+
+### Q62: What are some cost optimization strategies for your AI agent system?
+**Answer:**
+- Use spot/preemptible instances for non-critical workloads.
+- Autoscale compute and database resources based on demand.
+- Use serverless functions for bursty or infrequent tasks.
+- Shard or partition large vector DBs to reduce memory/compute costs.
+- Cache aggressively (Redis) to reduce expensive LLM or DB calls.
+- Monitor usage and set budgets/alerts.
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	App --> Autoscaler
+	App --> SpotInstances
+	App --> Serverless
+	App --> Cache
+```
+
+### Q63: How would you deploy parts of your stack serverlessly?
+**Answer:**
+Use serverless platforms (AWS Lambda, Azure Functions, Google Cloud Functions) for stateless, event-driven tasks (e.g., webhook handlers, background jobs, lightweight APIs). Store state in managed DBs or object storage. Use API Gateway for routing.
+
+**Example (AWS Lambda handler):**
+```python
+def lambda_handler(event, context):
+	user_input = event['body']
+	response = agent.arun(user_input)
+	return {"statusCode": 200, "body": response}
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	Client --> APIGW[API Gateway] --> Lambda[AWS Lambda] --> DB[(DB/VectorDB)]
+```
+
+### Q64: What are responsible AI practices for your agent?
+**Answer:**
+- Audit for bias in training data and outputs.
+- Provide explanations for agent decisions (e.g., show retrieved context, reasoning steps).
+- Allow users to report issues or opt out of data collection.
+- Log and monitor for harmful or biased outputs.
+- Regularly review and update models and data.
+
+**Example (explanation):**
+```python
+def explain_response(query, context, answer):
+	return {
+		"query": query,
+		"context": context,
+		"answer": answer,
+		"reasoning": "Answer generated based on retrieved context and LLM output."
+	}
+```
+
+**Diagram (Mermaid):**
+```mermaid
+graph TD
+	UserQuery --> Agent
+	Agent --> Explanation[Explanation/Trace]
+	Explanation --> User
+```
+
+### Q65: What are common pitfalls or lessons learned from building AI agent systems?
+**Answer:**
+- Not monitoring or logging enough (hard to debug issues).
+- Hard-coding secrets or credentials in code.
+- Not handling rate limiting or abuse, leading to outages.
+- Failing to validate or sanitize user input (security risk).
+- Not versioning APIs or models, causing breaking changes.
+- Underestimating cost of vector DBs or LLM calls.
+- Not planning for scaling or failover.
+- Ignoring responsible AI (bias, explainability, user feedback).
+
+**Diagram:**
+```
+Pitfalls: [No Monitoring] [Hard-coded Secrets] [No Rate Limiting] [No Input Validation] [No Versioning] [High Cost] [No Scaling] [No Responsible AI]
+```
