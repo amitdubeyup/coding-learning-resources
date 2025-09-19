@@ -1,6 +1,22 @@
+
 # Top Python Interview Questions (with Answers & Examples)
 
-## Basics
+## Table of Contents
+1. [Python Basics](#python-basics)
+2. [OOP, Advanced Functions, and Error Handling](#oop-advanced-functions-and-error-handling)
+3. [File Handling, Iterators, Comprehensions, Built-ins, Modules](#file-handling-iterators-comprehensions-built-ins-modules)
+4. [Modules, Packages, Standard Library, OOP Advanced, Functional Programming](#modules-packages-standard-library-oop-advanced-functional-programming)
+5. [Advanced Topics: Threading, Multiprocessing, Async, Testing, Data Science, Web, Best Practices](#advanced-topics-threading-multiprocessing-async-testing-data-science-web-best-practices)
+6. [More Advanced Python Interview Questions](#more-advanced-python-interview-questions)
+7. [Networking](#networking)
+8. [Database](#database)
+9. [Security](#security)
+10. [Design Patterns](#design-patterns)
+11. [Interview Coding Problems](#interview-coding-problems)
+12. [Python Internals](#python-internals)
+
+
+## Python Basics
 
 1. **What is Python?**
    - Python is a high-level, interpreted, general-purpose programming language known for its readability and simplicity.
@@ -189,14 +205,7 @@
 		  pass
 	  ```
 
-29. **What is multiple inheritance?**
-	- A class inheriting from more than one parent class.
-	- Example:
-	  ```python
-	  class A: pass
-	  class B: pass
-	  class C(A, B): pass
-	  ```
+// ...existing code...
 
 30. **What is method overriding?**
 	- Redefining a method in a subclass.
@@ -210,7 +219,7 @@
 			  print('Child')
 	  ```
 
-## OOP, Advanced Functions, and Error Handling
+## OOP, Advanced Functions and Error Handling
 
 31. **What is encapsulation?**
 	- Wrapping data and methods into a single unit (class). Restricts direct access to some variables.
@@ -629,8 +638,7 @@
 100. **What is object-oriented programming (OOP)?**
 	- A programming paradigm based on objects and classes.
 
-101. **What is multiple inheritance?**
-	- A class inheriting from more than one parent class.
+// ...existing code...
 
 102. **What is method overloading?**
 	- Defining multiple methods with the same name but different arguments (not directly supported in Python, can use default arguments or *args).
@@ -740,7 +748,7 @@
 			self._x = value
 	  ```
 
-# Advanced Topics: Threading, Multiprocessing, Async, Testing, Data Science, Web, Best Practices
+## Advanced Topics: Threading, Multiprocessing, Async, Testing, Data Science, Web, Best Practices
 
 121. **What is multithreading in Python?**
 	- Running multiple threads (smaller units of a process) concurrently.
@@ -912,7 +920,7 @@
 	- Handle exceptions properly
 	- Document your code
 
-# More Advanced Python Interview Questions
+## More Advanced Python Interview Questions
 
 151. **What is the difference between `@dataclass` and a regular class?**
 	- `@dataclass` automatically generates special methods like `__init__`, `__repr__`, and `__eq__`.
@@ -1023,7 +1031,7 @@
 	  print(f'Hello, {name}')
 	  ```
 
-### Networking
+## Networking
 1. **How do you create a TCP client and server in Python?**
    - Use the `socket` module.
    - Example (TCP server):
@@ -1059,7 +1067,7 @@
 	 print(soup.title.text)
 	 ```
 
-### Database
+## Database
 4. **How do you connect to a SQLite database in Python?**
    - Use the `sqlite3` module.
    - Example:
@@ -1086,7 +1094,7 @@
 	 Base.metadata.create_all(engine)
 	 ```
 
-### Security
+## Security
 6. **How do you hash a password in Python?**
    - Use the `hashlib` or `bcrypt` library.
    - Example:
@@ -1114,7 +1122,7 @@
    - Use virtual environments and keep dependencies updated.
    - Avoid using `eval()` on untrusted input.
 
-### Design Patterns
+## Design Patterns
 9. **What is the Singleton pattern?**
    - Ensures a class has only one instance.
    - Example:
@@ -1156,7 +1164,7 @@
 			  print('Received:', msg)
 	  ```
 
-### Interview Coding Problems
+## Interview Coding Problems
 12. **How do you reverse a linked list in Python?**
 	- Example:
 	  ```python
@@ -1188,7 +1196,7 @@
 		  return list(dupes)
 	  ```
 
-### Python Internals
+## Python Internals
 14. **How does Python manage memory?**
 	- Python uses reference counting and a cyclic garbage collector to manage memory.
 
