@@ -1,3 +1,194 @@
+## Python 3.10+ Features
+
+**References:**
+- [What's New in Python 3.10](https://docs.python.org/3/whatsnew/3.10.html)
+- [What's New in Python 3.11](https://docs.python.org/3/whatsnew/3.11.html)
+- [What's New in Python 3.12](https://docs.python.org/3/whatsnew/3.12.html)
+
+### Pattern Matching (match/case)
+```python
+def http_status(status):
+	match status:
+		case 400:
+			return "Bad request"
+		case 404:
+			return "Not found"
+		case 418:
+			return "I'm a teapot"
+		case _:
+			return "Something's wrong"
+```
+
+### New Typing Features
+- `TypeAlias`, `TypeGuard`, `ParamSpec`, `Concatenate`, and more.
+- Example:
+  ```python
+  from typing import TypeAlias
+  Vector: TypeAlias = list[float]
+  ```
+
+### Parenthesized Context Managers
+```python
+with (
+	open('file1.txt') as f1,
+	open('file2.txt') as f2
+):
+	data1 = f1.read()
+	data2 = f2.read()
+```
+
+### Precise Error Locations in Tracebacks
+- Tracebacks now point to the exact expression where the error occurred.
+
+### Other Additions
+- `str.removeprefix()` and `str.removesuffix()`
+- Performance improvements and new standard library modules.
+## Security Best Practices and Common Vulnerabilities
+
+**References:**
+- [OWASP Python Security](https://owasp.org/www-project-python-security/)
+- [Python Security Best Practices](https://cheatsheetseries.owasp.org/cheatsheets/Python_Security_Cheat_Sheet.html)
+
+### Common Vulnerabilities
+
+1. **Code Injection**
+	- Avoid using `eval()` or `exec()` on untrusted input.
+	- Use safe parsing and validation.
+
+2. **Insecure Deserialization**
+	- Avoid `pickle` on untrusted data. Use `json` for safe serialization.
+
+3. **SQL Injection**
+	- Always use parameterized queries with DB-API or ORM.
+	- Example (sqlite3):
+	  ```python
+	  c.execute("SELECT * FROM users WHERE name=?", (username,))
+	  ```
+
+4. **Hardcoded Secrets**
+	- Store secrets in environment variables or secret managers, not in code.
+
+5. **Insecure Dependencies**
+	- Keep dependencies updated. Use tools like `pip-audit` or `safety` to check for vulnerabilities.
+
+### Secure Coding Practices
+- Validate and sanitize all user input.
+- Use HTTPS for network communication.
+- Apply the principle of least privilege.
+- Log security-relevant events.
+## Performance Optimization in Python
+
+**References:**
+- [Profiling and Timing Code](https://docs.python.org/3/library/profile.html)
+- [Cython Documentation](https://cython.readthedocs.io/en/latest/)
+- [Speeding up Python](https://realpython.com/speed-up-python/)
+
+### Profiling and Optimization
+
+1. **Profiling Code**
+	- Use `cProfile` or `profile` modules to find bottlenecks.
+	- Example:
+	  ```python
+	  import cProfile
+	  cProfile.run('main()')
+	  ```
+
+2. **Timing Code**
+	- Use `timeit` for micro-benchmarks.
+	- Example:
+	  ```python
+	  import timeit
+	  print(timeit.timeit('sum(range(1000))', number=1000))
+	  ```
+
+3. **Optimizing Algorithms**
+	- Use efficient data structures (sets, dicts, heaps).
+	- Avoid unnecessary loops and computations.
+
+4. **Cython**
+	- Compile Python code to C for speed.
+	- Example:
+	  ```python
+	  # example.pyx
+	  def f(int x):
+			return x * x
+	  ```
+	- Build with: `cythonize -i example.pyx`
+
+5. **Numba**
+	- Use the `@jit` decorator to speed up numerical code.
+	- Example:
+	  ```python
+	  from numba import jit
+	  @jit
+	  def fast_square(x):
+			return x * x
+	  ```
+## Deploying Python Applications
+
+**References:**
+- [Docker Official Docs](https://docs.docker.com/)
+- [AWS Lambda Python](https://docs.aws.amazon.com/lambda/latest/dg/lambda-python.html)
+- [Heroku Python Deployment](https://devcenter.heroku.com/categories/python-support)
+
+### Common Deployment Approaches
+
+1. **Docker**
+	- Containerize your app for consistent deployment.
+	- Example Dockerfile:
+	  ```dockerfile
+	  FROM python:3.11-slim
+	  WORKDIR /app
+	  COPY . .
+	  RUN pip install -r requirements.txt
+	  CMD ["python", "main.py"]
+	  ```
+
+2. **Cloud Platforms**
+	- Deploy to AWS Lambda, Google Cloud Functions, Azure Functions, or Heroku.
+	- Example: Deploying a FastAPI app to AWS Lambda with [Mangum](https://mangum.io/).
+
+3. **Serverless**
+	- Use frameworks like Zappa or Serverless Framework to deploy Python apps as serverless functions.
+
+4. **Best Practices**
+	- Use environment variables for configuration.
+	- Keep dependencies up to date.
+	- Automate deployment with CI/CD tools (GitHub Actions, GitLab CI, etc.).
+## Modern Python Packaging
+
+**References:**
+- [Packaging Python Projects](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
+- [PEP 517 – pyproject.toml build system](https://peps.python.org/pep-0517/)
+- [Poetry Documentation](https://python-poetry.org/docs/)
+
+### Key Concepts
+
+1. **pyproject.toml**
+	- The modern, standardized configuration file for Python projects.
+	- Used by build tools (setuptools, poetry, flit, etc.) to specify dependencies and build system.
+	- Example:
+	  ```toml
+	  [build-system]
+	  requires = ["setuptools>=42", "wheel"]
+	  build-backend = "setuptools.build_meta"
+	  ```
+
+2. **Poetry**
+	- A tool for dependency management and packaging.
+	- Handles virtual environments, publishing, and versioning.
+	- Example commands:
+	  - `poetry init` (create project)
+	  - `poetry add requests` (add dependency)
+	  - `poetry build` (build wheel/sdist)
+
+3. **Wheels**
+	- The modern binary package format for Python.
+	- Built with `python -m build` or `poetry build`.
+	- Install with `pip install mypackage.whl`.
+
+4. **Publishing to PyPI**
+	- Use `twine upload dist/*` to publish built packages.
 ## Data Science and Machine Learning in Python
 
 **References:**
@@ -948,15 +1139,74 @@ asyncio.run(main())
 130. **What is unit testing?**
 	- Testing individual units of code (functions, classes) for correctness.
 
+
 131. **How do you write tests in Python?**
-	- Using `unittest` or `pytest` frameworks.
-		 - Example:
-			 ```python
-			 import unittest
-			 class TestAdd(unittest.TestCase):
-					 def test_add(self):
-							 self.assertEqual(2 + 2, 4)
-			 ```
+   - Using `unittest` or `pytest` frameworks.
+   - Example:
+	 ```python
+	 import unittest
+	 class TestAdd(unittest.TestCase):
+		 def test_add(self):
+			 self.assertEqual(2 + 2, 4)
+	 ```
+
+## Advanced Testing with pytest
+
+**References:**
+- [pytest Documentation](https://docs.pytest.org/en/stable/)
+- [pytest Fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html)
+- [pytest Parametrize](https://docs.pytest.org/en/stable/how-to/parametrize.html)
+
+### Common pytest Features
+
+1. **Fixtures**
+   ```python
+   import pytest
+
+   @pytest.fixture
+   def sample_data():
+	   return [1, 2, 3]
+
+   def test_sum(sample_data):
+	   assert sum(sample_data) == 6
+   ```
+
+2. **Parameterization**
+   ```python
+   import pytest
+
+   @pytest.mark.parametrize("a,b,result", [
+	   (1, 2, 3),
+	   (2, 3, 5),
+   ])
+   def test_add(a, b, result):
+	   assert a + b == result
+   ```
+
+3. **Mocking**
+   ```python
+   from unittest.mock import patch
+
+   def get_data():
+	   # Imagine this fetches from a database
+	   return 42
+
+   def test_get_data():
+	   with patch("__main__.get_data", return_value=99):
+		   assert get_data() == 99
+   ```
+
+4. **Test Discovery and Running**
+   - Run all tests: `pytest`
+   - Run specific file: `pytest test_file.py`
+   - Run tests matching a pattern: `pytest -k 'pattern'`
+
+5. **Best Practices**
+   - Use descriptive test names.
+   - Keep tests isolated and independent.
+   - Use fixtures for setup/teardown.
+   - Prefer `assert` statements for clarity.
+   - Use parameterization to avoid code duplication.
 
 132. **What is mocking?**
 	- Replacing parts of your system under test with mock objects.
@@ -1048,13 +1298,16 @@ asyncio.run(main())
 			 ```
 
 150. **What are some best practices for Python programming?**
-	- Follow PEP 8
-	- Write readable and maintainable code
-	- Use virtual environments
-	- Write tests
-	- Use list comprehensions and generators
-	- Handle exceptions properly
-	- Document your code
+	- Follow PEP 8 and use a linter (e.g., flake8, pylint).
+	- Write readable and maintainable code (clear naming, modular functions).
+	- Use virtual environments for dependency isolation.
+	- Write tests and use test automation (pytest, tox).
+	- Use list comprehensions and generators for concise code.
+	- Handle exceptions properly and catch specific exceptions.
+	- Document your code with docstrings and generate docs with Sphinx.
+	- Organize code into packages/modules with clear structure.
+	- Use type hints for clarity and tooling support.
+	- Perform code reviews and use version control (git).
 
 
 ## Advanced Type Hints & Typing Best Practices
