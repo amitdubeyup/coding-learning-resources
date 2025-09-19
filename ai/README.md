@@ -23,24 +23,25 @@ This document contains a comprehensive set of interview questions and detailed a
 **Answer:**
 The AI agent system is designed as a modular, scalable backend service. It uses FastAPI as the web framework to expose REST and WebSocket endpoints. LangChain/LangGraph orchestrates the agent's reasoning and workflow, integrating with a VectorDB (backed by FAISS) for semantic search and retrieval. PostgreSQL is used for structured data storage, while Redis provides fast caching and pub/sub for real-time features. WebSocket enables real-time, bidirectional communication with clients. The system is containerized for deployment and can scale horizontally.
 
+
 **Architecture Diagram (Mermaid):**
 
 ```mermaid
 graph TD
-	Client((Client))
-	subgraph Backend
-		FastAPI[FastAPI API Layer]
-		LangChain[LangChain / LangGraph]
-		VectorDB[VectorDB (FAISS)]
-		Postgres[(PostgreSQL)]
-		Redis[(Redis)]
-	end
-	Client-->|HTTP/WebSocket|FastAPI
-	FastAPI-->|Invoke|LangChain
-	LangChain-->|Semantic Search|VectorDB
-	LangChain-->|Structured Data|Postgres
-	LangChain-->|Cache/PubSub|Redis
-	FastAPI-->|WebSocket|Client
+    Client((Client))
+    subgraph Backend
+        FastAPI[FastAPI API Layer]
+        LangChain[LangChain / LangGraph]
+        VectorDB[VectorDB/FAISS]
+        Postgres[PostgreSQL]
+        Redis[Redis]
+    end
+    Client-->|HTTP/WebSocket|FastAPI
+    FastAPI-->|Invoke|LangChain
+    LangChain-->|Semantic Search|VectorDB
+    LangChain-->|Structured Data|Postgres
+    LangChain-->|Cache/PubSub|Redis
+    FastAPI-->|WebSocket|Client
 ```
 
 This diagram shows how the client interacts with FastAPI, which orchestrates requests to LangChain/LangGraph, and how the agent interacts with VectorDB, PostgreSQL, and Redis.
