@@ -1,3 +1,55 @@
+## Data Science and Machine Learning in Python
+
+**References:**
+ - [NumPy Documentation](https://numpy.org/doc/)
+ - [pandas Documentation](https://pandas.pydata.org/docs/)
+ - [scikit-learn Documentation](https://scikit-learn.org/stable/documentation.html)
+ - [matplotlib Documentation](https://matplotlib.org/stable/contents.html)
+ - [seaborn Documentation](https://seaborn.pydata.org/)
+
+### Common Data Science/ML Questions
+
+1. **How do you create and manipulate arrays with NumPy?**
+	```python
+	import numpy as np
+	arr = np.array([1, 2, 3])
+	arr2 = arr * 2
+	print(arr2)
+	```
+
+2. **How do you work with tabular data using pandas?**
+	```python
+	import pandas as pd
+	df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+	print(df['a'].mean())
+	```
+
+3. **How do you train a machine learning model with scikit-learn?**
+	```python
+	from sklearn.linear_model import LinearRegression
+	import numpy as np
+	X = np.array([[1], [2], [3]])
+	y = np.array([2, 4, 6])
+	model = LinearRegression().fit(X, y)
+	print(model.predict([[4]]))
+	```
+
+4. **How do you visualize data with matplotlib and seaborn?**
+	```python
+	import matplotlib.pyplot as plt
+	import seaborn as sns
+	data = [1, 2, 2, 3, 3, 3]
+	sns.histplot(data)
+	plt.show()
+	```
+
+5. **How do you handle missing data in pandas?**
+	```python
+	import pandas as pd
+	df = pd.DataFrame({'a': [1, None, 3]})
+	df_filled = df.fillna(0)
+	print(df_filled)
+	```
 
 # Top Python Interview Questions (with Answers & Examples)
 
@@ -765,7 +817,67 @@
 					 self._x = value
 		  ```
 
-## Advanced Topics: Threading, Multiprocessing, Async, Testing, Data Science, Web, Best Practices
+
+## Advanced Asyncio Patterns
+
+**References:**
+- [asyncio — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
+- [Async Features in Python](https://realpython.com/async-io-python/)
+
+### Async Generators
+```python
+import asyncio
+
+async def ticker(delay: float, to: int):
+	for i in range(to):
+		yield i
+		await asyncio.sleep(delay)
+
+async def main():
+	async for i in ticker(0.5, 3):
+		print(i)
+
+asyncio.run(main())
+```
+
+### Async Context Managers
+```python
+import asyncio
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def connection():
+	print("Connecting...")
+	await asyncio.sleep(1)
+	yield "conn"
+	print("Disconnecting...")
+
+async def main():
+	async with connection() as conn:
+		print("Using", conn)
+
+asyncio.run(main())
+```
+
+### Real-World Async Patterns
+- **Concurrent HTTP requests:**
+  ```python
+  import asyncio
+  import httpx
+
+  async def fetch(url):
+	  async with httpx.AsyncClient() as client:
+		  r = await client.get(url)
+		  return r.text
+
+  async def main():
+	  urls = ["https://example.com", "https://python.org"]
+	  results = await asyncio.gather(*(fetch(url) for url in urls))
+	  print(results)
+
+  asyncio.run(main())
+  ```
+- **Async database access:** Use libraries like `databases` or `aiomysql` for async DB operations.
 
 **References:**
 - [threading — Thread-based parallelism](https://docs.python.org/3/library/threading.html)
@@ -944,7 +1056,96 @@
 	- Handle exceptions properly
 	- Document your code
 
-## More Advanced Python Interview Questions
+
+## Advanced Type Hints & Typing Best Practices
+
+**References:**
+- [Typing — Type Hints](https://docs.python.org/3/library/typing.html)
+- [PEP 484 – Type Hints](https://peps.python.org/pep-0484/)
+- [Typing Cheat Sheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html)
+
+### Examples and Best Practices
+
+1. **Optional and Union**
+   ```python
+   from typing import Optional, Union
+
+   def get_length(s: Optional[str]) -> int:
+	   if s is None:
+		   return 0
+	   return len(s)
+
+   def stringify(val: Union[int, float, str]) -> str:
+	   return str(val)
+   ```
+
+2. **TypedDict**
+   ```python
+   from typing import TypedDict
+
+   class UserDict(TypedDict):
+	   id: int
+	   name: str
+
+   def print_user(user: UserDict) -> None:
+	   print(user['id'], user['name'])
+   ```
+
+3. **Protocol (Structural Subtyping)**
+   ```python
+   from typing import Protocol
+
+   class Greeter(Protocol):
+	   def greet(self) -> str: ...
+
+   class Person:
+	   def greet(self) -> str:
+		   return "Hello!"
+
+   def say_hello(g: Greeter) -> None:
+	   print(g.greet())
+
+   say_hello(Person())
+   ```
+
+4. **Type Aliases and Literal**
+   ```python
+   from typing import List, Literal
+
+   Vector = List[float]  # Type alias
+
+   def scale(v: Vector, factor: float) -> Vector:
+	   return [x * factor for x in v]
+
+   def move(direction: Literal['up', 'down']) -> None:
+	   print(f"Moving {direction}")
+   ```
+
+5. **Generic Types**
+   ```python
+   from typing import TypeVar, Generic, List
+
+   T = TypeVar('T')
+
+   class Stack(Generic[T]):
+	   def __init__(self) -> None:
+		   self.items: List[T] = []
+	   def push(self, item: T) -> None:
+		   self.items.append(item)
+	   def pop(self) -> T:
+		   return self.items.pop()
+   ```
+
+6. **Callable and Annotated**
+   ```python
+   from typing import Callable, Annotated
+
+   def run_callback(cb: Callable[[int, int], int]) -> int:
+	   return cb(2, 3)
+
+   def add(a: Annotated[int, 'must be positive'], b: int) -> int:
+	   return a + b
+   ```
 
 **References:**
 - [dataclasses — Data Classes](https://docs.python.org/3/library/dataclasses.html)
