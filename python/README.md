@@ -1210,7 +1210,198 @@
 				 print('Received:', msg)
 		 ```
 
+
 ## Interview Coding Problems
+
+### Additional Coding Problems
+
+1. **How do you implement binary search in Python?**
+   ```python
+   def binary_search(arr, target):
+	   left, right = 0, len(arr) - 1
+	   while left <= right:
+		   mid = (left + right) // 2
+		   if arr[mid] == target:
+			   return mid
+		   elif arr[mid] < target:
+			   left = mid + 1
+		   else:
+			   right = mid - 1
+	   return -1
+   ```
+
+2. **How do you sort a list using bubble sort?**
+   ```python
+   def bubble_sort(arr):
+	   n = len(arr)
+	   for i in range(n):
+		   for j in range(0, n-i-1):
+			   if arr[j] > arr[j+1]:
+				   arr[j], arr[j+1] = arr[j+1], arr[j]
+   ```
+
+3. **How do you traverse a binary tree in-order?**
+   ```python
+   class Node:
+	   def __init__(self, val):
+		   self.val = val
+		   self.left = None
+		   self.right = None
+
+   def inorder(root):
+	   if root:
+		   inorder(root.left)
+		   print(root.val)
+		   inorder(root.right)
+   ```
+
+4. **How do you detect a cycle in a linked list?**
+   ```python
+   def has_cycle(head):
+	   slow = fast = head
+	   while fast and fast.next:
+		   slow = slow.next
+		   fast = fast.next.next
+		   if slow == fast:
+			   return True
+	   return False
+   ```
+
+5. **How do you implement BFS (Breadth-First Search) for a graph?**
+   ```python
+   from collections import deque
+
+   def bfs(graph, start):
+	   visited = set()
+	   queue = deque([start])
+	   while queue:
+		   node = queue.popleft()
+		   if node not in visited:
+			   print(node)
+			   visited.add(node)
+			   queue.extend(graph[node] - visited)
+   ```
+
+6. **How do you implement DFS (Depth-First Search) for a graph?**
+   ```python
+   def dfs(graph, start, visited=None):
+	   if visited is None:
+		   visited = set()
+	   print(start)
+	   visited.add(start)
+	   for neighbor in graph[start] - visited:
+		   dfs(graph, neighbor, visited)
+   ```
+
+7. **How do you find the maximum subarray sum (Kadane's Algorithm)?**
+   ```python
+   def max_subarray_sum(nums):
+	   max_sum = curr_sum = nums[0]
+	   for num in nums[1:]:
+		   curr_sum = max(num, curr_sum + num)
+		   max_sum = max(max_sum, curr_sum)
+	   return max_sum
+   ```
+
+8. **How do you check if a string is a palindrome?**
+   ```python
+   def is_palindrome(s):
+	   return s == s[::-1]
+   ```
+
+9. **How do you merge two sorted lists?**
+   ```python
+   def merge_sorted_lists(l1, l2):
+	   result = []
+	   i = j = 0
+	   while i < len(l1) and j < len(l2):
+		   if l1[i] < l2[j]:
+			   result.append(l1[i])
+			   i += 1
+		   else:
+			   result.append(l2[j])
+			   j += 1
+	   result.extend(l1[i:])
+	   result.extend(l2[j:])
+	   return result
+   ```
+
+10. **How do you find the first non-repeating character in a string?**
+	```python
+	from collections import Counter
+	def first_non_repeating(s):
+		count = Counter(s)
+		for c in s:
+			if count[c] == 1:
+				return c
+		return None
+	```
+
+### Real-World Scenario & System Design Questions
+
+1. **How would you design a REST API in Python?**
+	- Use frameworks like Flask or FastAPI.
+	- Example (with FastAPI):
+	  ```python
+	  from fastapi import FastAPI
+	  app = FastAPI()
+
+	  @app.get("/items/{item_id}")
+	  def read_item(item_id: int, q: str = None):
+			return {"item_id": item_id, "q": q}
+	  ```
+	- Key points: routing, request/response models, authentication, error handling, documentation (OpenAPI/Swagger).
+
+2. **How would you build a background task processor in Python?**
+	- Use Celery with a message broker (e.g., Redis, RabbitMQ).
+	- Example:
+	  ```python
+	  from celery import Celery
+	  app = Celery('tasks', broker='redis://localhost:6379/0')
+
+	  @app.task
+	  def add(x, y):
+			return x + y
+	  ```
+
+3. **How would you design a scalable web scraper?**
+	- Use requests/BeautifulSoup for parsing, concurrent.futures or asyncio for parallelism, and respect robots.txt.
+	- Example:
+	  ```python
+	  import requests
+	  from bs4 import BeautifulSoup
+	  from concurrent.futures import ThreadPoolExecutor
+
+	  def fetch(url):
+			r = requests.get(url)
+			soup = BeautifulSoup(r.text, 'html.parser')
+			return soup.title.text
+
+	  urls = ["https://example.com", "https://python.org"]
+	  with ThreadPoolExecutor() as executor:
+			titles = list(executor.map(fetch, urls))
+	  ```
+
+4. **How would you design a configuration management system in Python?**
+	- Use config files (YAML, JSON, INI), environment variables, and libraries like pydantic or dynaconf for validation and management.
+
+5. **How would you implement user authentication in a web app?**
+	- Use Flask-Login, Django auth, or FastAPI security utilities. Store hashed passwords, use JWT or session cookies, and protect endpoints.
+
+6. **How would you design a data pipeline in Python?**
+	- Use pandas for ETL, schedule jobs with Airflow or cron, and store data in databases or files. Handle errors and logging robustly.
+
+7. **How would you handle large file uploads/downloads in Python?**
+	- Use streaming (chunked) reads/writes, async frameworks, and cloud storage SDKs (e.g., boto3 for AWS S3).
+
+8. **How would you implement caching in a Python application?**
+	- Use functools.lru_cache for in-memory, or Redis/Memcached for distributed caching.
+
+9. **How would you design a CLI tool in Python?**
+	- Use argparse, click, or typer for argument parsing and command structure.
+
+10. **How would you monitor and log a production Python application?**
+	 - Use the logging module, integrate with monitoring tools (Prometheus, Sentry), and set up alerts for errors and performance issues.
 
 **References:**
 - [LeetCode Python Problems](https://leetcode.com/problemset/all/?difficulty=All&status=All&tags=python)
@@ -1246,7 +1437,128 @@
 			 return list(dupes)
 		 ```
 
+## Common Python Pitfalls and How to Avoid Them
+
+**References:**
+- [Common Python Mistakes](https://realpython.com/python-common-mistakes/)
+
+1. **Mutable default arguments**
+	- Problem: Using a mutable object (like a list or dict) as a default argument can lead to unexpected behavior.
+	- Example:
+	  ```python
+	  def append_to(element, to=[]):
+			to.append(element)
+			return to
+	  print(append_to(1))  # [1]
+	  print(append_to(2))  # [1, 2] (unexpected)
+	  ```
+	- Solution: Use `None` as the default and create a new object inside the function.
+	  ```python
+	  def append_to(element, to=None):
+			if to is None:
+				 to = []
+			to.append(element)
+			return to
+	  ```
+
+2. **Modifying a list while iterating**
+	- Problem: Removing or adding items to a list while iterating can skip elements or cause errors.
+	- Solution: Iterate over a copy or use list comprehensions.
+
+3. **Using `is` for equality**
+	- Problem: `is` checks identity, not value equality. Use `==` for value comparison.
+
+4. **Importing local modules with the same name as standard library modules**
+	- Problem: Can shadow standard modules and cause import errors.
+
+5. **Integer division in Python 2 vs 3**
+	- Problem: In Python 2, `/` does integer division for ints. In Python 3, `/` is always float division.
+
+6. **Unpacking errors**
+	- Problem: Not matching the number of variables to unpacked values.
+
+7. **Late binding in closures**
+	- Problem: Lambdas in loops capture the same variable.
+	- Solution: Use default arguments in lambdas.
+	  ```python
+	  funcs = [lambda x=i: x for i in range(3)]
+	  print([f() for f in funcs])  # [0, 1, 2]
+	  ```
+
+8. **Catching broad exceptions**
+	- Problem: Using `except:` or `except Exception:` can hide bugs.
+	- Solution: Catch specific exceptions.
+
+9. **Not closing files or resources**
+	- Solution: Use `with` statements for file/resource management.
+
+10. **Off-by-one errors in loops and slices**
+	 - Problem: Misunderstanding Python's zero-based indexing and exclusive end in slices.
+
+---
+
 ## Python Internals
+
+---
+
+## Popular Python Community Tools
+
+**References:**
+- [Awesome Python Linters](https://github.com/python-linters/awesome-python-linters)
+- [Python Code Quality Tools](https://realpython.com/python-code-quality/)
+
+1. **black**: The uncompromising Python code formatter. Automatically formats code to PEP 8 standards.
+	- [Black documentation](https://black.readthedocs.io/en/stable/)
+
+2. **flake8**: A tool for style guide enforcement and linting.
+	- [Flake8 documentation](https://flake8.pycqa.org/en/latest/)
+
+3. **mypy**: Static type checker for Python.
+	- [Mypy documentation](http://mypy-lang.org/)
+
+4. **isort**: Automatically sorts Python imports.
+	- [isort documentation](https://pycqa.github.io/isort/)
+
+5. **pytest**: Powerful testing framework for Python.
+	- [pytest documentation](https://docs.pytest.org/en/stable/)
+
+6. **pylint**: Another popular linter for code analysis.
+	- [Pylint documentation](https://pylint.readthedocs.io/en/stable/)
+
+7. **coverage.py**: Measures code coverage of Python programs.
+	- [Coverage.py documentation](https://coverage.readthedocs.io/en/stable/)
+
+8. **tox**: Automates testing in multiple Python environments.
+	- [tox documentation](https://tox.readthedocs.io/en/latest/)
+
+### Deeper Dive: GIL, Memory Model, and Interpreter Differences
+
+1. **What is the Global Interpreter Lock (GIL)?**
+	- The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes at once in CPython. This means only one thread executes Python code at a time, even on multi-core systems.
+	- The GIL simplifies memory management but can be a bottleneck for CPU-bound multi-threaded programs.
+	- [GIL details](https://realpython.com/python-gil/)
+
+2. **How does Python manage memory?**
+	- Python uses reference counting and a cyclic garbage collector to manage memory.
+	- Objects are deallocated when their reference count drops to zero. The garbage collector handles reference cycles.
+	- [Memory management in Python](https://docs.python.org/3/c-api/memory.html)
+
+3. **What are the differences between CPython, PyPy, and Jython?**
+	- **CPython**: The standard Python implementation, written in C. Most widely used.
+	- **PyPy**: An alternative implementation with a Just-In-Time (JIT) compiler for speed.
+	- **Jython**: Python implemented in Java, runs on the JVM.
+	- **IronPython**: Python for .NET/Mono.
+	- [CPython vs PyPy vs Jython](https://realpython.com/cpython-vs-pypy/)
+
+4. **How does garbage collection work in Python?**
+	- Python uses reference counting and a cyclic garbage collector (gc module) to reclaim memory.
+	- The `gc` module can be used to interact with the garbage collector.
+	- [Garbage collection](https://docs.python.org/3/library/gc.html)
+
+5. **How does Python execute code?**
+	- Python source code is compiled to bytecode (.pyc files), which is executed by the Python virtual machine (PVM).
+	- The process: Source code → Bytecode → Interpreter (PVM) → Machine code (via C, JIT, or JVM depending on implementation).
+	- [How Python runs programs](https://realpython.com/python-virtual-machine/)
 
 **References:**
 - [Python Memory Management](https://docs.python.org/3/c-api/memory.html)
