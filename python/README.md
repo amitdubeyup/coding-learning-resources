@@ -18,6 +18,10 @@
 
 ## Python Basics
 
+**References:**
+- [Official Python Tutorial](https://docs.python.org/3/tutorial/index.html)
+- [PEP 8 – Style Guide for Python Code](https://peps.python.org/pep-0008/)
+
 1. **What is Python?**
    - Python is a high-level, interpreted, general-purpose programming language known for its readability and simplicity.
 
@@ -221,6 +225,10 @@
 
 ## OOP, Advanced Functions and Error Handling
 
+**References:**
+- [Python Classes and Objects](https://docs.python.org/3/tutorial/classes.html)
+- [Errors and Exceptions](https://docs.python.org/3/tutorial/errors.html)
+
 31. **What is encapsulation?**
 	- Wrapping data and methods into a single unit (class). Restricts direct access to some variables.
 		 - Example:
@@ -412,6 +420,11 @@
 
 ## File Handling, Iterators, Comprehensions, Built-ins, Modules
 
+**References:**
+- [File and Directory Access](https://docs.python.org/3/library/os.html)
+- [Built-in Functions](https://docs.python.org/3/library/functions.html)
+- [Itertools — Iterator Functions](https://docs.python.org/3/library/itertools.html)
+
 61. **How do you read and write files in Python?**
 	- Using `open()` function.
 	   - Example:
@@ -577,6 +590,10 @@
 			 ```
       
 ## Modules, Packages, Standard Library, OOP Advanced, Functional Programming
+
+**References:**
+- [Python Standard Library](https://docs.python.org/3/library/index.html)
+- [Modules and Packages](https://docs.python.org/3/tutorial/modules.html)
 
 91. **What is the difference between module and package?**
     - Module: single file; Package: directory with `__init__.py` and modules.
@@ -750,6 +767,13 @@
 
 ## Advanced Topics: Threading, Multiprocessing, Async, Testing, Data Science, Web, Best Practices
 
+**References:**
+- [threading — Thread-based parallelism](https://docs.python.org/3/library/threading.html)
+- [multiprocessing — Process-based parallelism](https://docs.python.org/3/library/multiprocessing.html)
+- [asyncio — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
+- [unittest — Unit testing framework](https://docs.python.org/3/library/unittest.html)
+- [logging — Logging facility](https://docs.python.org/3/library/logging.html)
+
 121. **What is multithreading in Python?**
 	- Running multiple threads (smaller units of a process) concurrently.
 		 - Example:
@@ -922,6 +946,11 @@
 
 ## More Advanced Python Interview Questions
 
+**References:**
+- [dataclasses — Data Classes](https://docs.python.org/3/library/dataclasses.html)
+- [typing — Type Hints](https://docs.python.org/3/library/typing.html)
+- [functools — Higher-order functions and operations](https://docs.python.org/3/library/functools.html)
+
 151. **What is the difference between `@dataclass` and a regular class?**
 	- `@dataclass` automatically generates special methods like `__init__`, `__repr__`, and `__eq__`.
 
@@ -1032,6 +1061,10 @@
 	  ```
 
 ## Networking
+
+**References:**
+- [socket — Low-level networking interface](https://docs.python.org/3/library/socket.html)
+- [requests: HTTP for Humans](https://docs.python-requests.org/en/latest/)
 1. **How do you create a TCP client and server in Python?**
    - Use the `socket` module.
 	 - Example (TCP server):
@@ -1068,6 +1101,10 @@
 		 ```
 
 ## Database
+
+**References:**
+- [sqlite3 — DB-API 2.0 interface for SQLite databases](https://docs.python.org/3/library/sqlite3.html)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/en/20/)
 4. **How do you connect to a SQLite database in Python?**
    - Use the `sqlite3` module.
 	 - Example:
@@ -1095,6 +1132,10 @@
 		 ```
 
 ## Security
+
+**References:**
+- [hashlib — Secure hashes and message digests](https://docs.python.org/3/library/hashlib.html)
+- [cryptography Documentation](https://cryptography.io/en/latest/)
 6. **How do you hash a password in Python?**
    - Use the `hashlib` or `bcrypt` library.
 	 - Example:
@@ -1123,6 +1164,9 @@
    - Avoid using `eval()` on untrusted input.
 
 ## Design Patterns
+
+**References:**
+- [Python Patterns - Implementing Design Patterns in Python](https://python-3-patterns-idioms-test.readthedocs.io/en/latest/)
 9. **What is the Singleton pattern?**
    - Ensures a class has only one instance.
    - Example:
@@ -1167,6 +1211,10 @@
 		 ```
 
 ## Interview Coding Problems
+
+**References:**
+- [LeetCode Python Problems](https://leetcode.com/problemset/all/?difficulty=All&status=All&tags=python)
+- [GeeksforGeeks Python Programming Examples](https://www.geeksforgeeks.org/python-programming-examples/)
 12. **How do you reverse a linked list in Python?**
 	   - Example:
 		 ```python
@@ -1199,6 +1247,10 @@
 		 ```
 
 ## Python Internals
+
+**References:**
+- [Python Memory Management](https://docs.python.org/3/c-api/memory.html)
+- [CPython Internals Book](https://realpython.com/cpython-source-code-guide/)
 14. **How does Python manage memory?**
 	- Python uses reference counting and a cyclic garbage collector to manage memory.
 
