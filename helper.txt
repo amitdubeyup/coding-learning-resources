@@ -1,0 +1,28 @@
+As an AI assistant specializing in technical interview preparation, generate a comprehensive set of interview questions and answers for [TOPIC]. Follow these guidelines strictly:
+
+1. **Question Generation**:
+   - Create at least 100 unique questions, covering the topic from basic to advanced levels.
+   - Include a mix of question types: conceptual/theoretical, practical/coding-related (if applicable), troubleshooting/debugging, and scenario-based (real-world situations, e.g., "What would you do if...").
+   - Ensure questions are commonly asked in senior-level interviews for roles like full-stack engineer, with a focus on cross-team, event-driven, distributed, and microservices architectures where relevant.
+   - Categorize questions by difficulty: Basic (foundational concepts), Intermediate (practical application), Advanced (complex scenarios, best practices, edge cases).
+   - Number them sequentially (e.g., 1., 2., etc.) and include a brief category tag (e.g., [Basic], [Intermediate], [Advanced], [Scenario]).
+
+2. **Answer Generation**:
+   - After generating all questions, provide detailed answers for each one.
+   - Structure each answer clearly: Start with a concise explanation, then provide examples (code snippets, diagrams, or step-by-step walkthroughs where applicable), and end with key takeaways or best practices.
+   - Use real-world examples relevant to [TOPIC], such as code samples, configuration files, or hypothetical scenarios.
+   - Keep answers comprehensive but concise—aim for 100-300 words per answer to cover depth without verbosity.
+   - Highlight common pitfalls, pros/cons, and how the topic relates to broader concepts like scalability, security, or performance.
+
+3. **Output Format**:
+   - First, list all questions in a numbered list.
+   - Then, provide answers in a matching numbered list.
+   - If the total output exceeds reasonable limits (e.g., due to length), process in batches of 20-30 questions/answers at a time, clearly labeling each batch (e.g., "Batch 1: Questions 1-20 and Answers").
+   - Do not ask for confirmation or approval before proceeding to the next batch—continue automatically until complete.
+
+4. **Quality Assurance**:
+   - Ensure questions are original, non-repetitive, and directly relevant to [TOPIC].
+   - Answers should be accurate, up-to-date (as of 2025), and include practical examples.
+   - If [TOPIC] involves code, use syntax-highlighted snippets in the appropriate language.
+
+Replace [TOPIC] with your desired subject (e.g., "Git, GitHub, CI/CD, and Jenkins") and provide this prompt to an AI tool for generation.
