@@ -1,13 +1,8 @@
 📌 Most Common DSA Interview Topics & Questions
 🔹 1. Complexity Basics
 
-Time & Space Complexity (✅ you covered)
+1. Time & Space Complexity
 
-Big-O, Big-Ω, Big-Θ differences
-
-Best, Worst, Average cases
-
-### Time & Space Complexity
 Time complexity measures how the runtime of an algorithm grows with the input size. Space complexity measures the extra space used by the algorithm.
 
 - **Time Complexity**: Often expressed in Big-O notation, it describes the upper bound of the algorithm's growth rate.
@@ -25,37 +20,24 @@ function sumArray(arr) {
 }
 ```
 
-### Big-O, Big-Ω, Big-Θ Differences
+2. Big-O, Big-Ω, Big-Θ differences
+
 - **Big-O (O)**: Upper bound, worst-case scenario. "The algorithm takes at most this much time."
 - **Big-Ω (Ω)**: Lower bound, best-case scenario. "The algorithm takes at least this much time."
 - **Big-Θ (Θ)**: Tight bound, both upper and lower. "The algorithm takes exactly this much time asymptotically."
 
 Example: Linear search is O(n), Ω(1), Θ(n) in worst, best, average cases respectively.
 
-### Best, Worst, Average Cases
+3. Best, Worst, Average cases
+
 - **Best Case**: Minimum time for any input (e.g., finding element at first position in linear search: Ω(1)).
 - **Worst Case**: Maximum time for any input (e.g., element at last position: O(n)).
 - **Average Case**: Expected time over all inputs, often Θ(n) for linear search assuming uniform distribution.
 
 🔹 2. Arrays & Strings
 
-Find second largest number (✅ you asked)
+1. Find second largest number
 
-Kadane’s Algorithm (Maximum Subarray Sum)
-
-Two Sum problem (Hashing approach)
-
-Sliding Window problems (longest substring without repeat, max sum subarray of size k)
-
-Rotate array (by k steps)
-
-Trapping Rainwater problem
-
-Palindrome (✅ you covered)
-
-Anagrams, Substring/ Subsequence problems
-
-### Find Second Largest Number
 To find the second largest number in an array, iterate through the array, keeping track of the largest and second largest elements.
 
 ```javascript
@@ -74,7 +56,8 @@ function secondLargest(arr) {
 }
 ```
 
-### Kadane’s Algorithm (Maximum Subarray Sum)
+2. Kadane’s Algorithm (Maximum Subarray Sum)
+
 Kadane's algorithm finds the maximum sum of a contiguous subarray in O(n) time.
 
 ```javascript
@@ -89,7 +72,8 @@ function maxSubarraySum(arr) {
 }
 ```
 
-### Two Sum Problem (Hashing Approach)
+3. Two Sum problem (Hashing approach)
+
 Given an array and a target sum, find two indices that add up to the target using a hash map for O(n) time.
 
 ```javascript
@@ -106,10 +90,10 @@ function twoSum(arr, target) {
 }
 ```
 
-### Sliding Window Problems
-Sliding window technique maintains a window of elements and slides it to find optimal subarrays.
+4. Longest substring without repeat
 
-#### Longest Substring Without Repeating Characters
+Sliding window technique to find the longest substring without repeating characters.
+
 ```javascript
 function lengthOfLongestSubstring(s) {
     const set = new Set();
@@ -126,7 +110,10 @@ function lengthOfLongestSubstring(s) {
 }
 ```
 
-#### Maximum Sum Subarray of Size K
+5. Max sum subarray of size k
+
+Find the maximum sum of any contiguous subarray of size k.
+
 ```javascript
 function maxSumSubarray(arr, k) {
     let maxSum = 0, windowSum = 0;
@@ -142,7 +129,8 @@ function maxSumSubarray(arr, k) {
 }
 ```
 
-### Rotate Array by K Steps
+6. Rotate array (by k steps)
+
 Rotate an array to the right by k steps.
 
 ```javascript
@@ -163,7 +151,8 @@ function reverse(arr, start, end) {
 }
 ```
 
-### Trapping Rainwater Problem
+7. Trapping Rainwater problem
+
 Calculate trapped rainwater using two pointers or dynamic programming.
 
 ```javascript
@@ -191,7 +180,8 @@ function trap(height) {
 }
 ```
 
-### Palindrome (✅ you covered)
+8. Palindrome
+
 A palindrome reads the same forwards and backwards. Check by comparing characters from both ends.
 
 ```javascript
@@ -207,8 +197,10 @@ function isPalindrome(s) {
 }
 ```
 
-### Anagrams, Substring/Subsequence Problems
-#### Anagrams: Check if two strings are anagrams by sorting or using frequency count.
+9. Anagrams
+
+Check if two strings are anagrams by sorting or using frequency count.
+
 ```javascript
 function isAnagram(s, t) {
     if (s.length !== t.length) return false;
@@ -224,9 +216,13 @@ function isAnagram(s, t) {
 }
 ```
 
-#### Substring: Contiguous sequence. Subsequence: Not necessarily contiguous.
+10. Substring/Subsequence
+
+Substring: Contiguous sequence. Subsequence: Not necessarily contiguous.
+
+Check if s is subsequence of t.
+
 ```javascript
-// Check if s is subsequence of t
 function isSubsequence(s, t) {
     let i = 0, j = 0;
     while (i < s.length && j < t.length) {
@@ -239,18 +235,10 @@ function isSubsequence(s, t) {
 
 🔹 3. Searching & Sorting
 
-Binary Search + Variations (first/last occurrence, rotated array search, square root, peak element)
+1. Standard Binary Search
 
-Merge Sort & Quick Sort (time & space complexity ✅ covered partially)
-
-Heap Sort
-
-Counting Sort / Radix Sort basics
-
-### Binary Search + Variations
 Binary search finds an element in a sorted array in O(log n) time.
 
-#### Standard Binary Search
 ```javascript
 function binarySearch(arr, target) {
     let left = 0, right = arr.length - 1;
@@ -264,7 +252,10 @@ function binarySearch(arr, target) {
 }
 ```
 
-#### First Occurrence
+2. First Occurrence
+
+Find the first occurrence of a target in a sorted array.
+
 ```javascript
 function firstOccurrence(arr, target) {
     let left = 0, right = arr.length - 1, result = -1;
@@ -280,7 +271,10 @@ function firstOccurrence(arr, target) {
 }
 ```
 
-#### Rotated Array Search
+3. Rotated Array Search
+
+Search in a rotated sorted array.
+
 ```javascript
 function searchRotated(arr, target) {
     let left = 0, right = arr.length - 1;
@@ -299,7 +293,10 @@ function searchRotated(arr, target) {
 }
 ```
 
-#### Square Root (Integer)
+4. Square Root (Integer)
+
+Compute the integer square root of a number.
+
 ```javascript
 function mySqrt(x) {
     if (x < 2) return x;
@@ -317,7 +314,10 @@ function mySqrt(x) {
 }
 ```
 
-#### Peak Element
+5. Peak Element
+
+Find a peak element in an array.
+
 ```javascript
 function findPeakElement(nums) {
     let left = 0, right = nums.length - 1;
@@ -330,8 +330,10 @@ function findPeakElement(nums) {
 }
 ```
 
-### Merge Sort & Quick Sort
-#### Merge Sort: Divide and conquer, stable, O(n log n) time, O(n) space.
+6. Merge Sort
+
+Divide and conquer, stable, O(n log n) time, O(n) space.
+
 ```javascript
 function mergeSort(arr) {
     if (arr.length <= 1) return arr;
@@ -352,7 +354,10 @@ function merge(left, right) {
 }
 ```
 
-#### Quick Sort: Divide and conquer, in-place, O(n log n) average, O(n^2) worst.
+7. Quick Sort
+
+Divide and conquer, in-place, O(n log n) average, O(n^2) worst.
+
 ```javascript
 function quickSort(arr, low = 0, high = arr.length - 1) {
     if (low < high) {
@@ -377,7 +382,8 @@ function partition(arr, low, high) {
 }
 ```
 
-### Heap Sort
+8. Heap Sort
+
 Heap sort uses a heap data structure, O(n log n) time, in-place.
 
 ```javascript
@@ -406,8 +412,10 @@ function heapify(arr, n, i) {
 }
 ```
 
-### Counting Sort / Radix Sort Basics
-#### Counting Sort: For small range integers, O(n + k) time.
+9. Counting Sort
+
+For small range integers, O(n + k) time.
+
 ```javascript
 function countingSort(arr) {
     const max = Math.max(...arr);
@@ -424,7 +432,10 @@ function countingSort(arr) {
 }
 ```
 
-#### Radix Sort: Sorts by digits, O(n * d) time where d is digit count.
+10. Radix Sort
+
+Sorts by digits, O(n * d) time where d is digit count.
+
 ```javascript
 function radixSort(arr) {
     const max = Math.max(...arr);
@@ -452,18 +463,10 @@ function countingSortByDigit(arr, exp) {
 
 🔹 4. Recursion & Backtracking
 
-Factorial, Fibonacci (recursive vs DP)
+1. Factorial Recursive
 
-N-Queens problem
-
-Rat in a Maze / Backtracking pathfinding
-
-Generate all subsets/permutations
-
-### Factorial, Fibonacci (Recursive vs DP)
 Recursion solves problems by breaking into smaller subproblems.
 
-#### Factorial Recursive
 ```javascript
 function factorial(n) {
     if (n <= 1) return 1;
@@ -471,7 +474,10 @@ function factorial(n) {
 }
 ```
 
-#### Fibonacci Recursive (Inefficient, O(2^n))
+2. Fibonacci Recursive
+
+Inefficient, O(2^n).
+
 ```javascript
 function fib(n) {
     if (n <= 1) return n;
@@ -479,7 +485,10 @@ function fib(n) {
 }
 ```
 
-#### Fibonacci with DP (Memoization, O(n))
+3. Fibonacci with DP
+
+Memoization, O(n).
+
 ```javascript
 function fibDP(n, memo = {}) {
     if (n in memo) return memo[n];
@@ -489,7 +498,8 @@ function fibDP(n, memo = {}) {
 }
 ```
 
-### N-Queens Problem
+4. N-Queens problem
+
 Place N queens on an N x N chessboard so no two attack each other. Use backtracking.
 
 ```javascript
@@ -524,7 +534,8 @@ function isSafe(board, row, col) {
 }
 ```
 
-### Rat in a Maze / Backtracking Pathfinding
+5. Rat in a Maze / Backtracking pathfinding
+
 Find a path from start to end in a maze using backtracking.
 
 ```javascript
@@ -559,8 +570,10 @@ function isSafeMaze(maze, x, y) {
 }
 ```
 
-### Generate All Subsets/Permutations
-#### Subsets (Power Set)
+6. Generate all subsets
+
+Power Set.
+
 ```javascript
 function subsets(nums) {
     const result = [];
@@ -578,7 +591,8 @@ function backtrackSubsets(nums, start, current, result) {
 }
 ```
 
-#### Permutations
+7. Generate all permutations
+
 ```javascript
 function permute(nums) {
     const result = [];
@@ -603,18 +617,8 @@ function backtrackPermute(nums, current, result) {
 
 🔹 5. Linked List
 
-Reverse a Linked List (iterative & recursive)
+1. Reverse a Linked List (iterative)
 
-Detect cycle (Floyd’s Cycle Detection)
-
-Merge two sorted linked lists
-
-Remove nth node from end
-
-Find middle node
-
-### Reverse a Linked List
-#### Iterative
 ```javascript
 function reverseList(head) {
     let prev = null;
@@ -629,7 +633,8 @@ function reverseList(head) {
 }
 ```
 
-#### Recursive
+2. Reverse a Linked List (recursive)
+
 ```javascript
 function reverseListRecursive(head) {
     if (!head || !head.next) return head;
@@ -640,7 +645,8 @@ function reverseListRecursive(head) {
 }
 ```
 
-### Detect Cycle (Floyd’s Cycle Detection)
+3. Detect cycle (Floyd’s Cycle Detection)
+
 Use slow and fast pointers to detect cycle in O(n) time, O(1) space.
 
 ```javascript
@@ -656,7 +662,8 @@ function hasCycle(head) {
 }
 ```
 
-### Merge Two Sorted Linked Lists
+4. Merge two sorted linked lists
+
 Merge two sorted lists into one sorted list.
 
 ```javascript
@@ -678,7 +685,8 @@ function mergeTwoLists(l1, l2) {
 }
 ```
 
-### Remove Nth Node from End
+5. Remove nth node from end
+
 Use two pointers, fast moves n steps ahead.
 
 ```javascript
@@ -698,7 +706,8 @@ function removeNthFromEnd(head, n) {
 }
 ```
 
-### Find Middle Node
+6. Find middle node
+
 Use slow and fast pointers.
 
 ```javascript
@@ -715,18 +724,8 @@ function middleNode(head) {
 
 🔹 6. Stack & Queue
 
-Implement Stack/Queue using arrays/linked list
+1. Implement Stack using arrays
 
-Min Stack (stack with O(1) min operation)
-
-Balanced Parentheses (using stack)
-
-LRU Cache (using LinkedHashMap or DLL + HashMap)
-
-Queue using stacks / Stack using queues
-
-### Implement Stack/Queue Using Arrays/Linked List
-#### Stack with Array
 ```javascript
 class Stack {
     constructor() {
@@ -739,7 +738,8 @@ class Stack {
 }
 ```
 
-#### Queue with Array
+2. Implement Queue using arrays
+
 ```javascript
 class Queue {
     constructor() {
@@ -752,7 +752,8 @@ class Queue {
 }
 ```
 
-### Min Stack
+3. Min Stack
+
 Stack that supports push, pop, top, and getMin in O(1).
 
 ```javascript
@@ -777,7 +778,8 @@ class MinStack {
 }
 ```
 
-### Balanced Parentheses
+4. Balanced Parentheses
+
 Use stack to check if parentheses are balanced.
 
 ```javascript
@@ -796,7 +798,8 @@ function isValid(s) {
 }
 ```
 
-### LRU Cache
+5. LRU Cache
+
 Least Recently Used cache using Map (in JS, Map maintains insertion order).
 
 ```javascript
@@ -824,7 +827,8 @@ class LRUCache {
 }
 ```
 
-### Queue Using Stacks
+6. Queue using stacks
+
 Implement queue using two stacks.
 
 ```javascript
@@ -849,22 +853,8 @@ class QueueWithStacks {
 
 🔹 7. Trees
 
-Binary Tree traversals (✅ you asked BFS/DFS)
+1. Binary Tree traversals (BFS)
 
-Lowest Common Ancestor (LCA)
-
-Height / Diameter of tree
-
-Balanced Binary Tree check
-
-Serialize & Deserialize Binary Tree
-
-BST insert, delete, search (✅ BST you asked)
-
-Heap (min-heap / max-heap operations)
-
-### Binary Tree Traversals
-#### BFS (Level Order)
 ```javascript
 function levelOrder(root) {
     if (!root) return [];
@@ -885,7 +875,8 @@ function levelOrder(root) {
 }
 ```
 
-#### DFS: Inorder, Preorder, Postorder
+2. Binary Tree traversals (DFS Inorder)
+
 ```javascript
 function inorderTraversal(root) {
     const result = [];
@@ -898,7 +889,11 @@ function inorderTraversal(root) {
     dfs(root);
     return result;
 }
+```
 
+3. Binary Tree traversals (DFS Preorder)
+
+```javascript
 function preorderTraversal(root) {
     const result = [];
     function dfs(node) {
@@ -910,7 +905,11 @@ function preorderTraversal(root) {
     dfs(root);
     return result;
 }
+```
 
+4. Binary Tree traversals (DFS Postorder)
+
+```javascript
 function postorderTraversal(root) {
     const result = [];
     function dfs(node) {
@@ -924,7 +923,8 @@ function postorderTraversal(root) {
 }
 ```
 
-### Lowest Common Ancestor (LCA)
+5. Lowest Common Ancestor (LCA)
+
 Find LCA of two nodes in a binary tree.
 
 ```javascript
@@ -937,8 +937,8 @@ function lowestCommonAncestor(root, p, q) {
 }
 ```
 
-### Height / Diameter of Tree
-#### Height
+6. Height of tree
+
 ```javascript
 function height(root) {
     if (!root) return 0;
@@ -946,7 +946,8 @@ function height(root) {
 }
 ```
 
-#### Diameter
+7. Diameter of tree
+
 ```javascript
 function diameterOfBinaryTree(root) {
     let max = 0;
@@ -962,7 +963,8 @@ function diameterOfBinaryTree(root) {
 }
 ```
 
-### Balanced Binary Tree Check
+8. Balanced Binary Tree check
+
 Check if height difference between subtrees is <=1.
 
 ```javascript
@@ -978,8 +980,8 @@ function isBalanced(root) {
 }
 ```
 
-### Serialize & Deserialize Binary Tree
-#### Serialize (Preorder)
+9. Serialize Binary Tree
+
 ```javascript
 function serialize(root) {
     const result = [];
@@ -997,7 +999,8 @@ function serialize(root) {
 }
 ```
 
-#### Deserialize
+10. Deserialize Binary Tree
+
 ```javascript
 function deserialize(data) {
     const vals = data.split(',');
@@ -1017,8 +1020,8 @@ function deserialize(data) {
 }
 ```
 
-### BST Insert, Delete, Search
-#### Search
+11. BST search
+
 ```javascript
 function searchBST(root, val) {
     if (!root || root.val === val) return root;
@@ -1026,7 +1029,8 @@ function searchBST(root, val) {
 }
 ```
 
-#### Insert
+12. BST insert
+
 ```javascript
 function insertIntoBST(root, val) {
     if (!root) return new TreeNode(val);
@@ -1036,7 +1040,8 @@ function insertIntoBST(root, val) {
 }
 ```
 
-#### Delete
+13. BST delete
+
 ```javascript
 function deleteNode(root, key) {
     if (!root) return null;
@@ -1058,8 +1063,8 @@ function findMin(node) {
 }
 ```
 
-### Heap (Min-Heap / Max-Heap Operations)
-#### Min-Heap
+14. Heap (min-heap operations)
+
 ```javascript
 class MinHeap {
     constructor() {
@@ -1102,20 +1107,8 @@ class MinHeap {
 
 🔹 8. Graphs
 
-BFS & DFS (✅ covered)
+1. BFS
 
-Detect cycle in directed/undirected graph
-
-Topological Sort (DAG)
-
-Dijkstra’s Algorithm (shortest path)
-
-Minimum Spanning Tree (Prim’s/Kruskal’s)
-
-Graph representations: Adjacency List vs Matrix
-
-### BFS & DFS
-#### BFS
 ```javascript
 function bfs(graph, start) {
     const visited = new Set();
@@ -1136,7 +1129,8 @@ function bfs(graph, start) {
 }
 ```
 
-#### DFS
+2. DFS
+
 ```javascript
 function dfs(graph, start, visited = new Set(), result = []) {
     visited.add(start);
@@ -1150,7 +1144,8 @@ function dfs(graph, start, visited = new Set(), result = []) {
 }
 ```
 
-### Detect Cycle in Undirected Graph
+3. Detect cycle in undirected graph
+
 Use DFS or Union-Find.
 
 ```javascript
@@ -1177,7 +1172,8 @@ function dfsCycle(node, parent, visited, graph) {
 }
 ```
 
-### Detect Cycle in Directed Graph
+4. Detect cycle in directed graph
+
 Use DFS with recursion stack.
 
 ```javascript
@@ -1202,7 +1198,8 @@ function dfsCycleDirected(node, visited, recStack, graph) {
 }
 ```
 
-### Topological Sort (DAG)
+5. Topological Sort (DAG)
+
 Using Kahn's algorithm (BFS with indegrees).
 
 ```javascript
@@ -1224,7 +1221,8 @@ function topologicalSort(graph, indegrees) {
 }
 ```
 
-### Dijkstra’s Algorithm
+6. Dijkstra’s Algorithm
+
 Shortest path in weighted graph with non-negative weights.
 
 ```javascript
@@ -1268,8 +1266,8 @@ class PriorityQueue {
 }
 ```
 
-### Minimum Spanning Tree (Prim’s/Kruskal’s)
-#### Prim’s Algorithm
+7. Minimum Spanning Tree (Prim’s)
+
 ```javascript
 function prims(graph) {
     const n = Object.keys(graph).length;
@@ -1292,7 +1290,10 @@ function prims(graph) {
 }
 ```
 
-#### Kruskal’s Algorithm (requires Union-Find)
+8. Minimum Spanning Tree (Kruskal’s)
+
+Requires Union-Find.
+
 ```javascript
 function kruskals(edges, n) {
     edges.sort((a, b) => a[2] - b[2]);
@@ -1329,9 +1330,9 @@ class UnionFind {
 }
 ```
 
-### Graph Representations
-- **Adjacency List**: Array of lists, space O(V + E), good for sparse graphs.
-- **Adjacency Matrix**: 2D array, space O(V^2), good for dense graphs.
+9. Graph representations
+
+Adjacency List vs Matrix.
 
 ```javascript
 // Adjacency List
@@ -1353,19 +1354,8 @@ const graphMatrix = [
 
 🔹 9. Dynamic Programming (DP)
 
-Fibonacci with memoization (basic DP)
+1. Fibonacci with memoization
 
-Longest Common Subsequence / Substring
-
-Longest Increasing Subsequence
-
-Coin Change problem
-
-0/1 Knapsack
-
-Matrix DP problems (Unique Paths, Min Path Sum)
-
-### Fibonacci with Memoization
 ```javascript
 function fib(n, memo = {}) {
     if (n in memo) return memo[n];
@@ -1375,7 +1365,8 @@ function fib(n, memo = {}) {
 }
 ```
 
-### Longest Common Subsequence (LCS)
+2. Longest Common Subsequence
+
 Find length of LCS between two strings.
 
 ```javascript
@@ -1395,7 +1386,8 @@ function longestCommonSubsequence(text1, text2) {
 }
 ```
 
-### Longest Common Substring
+3. Longest Common Substring
+
 Contiguous substring.
 
 ```javascript
@@ -1415,7 +1407,8 @@ function longestCommonSubstring(s1, s2) {
 }
 ```
 
-### Longest Increasing Subsequence
+4. Longest Increasing Subsequence
+
 Length of longest increasing subsequence.
 
 ```javascript
@@ -1432,7 +1425,8 @@ function lengthOfLIS(nums) {
 }
 ```
 
-### Coin Change Problem
+5. Coin Change problem
+
 Minimum coins to make amount.
 
 ```javascript
@@ -1448,7 +1442,8 @@ function coinChange(coins, amount) {
 }
 ```
 
-### 0/1 Knapsack
+6. 0/1 Knapsack
+
 Max value with weight limit.
 
 ```javascript
@@ -1468,8 +1463,8 @@ function knapsack(weights, values, W) {
 }
 ```
 
-### Matrix DP Problems
-#### Unique Paths
+7. Unique Paths
+
 Number of ways to reach bottom-right in grid.
 
 ```javascript
@@ -1486,7 +1481,8 @@ function uniquePaths(m, n) {
 }
 ```
 
-#### Min Path Sum
+8. Min Path Sum
+
 Minimum path sum from top-left to bottom-right.
 
 ```javascript
@@ -1507,21 +1503,7 @@ function minPathSum(grid) {
 
 🔹 10. Other Must-Know
 
-Hashing (Map & Set complexities ✅ you asked)
-
-Bit Manipulation basics (check odd/even, count set bits, subset generation)
-
-Greedy Algorithms (Activity Selection, Huffman Coding)
-
-Union-Find / Disjoint Set (Kruskal’s, cycle detection)
-
-Trie (Prefix Tree, autocomplete problem)
-
-### Hashing (Map & Set Complexities)
-- **HashMap**: Average O(1) for insert, delete, search. Worst O(n).
-- **HashSet**: Similar, for unique elements.
-
-In JavaScript, Map and Set have similar complexities.
+1. Hashing (Map & Set complexities)
 
 ```javascript
 const map = new Map();
@@ -1535,15 +1517,16 @@ set.has('item'); // O(1) avg
 set.delete('item'); // O(1) avg
 ```
 
-### Bit Manipulation Basics
-#### Check Odd/Even
+2. Check Odd/Even
+
 ```javascript
 function isEven(n) {
     return (n & 1) === 0;
 }
 ```
 
-#### Count Set Bits
+3. Count Set Bits
+
 ```javascript
 function countSetBits(n) {
     let count = 0;
@@ -1555,7 +1538,8 @@ function countSetBits(n) {
 }
 ```
 
-#### Subset Generation using Bits
+4. Subset Generation using Bits
+
 ```javascript
 function subsets(nums) {
     const result = [];
@@ -1571,8 +1555,8 @@ function subsets(nums) {
 }
 ```
 
-### Greedy Algorithms
-#### Activity Selection
+5. Activity Selection
+
 Select maximum non-overlapping activities.
 
 ```javascript
@@ -1588,7 +1572,8 @@ function activitySelection(activities) {
 }
 ```
 
-#### Huffman Coding
+6. Huffman Coding
+
 Build Huffman tree for compression.
 
 ```javascript
@@ -1619,7 +1604,8 @@ function buildHuffmanTree(text) {
 }
 ```
 
-### Union-Find / Disjoint Set
+7. Union-Find / Disjoint Set
+
 For Kruskal’s and cycle detection.
 
 ```javascript
@@ -1646,8 +1632,7 @@ class UnionFind {
 }
 ```
 
-### Trie (Prefix Tree)
-For autocomplete and prefix searches.
+8. Trie (Prefix Tree, autocomplete problem)
 
 ```javascript
 class TrieNode {
