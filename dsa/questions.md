@@ -38,7 +38,10 @@ Example: Linear search is O(n), Ω(1), Θ(n) in worst, best, average cases respe
 
 1. Find second largest number
 
-To find the second largest number in an array, iterate through the array, keeping track of the largest and second largest elements.
+To find the second largest number in an array, iterate through the array once, keeping track of the largest and second largest elements. Handle cases where duplicates exist or array has less than 2 elements.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function secondLargest(arr) {
@@ -58,7 +61,10 @@ function secondLargest(arr) {
 
 2. Kadane’s Algorithm (Maximum Subarray Sum)
 
-Kadane's algorithm finds the maximum sum of a contiguous subarray in O(n) time.
+Kadane's algorithm finds the maximum sum of a contiguous subarray in linear time by iterating through the array and keeping track of the current sum, resetting when negative.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function maxSubarraySum(arr) {
@@ -74,7 +80,10 @@ function maxSubarraySum(arr) {
 
 3. Two Sum problem (Hashing approach)
 
-Given an array and a target sum, find two indices that add up to the target using a hash map for O(n) time.
+Use a hash map to store indices of elements. For each element, check if the complement (target - current) exists in the map.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
 
 ```javascript
 function twoSum(arr, target) {
@@ -92,7 +101,10 @@ function twoSum(arr, target) {
 
 4. Longest substring without repeat
 
-Sliding window technique to find the longest substring without repeating characters.
+Use a sliding window with a set to track unique characters. Expand window to the right, shrink from left when duplicate found.
+
+Time Complexity: O(n)  
+Space Complexity: O(min(n, m)) where m is charset size
 
 ```javascript
 function lengthOfLongestSubstring(s) {
@@ -112,7 +124,10 @@ function lengthOfLongestSubstring(s) {
 
 5. Max sum subarray of size k
 
-Find the maximum sum of any contiguous subarray of size k.
+Use sliding window to maintain a window of size k, compute sum, and track maximum.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function maxSumSubarray(arr, k) {
@@ -131,7 +146,10 @@ function maxSumSubarray(arr, k) {
 
 6. Rotate array (by k steps)
 
-Rotate an array to the right by k steps.
+Reverse the entire array, then reverse first k elements, then the rest.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function rotateArray(arr, k) {
@@ -153,7 +171,10 @@ function reverse(arr, start, end) {
 
 7. Trapping Rainwater problem
 
-Calculate trapped rainwater using two pointers or dynamic programming.
+Use two pointers to track max heights from left and right, calculate trapped water at each position.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function trap(height) {
@@ -182,7 +203,10 @@ function trap(height) {
 
 8. Palindrome
 
-A palindrome reads the same forwards and backwards. Check by comparing characters from both ends.
+Remove non-alphanumeric, convert to lowercase, check if string equals its reverse.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
 
 ```javascript
 function isPalindrome(s) {
@@ -199,7 +223,10 @@ function isPalindrome(s) {
 
 9. Anagrams
 
-Check if two strings are anagrams by sorting or using frequency count.
+Sort both strings or use frequency count to check if they have same characters.
+
+Time Complexity: O(n log n) for sorting, O(n) for frequency  
+Space Complexity: O(1) for frequency if fixed charset
 
 ```javascript
 function isAnagram(s, t) {
@@ -218,9 +245,10 @@ function isAnagram(s, t) {
 
 10. Substring/Subsequence
 
-Substring: Contiguous sequence. Subsequence: Not necessarily contiguous.
+Substring: Contiguous sequence. Subsequence: Not necessarily contiguous. Check if s is subsequence of t by two pointers.
 
-Check if s is subsequence of t.
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function isSubsequence(s, t) {
@@ -237,7 +265,10 @@ function isSubsequence(s, t) {
 
 1. Standard Binary Search
 
-Binary search finds an element in a sorted array in O(log n) time.
+Binary search finds an element in a sorted array by repeatedly dividing the search interval in half.
+
+Time Complexity: O(log n)  
+Space Complexity: O(1)
 
 ```javascript
 function binarySearch(arr, target) {
@@ -254,7 +285,10 @@ function binarySearch(arr, target) {
 
 2. First Occurrence
 
-Find the first occurrence of a target in a sorted array.
+Find the first occurrence of a target in a sorted array with duplicates.
+
+Time Complexity: O(log n)  
+Space Complexity: O(1)
 
 ```javascript
 function firstOccurrence(arr, target) {
@@ -273,7 +307,10 @@ function firstOccurrence(arr, target) {
 
 3. Rotated Array Search
 
-Search in a rotated sorted array.
+Search in a rotated sorted array where the array is sorted but rotated at some pivot.
+
+Time Complexity: O(log n)  
+Space Complexity: O(1)
 
 ```javascript
 function searchRotated(arr, target) {
@@ -295,7 +332,10 @@ function searchRotated(arr, target) {
 
 4. Square Root (Integer)
 
-Compute the integer square root of a number.
+Compute the integer square root of a number using binary search.
+
+Time Complexity: O(log n)  
+Space Complexity: O(1)
 
 ```javascript
 function mySqrt(x) {
@@ -316,7 +356,10 @@ function mySqrt(x) {
 
 5. Peak Element
 
-Find a peak element in an array.
+Find a peak element in an array where arr[i] >= arr[i-1] and arr[i] >= arr[i+1].
+
+Time Complexity: O(log n)  
+Space Complexity: O(1)
 
 ```javascript
 function findPeakElement(nums) {
@@ -333,6 +376,9 @@ function findPeakElement(nums) {
 6. Merge Sort
 
 Divide and conquer, stable, O(n log n) time, O(n) space.
+
+Time Complexity: O(n log n)  
+Space Complexity: O(n)
 
 ```javascript
 function mergeSort(arr) {
@@ -357,6 +403,9 @@ function merge(left, right) {
 7. Quick Sort
 
 Divide and conquer, in-place, O(n log n) average, O(n^2) worst.
+
+Time Complexity: O(n log n) average, O(n^2) worst  
+Space Complexity: O(log n) average
 
 ```javascript
 function quickSort(arr, low = 0, high = arr.length - 1) {
@@ -385,6 +434,9 @@ function partition(arr, low, high) {
 8. Heap Sort
 
 Heap sort uses a heap data structure, O(n log n) time, in-place.
+
+Time Complexity: O(n log n)  
+Space Complexity: O(1)
 
 ```javascript
 function heapSort(arr) {
@@ -416,6 +468,9 @@ function heapify(arr, n, i) {
 
 For small range integers, O(n + k) time.
 
+Time Complexity: O(n + k) where k is range  
+Space Complexity: O(n + k)
+
 ```javascript
 function countingSort(arr) {
     const max = Math.max(...arr);
@@ -435,6 +490,9 @@ function countingSort(arr) {
 10. Radix Sort
 
 Sorts by digits, O(n * d) time where d is digit count.
+
+Time Complexity: O(n * d) where d is number of digits  
+Space Complexity: O(n + k)
 
 ```javascript
 function radixSort(arr) {
@@ -467,6 +525,9 @@ function countingSortByDigit(arr, exp) {
 
 Recursion solves problems by breaking into smaller subproblems.
 
+Time Complexity: O(n)  
+Space Complexity: O(n) due to call stack
+
 ```javascript
 function factorial(n) {
     if (n <= 1) return 1;
@@ -478,6 +539,9 @@ function factorial(n) {
 
 Inefficient, O(2^n).
 
+Time Complexity: O(2^n)  
+Space Complexity: O(n)
+
 ```javascript
 function fib(n) {
     if (n <= 1) return n;
@@ -488,6 +552,9 @@ function fib(n) {
 3. Fibonacci with DP
 
 Memoization, O(n).
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
 
 ```javascript
 function fibDP(n, memo = {}) {
@@ -501,6 +568,9 @@ function fibDP(n, memo = {}) {
 4. N-Queens problem
 
 Place N queens on an N x N chessboard so no two attack each other. Use backtracking.
+
+Time Complexity: O(N!) in worst case  
+Space Complexity: O(N^2) for board
 
 ```javascript
 function solveNQueens(n) {
@@ -538,6 +608,9 @@ function isSafe(board, row, col) {
 
 Find a path from start to end in a maze using backtracking.
 
+Time Complexity: O(2^(N^2)) in worst case  
+Space Complexity: O(N^2)
+
 ```javascript
 function solveMaze(maze) {
     const n = maze.length;
@@ -573,6 +646,9 @@ function isSafeMaze(maze, x, y) {
 6. Generate all subsets
 
 Power Set.
+
+Time Complexity: O(2^n)  
+Space Complexity: O(2^n * n)
 
 ```javascript
 function subsets(nums) {
@@ -615,9 +691,17 @@ function backtrackPermute(nums, current, result) {
 }
 ```
 
+Time Complexity: O(n!)  
+Space Complexity: O(n!) for result, O(n) for recursion
+
 🔹 5. Linked List
 
 1. Reverse a Linked List (iterative)
+
+Iteratively reverse the list by changing next pointers.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function reverseList(head) {
@@ -635,6 +719,11 @@ function reverseList(head) {
 
 2. Reverse a Linked List (recursive)
 
+Recursively reverse by reversing the rest and adjusting pointers.
+
+Time Complexity: O(n)  
+Space Complexity: O(n) due to recursion stack
+
 ```javascript
 function reverseListRecursive(head) {
     if (!head || !head.next) return head;
@@ -648,6 +737,9 @@ function reverseListRecursive(head) {
 3. Detect cycle (Floyd’s Cycle Detection)
 
 Use slow and fast pointers to detect cycle in O(n) time, O(1) space.
+
+Time Complexity: O(n)  
+Space Complexity: O(1)
 
 ```javascript
 function hasCycle(head) {
@@ -665,6 +757,9 @@ function hasCycle(head) {
 4. Merge two sorted linked lists
 
 Merge two sorted lists into one sorted list.
+
+Time Complexity: O(n + m)  
+Space Complexity: O(1)
 
 ```javascript
 function mergeTwoLists(l1, l2) {
@@ -689,6 +784,9 @@ function mergeTwoLists(l1, l2) {
 
 Use two pointers, fast moves n steps ahead.
 
+Time Complexity: O(n)  
+Space Complexity: O(1)
+
 ```javascript
 function removeNthFromEnd(head, n) {
     const dummy = new ListNode(0, head);
@@ -710,6 +808,9 @@ function removeNthFromEnd(head, n) {
 
 Use slow and fast pointers.
 
+Time Complexity: O(n)  
+Space Complexity: O(1)
+
 ```javascript
 function middleNode(head) {
     let slow = head;
@@ -726,6 +827,11 @@ function middleNode(head) {
 
 1. Implement Stack using arrays
 
+LIFO data structure.
+
+Time Complexity: O(1) for push/pop/peek  
+Space Complexity: O(n)
+
 ```javascript
 class Stack {
     constructor() {
@@ -739,6 +845,11 @@ class Stack {
 ```
 
 2. Implement Queue using arrays
+
+FIFO data structure.
+
+Time Complexity: O(1) amortized for enqueue/dequeue  
+Space Complexity: O(n)
 
 ```javascript
 class Queue {
@@ -755,6 +866,9 @@ class Queue {
 3. Min Stack
 
 Stack that supports push, pop, top, and getMin in O(1).
+
+Time Complexity: O(1) for all operations  
+Space Complexity: O(n)
 
 ```javascript
 class MinStack {
@@ -782,6 +896,9 @@ class MinStack {
 
 Use stack to check if parentheses are balanced.
 
+Time Complexity: O(n)  
+Space Complexity: O(n)
+
 ```javascript
 function isValid(s) {
     const stack = [];
@@ -801,6 +918,9 @@ function isValid(s) {
 5. LRU Cache
 
 Least Recently Used cache using Map (in JS, Map maintains insertion order).
+
+Time Complexity: O(1) for get/put  
+Space Complexity: O(capacity)
 
 ```javascript
 class LRUCache {
@@ -831,6 +951,9 @@ class LRUCache {
 
 Implement queue using two stacks.
 
+Time Complexity: Amortized O(1) for enqueue/dequeue  
+Space Complexity: O(n)
+
 ```javascript
 class QueueWithStacks {
     constructor() {
@@ -855,6 +978,11 @@ class QueueWithStacks {
 
 1. Binary Tree traversals (BFS)
 
+Level order traversal using queue.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
+
 ```javascript
 function levelOrder(root) {
     if (!root) return [];
@@ -877,6 +1005,11 @@ function levelOrder(root) {
 
 2. Binary Tree traversals (DFS Inorder)
 
+Left, root, right.
+
+Time Complexity: O(n)  
+Space Complexity: O(h) where h is height
+
 ```javascript
 function inorderTraversal(root) {
     const result = [];
@@ -893,6 +1026,11 @@ function inorderTraversal(root) {
 
 3. Binary Tree traversals (DFS Preorder)
 
+Root, left, right.
+
+Time Complexity: O(n)  
+Space Complexity: O(h)
+
 ```javascript
 function preorderTraversal(root) {
     const result = [];
@@ -908,6 +1046,11 @@ function preorderTraversal(root) {
 ```
 
 4. Binary Tree traversals (DFS Postorder)
+
+Left, right, root.
+
+Time Complexity: O(n)  
+Space Complexity: O(h)
 
 ```javascript
 function postorderTraversal(root) {
@@ -927,6 +1070,9 @@ function postorderTraversal(root) {
 
 Find LCA of two nodes in a binary tree.
 
+Time Complexity: O(n)  
+Space Complexity: O(h)
+
 ```javascript
 function lowestCommonAncestor(root, p, q) {
     if (!root || root === p || root === q) return root;
@@ -939,6 +1085,11 @@ function lowestCommonAncestor(root, p, q) {
 
 6. Height of tree
 
+Maximum depth.
+
+Time Complexity: O(n)  
+Space Complexity: O(h)
+
 ```javascript
 function height(root) {
     if (!root) return 0;
@@ -947,6 +1098,11 @@ function height(root) {
 ```
 
 7. Diameter of tree
+
+Longest path between any two nodes.
+
+Time Complexity: O(n)  
+Space Complexity: O(h)
 
 ```javascript
 function diameterOfBinaryTree(root) {
@@ -967,6 +1123,9 @@ function diameterOfBinaryTree(root) {
 
 Check if height difference between subtrees is <=1.
 
+Time Complexity: O(n)  
+Space Complexity: O(h)
+
 ```javascript
 function isBalanced(root) {
     function check(node) {
@@ -981,6 +1140,11 @@ function isBalanced(root) {
 ```
 
 9. Serialize Binary Tree
+
+Convert tree to string.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
 
 ```javascript
 function serialize(root) {
@@ -1000,6 +1164,11 @@ function serialize(root) {
 ```
 
 10. Deserialize Binary Tree
+
+Convert string back to tree.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
 
 ```javascript
 function deserialize(data) {
@@ -1022,6 +1191,11 @@ function deserialize(data) {
 
 11. BST search
 
+Search in BST.
+
+Time Complexity: O(h) where h is height  
+Space Complexity: O(h)
+
 ```javascript
 function searchBST(root, val) {
     if (!root || root.val === val) return root;
@@ -1030,6 +1204,11 @@ function searchBST(root, val) {
 ```
 
 12. BST insert
+
+Insert into BST.
+
+Time Complexity: O(h)  
+Space Complexity: O(h)
 
 ```javascript
 function insertIntoBST(root, val) {
@@ -1041,6 +1220,11 @@ function insertIntoBST(root, val) {
 ```
 
 13. BST delete
+
+Delete from BST.
+
+Time Complexity: O(h)  
+Space Complexity: O(h)
 
 ```javascript
 function deleteNode(root, key) {
@@ -1064,6 +1248,11 @@ function findMin(node) {
 ```
 
 14. Heap (min-heap operations)
+
+Implement min-heap with insert and extractMin.
+
+Time Complexity: O(log n) for operations  
+Space Complexity: O(n)
 
 ```javascript
 class MinHeap {
@@ -1109,6 +1298,11 @@ class MinHeap {
 
 1. BFS
 
+Breadth-first search using queue.
+
+Time Complexity: O(V + E)  
+Space Complexity: O(V)
+
 ```javascript
 function bfs(graph, start) {
     const visited = new Set();
@@ -1131,6 +1325,11 @@ function bfs(graph, start) {
 
 2. DFS
 
+Depth-first search using recursion or stack.
+
+Time Complexity: O(V + E)  
+Space Complexity: O(V)
+
 ```javascript
 function dfs(graph, start, visited = new Set(), result = []) {
     visited.add(start);
@@ -1147,6 +1346,9 @@ function dfs(graph, start, visited = new Set(), result = []) {
 3. Detect cycle in undirected graph
 
 Use DFS or Union-Find.
+
+Time Complexity: O(V + E)  
+Space Complexity: O(V)
 
 ```javascript
 function hasCycleUndirected(graph) {
@@ -1176,6 +1378,9 @@ function dfsCycle(node, parent, visited, graph) {
 
 Use DFS with recursion stack.
 
+Time Complexity: O(V + E)  
+Space Complexity: O(V)
+
 ```javascript
 function hasCycleDirected(graph) {
     const visited = new Set();
@@ -1202,6 +1407,9 @@ function dfsCycleDirected(node, visited, recStack, graph) {
 
 Using Kahn's algorithm (BFS with indegrees).
 
+Time Complexity: O(V + E)  
+Space Complexity: O(V)
+
 ```javascript
 function topologicalSort(graph, indegrees) {
     const queue = [];
@@ -1224,6 +1432,9 @@ function topologicalSort(graph, indegrees) {
 6. Dijkstra’s Algorithm
 
 Shortest path in weighted graph with non-negative weights.
+
+Time Complexity: O((V + E) log V) with priority queue  
+Space Complexity: O(V)
 
 ```javascript
 function dijkstra(graph, start) {
@@ -1268,6 +1479,11 @@ class PriorityQueue {
 
 7. Minimum Spanning Tree (Prim’s)
 
+Greedy algorithm to find MST.
+
+Time Complexity: O((V + E) log V)  
+Space Complexity: O(V)
+
 ```javascript
 function prims(graph) {
     const n = Object.keys(graph).length;
@@ -1293,6 +1509,9 @@ function prims(graph) {
 8. Minimum Spanning Tree (Kruskal’s)
 
 Requires Union-Find.
+
+Time Complexity: O(E log E)  
+Space Complexity: O(V + E)
 
 ```javascript
 function kruskals(edges, n) {
@@ -1334,6 +1553,9 @@ class UnionFind {
 
 Adjacency List vs Matrix.
 
+Time Complexity: Varies  
+Space Complexity: Adjacency List O(V + E), Matrix O(V^2)
+
 ```javascript
 // Adjacency List
 const graphList = {
@@ -1356,6 +1578,11 @@ const graphMatrix = [
 
 1. Fibonacci with memoization
 
+Memoization to store computed values.
+
+Time Complexity: O(n)  
+Space Complexity: O(n)
+
 ```javascript
 function fib(n, memo = {}) {
     if (n in memo) return memo[n];
@@ -1368,6 +1595,9 @@ function fib(n, memo = {}) {
 2. Longest Common Subsequence
 
 Find length of LCS between two strings.
+
+Time Complexity: O(m * n)  
+Space Complexity: O(m * n)
 
 ```javascript
 function longestCommonSubsequence(text1, text2) {
@@ -1390,6 +1620,9 @@ function longestCommonSubsequence(text1, text2) {
 
 Contiguous substring.
 
+Time Complexity: O(m * n)  
+Space Complexity: O(m * n)
+
 ```javascript
 function longestCommonSubstring(s1, s2) {
     const m = s1.length, n = s2.length;
@@ -1411,6 +1644,9 @@ function longestCommonSubstring(s1, s2) {
 
 Length of longest increasing subsequence.
 
+Time Complexity: O(n^2)  
+Space Complexity: O(n)
+
 ```javascript
 function lengthOfLIS(nums) {
     const dp = Array(nums.length).fill(1);
@@ -1429,6 +1665,9 @@ function lengthOfLIS(nums) {
 
 Minimum coins to make amount.
 
+Time Complexity: O(amount * coins.length)  
+Space Complexity: O(amount)
+
 ```javascript
 function coinChange(coins, amount) {
     const dp = Array(amount + 1).fill(Infinity);
@@ -1445,6 +1684,9 @@ function coinChange(coins, amount) {
 6. 0/1 Knapsack
 
 Max value with weight limit.
+
+Time Complexity: O(n * W)  
+Space Complexity: O(n * W)
 
 ```javascript
 function knapsack(weights, values, W) {
@@ -1467,6 +1709,9 @@ function knapsack(weights, values, W) {
 
 Number of ways to reach bottom-right in grid.
 
+Time Complexity: O(m * n)  
+Space Complexity: O(m * n)
+
 ```javascript
 function uniquePaths(m, n) {
     const dp = Array.from({ length: m }, () => Array(n).fill(0));
@@ -1484,6 +1729,9 @@ function uniquePaths(m, n) {
 8. Min Path Sum
 
 Minimum path sum from top-left to bottom-right.
+
+Time Complexity: O(m * n)  
+Space Complexity: O(m * n)
 
 ```javascript
 function minPathSum(grid) {
