@@ -15,9 +15,31 @@ This document covers fundamental data structures including Trees, Graphs, Binary
 
 Trees are hierarchical structures where you have a root node at the top, and each node can have multiple children, but no cycles - it's like a family tree or a company org chart.
 
+**Types of Trees:**
+- **Binary Tree**: Each node has at most 2 children
+- **Full/Complete Tree**: Every level is fully filled
+- **Balanced Tree**: Heights of subtrees differ by at most 1
+- **Perfect Tree**: All leaves at same level, every internal node has 2 children
+
+**Tree Traversals:**
+- **In-order**: Left → Root → Right (gives sorted order in BST)
+- **Pre-order**: Root → Left → Right (good for copying trees)
+- **Post-order**: Left → Right → Root (good for deleting trees)
+- **Level-order**: Breadth-first, level by level
+
 ### Graphs
 
 Graphs are more flexible - just nodes connected by edges. They can have cycles, be directed (one-way streets) or undirected (two-way), and edges can have weights (like distances) or not.
+
+**Graph Representations:**
+- **Adjacency Matrix**: 2D array where matrix[i][j] = 1 if edge exists. Simple but space-heavy for sparse graphs.
+- **Adjacency List**: Each node has a list of neighbors. Space-efficient, great for most real-world graphs.
+
+**Graph Types:**
+- **Directed vs Undirected**: One-way vs two-way connections
+- **Weighted vs Unweighted**: Edges have costs or just connections
+- **Cyclic vs Acyclic**: Has cycles or not (trees are acyclic graphs)
+- **Connected vs Disconnected**: All nodes reachable or not
 
 ### Time Complexity
 - **Tree Operations**: Depends on what you're doing - could be O(1) for some things, O(n) for others
@@ -77,6 +99,26 @@ A binary tree is just a tree where each node has at most two children - left and
 ### Binary Search Tree (BST)
 
 Now BST adds rules: left child must be smaller than parent, right child must be bigger. Both subtrees follow the same rule. This gives you sorted order automatically.
+
+**BST Operations in Detail:**
+- **Search**: Start at root, go left if target < current, right if target > current
+- **Insert**: Find the right spot following BST rules, add new node there
+- **Delete**: Tricky one - three cases:
+  - Leaf node: Just remove it
+  - One child: Replace with its child
+  - Two children: Replace with inorder successor (smallest in right subtree) or predecessor
+
+**Balancing Issues:**
+- BST can become skewed (like a linked list) if insertions come in sorted order
+- This makes operations O(n) instead of O(log n)
+- Solutions: Self-balancing trees like AVL trees or Red-Black trees
+- AVL: Height difference between subtrees ≤ 1, uses rotations to maintain balance
+- Red-Black: More relaxed balancing with color properties
+
+**Tree Rotations:**
+- **Left Rotation**: When right subtree is too tall
+- **Right Rotation**: When left subtree is too tall
+- **Double Rotations**: Combination for more complex cases
 
 ### Time Complexity
 - **Binary Tree Operations**: Search/insert/delete can be O(n) in worst case, O(log n) if balanced
@@ -167,6 +209,33 @@ class BinarySearchTree {
 
 BFS explores a graph level by level - like checking all your immediate friends first, then their friends, and so on. Uses a queue to keep track of what to visit next.
 
+**How BFS Works in Detail:**
+- Start with a queue containing just the starting node
+- Mark it as visited to avoid cycles
+- While queue isn't empty:
+  - Dequeue the front node
+  - Process it (add to result, etc.)
+  - Enqueue all its unvisited neighbors
+  - Mark them as visited when enqueuing
+
+**Key Properties:**
+- **Shortest Path**: In unweighted graphs, BFS finds shortest path (fewest edges)
+- **Level Order**: Processes nodes level by level from the source
+- **Queue Usage**: FIFO structure ensures breadth-first exploration
+
+**Applications:**
+- **Shortest Path in Unweighted Graphs**: GPS navigation, social network degrees of separation
+- **Web Crawling**: Search engines crawl level by level
+- **Finding Connected Components**: Group related items
+- **Cycle Detection**: Can detect cycles in undirected graphs
+- **Level Order Traversal**: Perfect for trees, processes by depth
+
+**BFS vs DFS Comparison:**
+- BFS: Good for shortest paths, uses more memory (queue can get big)
+- DFS: Good for topological sort, uses less memory (stack/recursion depth)
+- BFS: Level-by-level exploration
+- DFS: Depth-first exploration
+
 ### Time Complexity
 - O(V + E) - you visit each node and edge exactly once
 
@@ -215,6 +284,42 @@ console.log(bfs(graph, 'A')); // ['A', 'B', 'C', 'D', 'E']
 ## Depth-First Search (DFS)
 
 DFS goes as deep as possible down one path before backtracking - like exploring a maze by always going left until you hit a dead end, then backtracking. Uses a stack (or recursion).
+
+**How DFS Works in Detail:**
+- Start with a stack containing the starting node
+- Mark it as visited
+- While stack isn't empty:
+  - Pop the top node
+  - Process it (if not already processed)
+  - Push all its unvisited neighbors onto the stack
+  - Mark them as visited when pushing
+
+**Recursive vs Iterative:**
+- **Recursive**: Clean and easy, but can cause stack overflow for deep graphs
+- **Iterative**: Uses explicit stack, handles deep graphs better
+
+**Key Properties:**
+- **Explores Deep First**: Goes as far as possible down one branch
+- **Backtracking**: When stuck, returns to previous decision point
+- **Memory Efficient**: Usually uses less space than BFS
+
+**Applications:**
+- **Topological Sorting**: Order tasks with dependencies (course prerequisites)
+- **Cycle Detection**: Find loops in graphs
+- **Path Finding**: Find any path (not necessarily shortest)
+- **Connected Components**: Find isolated groups
+- **Maze Solving**: Explore all possible paths
+- **Tree Traversals**: Pre-order, in-order, post-order are DFS variants
+
+**Cycle Detection with DFS:**
+- Use three colors: White (unvisited), Gray (visiting), Black (visited)
+- If you encounter a Gray node, there's a cycle
+- Perfect for directed graphs
+
+**Topological Sort:**
+- Only works on DAGs (Directed Acyclic Graphs)
+- Process nodes in dependency order
+- Used in build systems, task scheduling
 
 ### Time Complexity
 - O(V + E) - visits each node and edge once
