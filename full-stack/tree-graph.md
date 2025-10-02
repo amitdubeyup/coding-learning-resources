@@ -13,30 +13,22 @@ This document covers fundamental data structures including Trees, Graphs, Binary
 
 ### Trees
 
-A tree is a hierarchical data structure consisting of nodes connected by edges. It has the following properties:
-- One root node
-- Each node has zero or more child nodes
-- No cycles (acyclic)
-- Connected (all nodes are reachable from the root)
+Trees are hierarchical structures where you have a root node at the top, and each node can have multiple children, but no cycles - it's like a family tree or a company org chart.
 
 ### Graphs
 
-A graph is a non-hierarchical data structure consisting of vertices (nodes) connected by edges. It can be:
-- **Directed**: Edges have direction
-- **Undirected**: Edges have no direction
-- **Weighted**: Edges have weights/costs
-- **Unweighted**: Edges have no weights
+Graphs are more flexible - just nodes connected by edges. They can have cycles, be directed (one-way streets) or undirected (two-way), and edges can have weights (like distances) or not.
 
 ### Time Complexity
-- **Tree Operations**: Varies by operation (O(1) to O(n))
-- **Graph Operations**: Varies by representation and operation
+- **Tree Operations**: Depends on what you're doing - could be O(1) for some things, O(n) for others
+- **Graph Operations**: Varies by how you store it and what operation
 
 ### Space Complexity
-- **Adjacency Matrix**: O(V²) where V is number of vertices
-- **Adjacency List**: O(V + E) where E is number of edges
+- **Adjacency Matrix**: O(V²) - like a big table showing connections between every pair
+- **Adjacency List**: O(V + E) - each node just lists its friends
 
 ### How They Work
-Trees are used for hierarchical data representation (file systems, organization charts). Graphs are used for modeling relationships (social networks, maps, web pages).
+Trees are perfect for hierarchical stuff like file systems or org charts. Graphs handle relationships like social networks, maps, or web pages where connections can be complex.
 
 ### Basic JavaScript Implementation
 
@@ -80,32 +72,22 @@ class Graph {
 
 ### Binary Tree
 
-A binary tree is a tree data structure where each node has at most two children, referred to as the left and right child.
+A binary tree is just a tree where each node has at most two children - left and right. That's it! No other restrictions.
 
 ### Binary Search Tree (BST)
 
-A BST is a binary tree with the following properties:
-- Left subtree of a node contains only nodes with values less than the node's value
-- Right subtree contains only nodes with values greater than the node's value
-- Both left and right subtrees are also BSTs
-- No duplicate values (typically)
+Now BST adds rules: left child must be smaller than parent, right child must be bigger. Both subtrees follow the same rule. This gives you sorted order automatically.
 
 ### Time Complexity
-- **Binary Tree Operations**:
-  - Search: O(n) worst case, O(log n) average
-  - Insert: O(n) worst case, O(log n) average
-  - Delete: O(n) worst case, O(log n) average
-- **BST Operations**:
-  - Search: O(h) where h is height (O(log n) for balanced, O(n) for skewed)
-  - Insert: O(h)
-  - Delete: O(h)
+- **Binary Tree Operations**: Search/insert/delete can be O(n) in worst case, O(log n) if balanced
+- **BST Operations**: Same as above - depends on height. Balanced = O(log n), skewed = O(n)
 
 ### Space Complexity
-- O(n) for storing n nodes
+- O(n) - just storing the nodes
 
 ### How They Work
 
-Binary trees provide efficient search and sorting operations when balanced. BSTs maintain sorted order, allowing for fast lookups, insertions, and deletions. The efficiency depends on the tree's balance - a balanced BST provides O(log n) operations, while a skewed tree degrades to O(n).
+Binary trees are the foundation. BSTs are special because they maintain sorted order, so searching is fast when balanced. But if it gets skewed (like a linked list), performance tanks.
 
 ### Basic JavaScript Implementation
 
@@ -183,23 +165,16 @@ class BinarySearchTree {
 
 ## Breadth-First Search (BFS)
 
-BFS is a graph traversal algorithm that explores all vertices at the present depth level before moving to the next depth level. It uses a queue data structure.
+BFS explores a graph level by level - like checking all your immediate friends first, then their friends, and so on. Uses a queue to keep track of what to visit next.
 
 ### Time Complexity
-- O(V + E) where V is vertices and E is edges
-- Each vertex and edge is visited once
+- O(V + E) - you visit each node and edge exactly once
 
 ### Space Complexity
-- O(V) for the queue in worst case (when graph is dense)
+- O(V) worst case - the queue could hold all nodes if it's a dense graph
 
 ### How It Works
-1. Start from a source vertex
-2. Visit all its adjacent vertices
-3. Mark visited vertices to avoid cycles
-4. Use a queue: enqueue visited vertices, dequeue to process
-5. Process level by level
-
-BFS is useful for finding shortest paths in unweighted graphs, level-order traversal in trees, and solving puzzles like mazes.
+Start at one node, visit all its direct neighbors first, then go to the next level. Perfect for finding shortest paths in unweighted graphs or doing level-order traversal in trees.
 
 ### Basic JavaScript Implementation
 ```javascript
@@ -239,24 +214,16 @@ console.log(bfs(graph, 'A')); // ['A', 'B', 'C', 'D', 'E']
 
 ## Depth-First Search (DFS)
 
-DFS is a graph traversal algorithm that explores as far as possible along each branch before backtracking. It uses a stack data structure (or recursion).
+DFS goes as deep as possible down one path before backtracking - like exploring a maze by always going left until you hit a dead end, then backtracking. Uses a stack (or recursion).
 
 ### Time Complexity
-- O(V + E) where V is vertices and E is edges
-- Each vertex and edge is visited once
+- O(V + E) - visits each node and edge once
 
 ### Space Complexity
-- O(V) for the recursion stack in worst case
-- O(h) where h is the maximum depth of the graph/tree
+- O(V) worst case for the recursion stack, or O(h) where h is the deepest path
 
 ### How It Works
-1. Start from a source vertex
-2. Explore as deep as possible along one path
-3. Backtrack when no unvisited adjacent vertices remain
-4. Use recursion or a stack to keep track of vertices
-5. Mark visited vertices to avoid cycles
-
-DFS is useful for topological sorting, detecting cycles, solving puzzles, and path finding in mazes.
+Start at one node, keep following one neighbor as far as you can, then backtrack when you can't go further. Great for topological sorting, cycle detection, and maze solving.
 
 ### Basic JavaScript Implementation
 
