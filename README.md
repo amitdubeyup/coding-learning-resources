@@ -1,4 +1,4 @@
-# learning
+# coding-learning-resources
 
 A comprehensive collection of learning resources and materials for technical skills development and efficiency improvement.
 
@@ -10,8 +10,8 @@ A comprehensive collection of learning resources and materials for technical ski
 
 ```bash
 # Clone the repository
-git clone https://github.com/amitdubeyup/learning.git
-cd learning
+git clone https://github.com/amitdubeyup/coding-learning-resources.git
+cd coding-learning-resources
 
 ```
 
@@ -34,7 +34,7 @@ Update the `.env` file with your configuration values.
 ## 📁 Project Structure
 
 ```
-learning/
+coding-learning-resources/
 ├── frontend/
 ├── .env.example
 ├── README.md
