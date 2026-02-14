@@ -1,28 +1,155 @@
+# Interview Preparation Prompt Templates
+
+A collection of reusable prompts for generating and maintaining technical interview Q&A documents.
+
+---
+
+## PROMPT 1: GENERATE NEW CONTENT
+
+Use this prompt to create interview Q&A from scratch for any topic.
+
+---
+
 As an AI assistant specializing in technical interview preparation, generate a comprehensive set of interview questions and answers for [TOPIC]. Follow these guidelines strictly:
 
 1. **Question Generation**:
-   - Create at least 100 unique questions, covering the topic from basic to advanced levels.
-   - Include a mix of question types: conceptual/theoretical, practical/coding-related (if applicable), troubleshooting/debugging, and scenario-based (real-world situations, e.g., "What would you do if...").
+   - Create 50-100 unique questions (scale based on topic breadth), covering basic to advanced levels.
+   - Include a mix of question types: conceptual/theoretical, practical/coding-related (if applicable), troubleshooting/debugging, scenario-based (real-world situations, e.g., "What would you do if..."), and system design where relevant.
    - Ensure questions are commonly asked in senior-level interviews for roles like full-stack engineer, with a focus on cross-team, event-driven, distributed, and microservices architectures where relevant.
    - Categorize questions by difficulty: Basic (foundational concepts), Intermediate (practical application), Advanced (complex scenarios, best practices, edge cases).
    - Number them sequentially (e.g., 1., 2., etc.) and include a brief category tag (e.g., [Basic], [Intermediate], [Advanced], [Scenario]).
+   - Include follow-up questions interviewers commonly ask (e.g., "Can you explain the trade-offs?", "How would you scale this?").
 
 2. **Answer Generation**:
    - After generating all questions, provide detailed answers for each one.
    - Structure each answer clearly: Start with a concise explanation, then provide examples (code snippets, diagrams, or step-by-step walkthroughs where applicable), and end with key takeaways or best practices.
    - Use real-world examples relevant to [TOPIC], such as code samples, configuration files, or hypothetical scenarios.
    - Keep answers comprehensive but concise—aim for 100-300 words per answer to cover depth without verbosity.
-   - Highlight common pitfalls, pros/cons, and how the topic relates to broader concepts like scalability, security, or performance.
+   - Highlight common pitfalls, anti-patterns, pros/cons, and how the topic relates to broader concepts like scalability, security, or performance.
+   - Flag deprecated APIs, outdated patterns, or practices that are no longer recommended—explain the modern alternative.
+   - Where applicable, include ASCII diagrams or suggest architecture visualizations.
+   - Add brief "What interviewers look for" tips for key questions.
 
 3. **Output Format**:
    - First, list all questions in a numbered list.
    - Then, provide answers in a matching numbered list.
    - If the total output exceeds reasonable limits (e.g., due to length), process in batches of 20-30 questions/answers at a time, clearly labeling each batch (e.g., "Batch 1: Questions 1-20 and Answers").
    - Do not ask for confirmation or approval before proceeding to the next batch—continue automatically until complete.
+   - Group questions by logical sections/themes with clear headings.
 
 4. **Quality Assurance**:
    - Ensure questions are original, non-repetitive, and directly relevant to [TOPIC].
-   - Answers should be accurate, up-to-date (as of 2025), and include practical examples.
-   - If [TOPIC] involves code, use syntax-highlighted snippets in the appropriate language.
+   - Answers should be accurate, up-to-date (as of 2026), and include practical examples using current library versions and best practices.
+   - If [TOPIC] involves code, use syntax-highlighted snippets in the appropriate language with modern syntax (e.g., Python 3.12+, TypeScript 5+, etc.).
+   - Cross-reference related concepts when they enhance understanding.
 
 Replace [TOPIC] with your desired subject (e.g., "Git, GitHub, CI/CD, and Jenkins") and provide this prompt to an AI tool for generation.
+
+---
+
+## PROMPT 2: UPDATE EXISTING CONTENT
+
+Use this prompt when you have an existing interview prep document and want to refresh/update it. Copy-paste the prompt below along with your existing content.
+
+---
+
+As an AI assistant specializing in technical interview preparation, review and update the following existing interview Q&A document for [TOPIC]. Follow these guidelines strictly:
+
+**EXISTING CONTENT:**
+```
+[PASTE YOUR EXISTING CONTENT HERE]
+```
+
+**Update Instructions:**
+
+1. **Content Preservation**:
+   - Do NOT delete any existing questions unless they are exact duplicates.
+   - Preserve the existing file structure, formatting style, and numbering scheme.
+   - Keep consolidated questions intact—do not split them back.
+
+2. **Content Modernization**:
+   - Update all code examples to use current best practices and latest stable versions (as of 2026).
+   - Replace deprecated APIs, libraries, or patterns with modern alternatives (e.g., `aioredis` → `redis.asyncio`, `langchain.llms` → `langchain_openai`).
+   - Update version numbers in Dockerfiles, package versions, and tool references.
+   - Modernize syntax (e.g., `Optional[str]` → `str | None` for Python 3.10+).
+
+3. **Duplicate Handling**:
+   - Identify and merge duplicate questions—consolidate into the more comprehensive version.
+   - If two questions cover the same concept differently, keep the better one and enhance it.
+
+4. **Quality Improvements**:
+   - Improve existing answers to be more accurate and aligned with current industry standards.
+   - Add missing practical examples, code snippets, or diagrams where beneficial.
+   - Fix any structural issues (misplaced questions, empty sections, broken links).
+   - Ensure the Table of Contents (if present) matches actual section headings.
+
+5. **New Content Addition**:
+   - Add new industry-standard interview questions that are commonly asked but missing.
+   - Include emerging topics relevant to [TOPIC] (e.g., for AI: MCP, RAGAS, prompt injection, semantic caching).
+   - Ensure new questions follow the existing difficulty categorization and formatting.
+
+6. **Output Format**:
+   - Return the COMPLETE updated document, not just the changes.
+   - Maintain the original markdown structure.
+   - If output is too long, process in sections and label each (e.g., "Section 1 of 3").
+   - Continue automatically without asking for confirmation.
+
+7. **Change Summary**:
+   - At the end, provide a brief summary of changes made:
+     - Number of duplicates removed
+     - Deprecated patterns updated
+     - New questions added
+     - Structural fixes applied
+
+---
+
+## PROMPT 3: QUICK REVIEW & VALIDATION
+
+Use this prompt to validate an existing document is up to industry standards without making changes.
+
+---
+
+As an AI assistant, review the following interview preparation document for [TOPIC] and provide a quality assessment:
+
+**CONTENT TO REVIEW:**
+```
+[PASTE YOUR CONTENT HERE]
+```
+
+**Review Checklist:**
+
+1. **Accuracy Check**:
+   - Are all code examples using current syntax and APIs?
+   - Are version numbers and library references up-to-date (as of 2026)?
+   - Are there any deprecated patterns or anti-patterns presented as best practices?
+
+2. **Completeness Check**:
+   - Are there any major topics missing for [TOPIC]?
+   - Is there a good balance of Basic/Intermediate/Advanced questions?
+   - Are common interview scenarios covered?
+
+3. **Quality Check**:
+   - Are answers comprehensive with practical examples?
+   - Are there any duplicate or redundant questions?
+   - Is the structure logical and easy to navigate?
+
+4. **Output Format**:
+   - Provide a score (1-10) for each category above.
+   - List specific issues found with line references if possible.
+   - Suggest improvements ranked by priority (High/Medium/Low).
+   - Do NOT rewrite the content—just provide the assessment.
+
+---
+
+## USAGE TIPS
+
+| Task | Prompt to Use |
+|------|---------------|
+| Create new content from scratch | Prompt 1 |
+| Update/refresh existing content | Prompt 2 |
+| Validate without changes | Prompt 3 |
+
+**Best Practices:**
+- Always backup your existing file before updating.
+- Run Prompt 3 after Prompt 2 to validate changes.
+- For large files (>1000 lines), consider updating section by section.
