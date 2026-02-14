@@ -20,7 +20,7 @@
 ## Core Concepts
 
 ### 1. What is React?
-React is an open-source JavaScript library for building user interfaces, particularly single-page applications. Originally created by Facebook (now Meta), it's maintained by Meta and a large community. React uses a component-based architecture and a virtual DOM for efficient rendering. As of 2025, React is the most widely used frontend library in the industry.
+React is an open-source JavaScript library for building user interfaces, particularly single-page applications. Originally created by Facebook (now Meta), it's maintained by Meta and a large community. React uses a component-based architecture and a virtual DOM for efficient rendering. As of 2026, React is the most widely used frontend library in the industry.
 
 ### 2. JSX
 JSX is a syntax extension for JavaScript that lets you write HTML-like code in your JavaScript files.

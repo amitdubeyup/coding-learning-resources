@@ -200,7 +200,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 **Answer:**
 LangChain is a framework for building applications with LLMs, providing tools for chaining prompts, memory, tool use, and retrieval. LangGraph extends this with graph-based workflows for complex, stateful agent logic with cycles and branching. They simplify building multi-step agent workflows.
 
-**Example (LangChain with tools - 2025 API):**
+**Example (LangChain with tools - 2026 API):**
 ```python
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
@@ -221,7 +221,7 @@ result = agent.invoke({"messages": [("user", "Search for LangChain docs")]})
 **Answer:**
 LangGraph uses a graph-based approach where nodes are functions and edges define the flow. It supports cycles, conditionals, and human-in-the-loop patterns.
 
-**Example (LangGraph workflow - 2025 API):**
+**Example (LangGraph workflow - 2026 API):**
 ```python
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
@@ -362,7 +362,7 @@ User Query -> [Embedder] -> [VectorDB/FAISS] <-> [Document Vectors]
 **Answer:**
 Embeddings are generated using embedding models (OpenAI, HuggingFace, Cohere). The vectors are stored in FAISS or a vector database, indexed for fast similarity search.
 
-**Example (2025 best practices):**
+**Example (2026 best practices):**
 ```python
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -542,7 +542,7 @@ Redis is used for caching (LLM responses, embeddings), session management, rate 
 **Answer:**
 Use redis-py with asyncio support for non-blocking cache operations.
 
-**Example (redis-py async - 2025):**
+**Example (redis-py async - 2026):**
 ```python
 import redis.asyncio as redis
 import json
@@ -1953,7 +1953,7 @@ spec:
 | Enterprise compliance | ❌ | ✅ | ❌ | ✅ |
 | Fastest setup | ✅ | ❌ | ✅ | ❌ |
 
-### Embedding Models (2025)
+### Embedding Models (2026)
 
 | Model | Dimensions | Best For |
 |-------|------------|----------|
