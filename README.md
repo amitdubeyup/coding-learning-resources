@@ -32,20 +32,6 @@ Browse the sections below to start your interview preparation.
 
 ---
 
-## 🚀 Quick Navigation by Role
-
-**Backend (Python):** [Python](python/) → [FastAPI](fastapi/) → [Database](database/) → [System Design](system-design/)
-
-**Full Stack:** [Python](python/)/[Node.js](nodejs/) → [React](reactjs/) → [FastAPI](fastapi/) → [Multi-Tenant](multi-tenant-architecture/)
-
-**Frontend:** [JavaScript](javascript/) → [React](reactjs/) → [Full Stack](full-stack/)
-
-**DevOps:** [DevOps](devops/) → [System Design](system-design/) → [Multi-Tenant](multi-tenant-architecture/)
-
-**AI/ML:** [Python](python/) → [AI/ML](ai/) → [FastAPI](fastapi/) → [System Design](system-design/)
-
----
-
 ## 👨‍💻 Lead Maintainer
 [@amitdubeyup](https://github.com/amitdubeyup)
 
