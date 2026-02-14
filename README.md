@@ -1,32 +1,50 @@
-# Coding Learning Resources
+# 🎓 Coding Learning Resources
 
-## 📝 About The Project
-Custom software solution developed to address specific business requirements for Coding Learning Resources.
+> **Comprehensive interview preparation repository** - Python, JavaScript, System Design, Cloud, AI/ML, and more.
 
-### 🔧 Key Features
-- Designed for scalability and performance
-- Modular architecture for easy maintenance
+## 🎯 Quick Start
 
-## 🛠️ Tech Stack
-*   **Standard Stack**
+Browse the sections below to start your interview preparation.
 
-## 📦 Installation
+---
 
-1.  **Clone the repository**:
-    ```bash
-    git clone git@github.com:amitdubeyup/coding-learning-resources.git
-    ```
-2.  **Install dependencies**:
-    ```bash
-    npm install  # or pip install -r requirements.txt
-    ```
-3.  **Run the application**:
-    ```bash
-    npm start    # or python app.py
-    ```
+## 📚 Content Overview
 
-## 👨‍💻 Lead Maintainer
-[@amitdubeyup](https://github.com/amitdubeyup)
+| Section | Files | What's Inside |
+|---------|-------|---------------|
+| **[Python](python/)** ⭐ | 219 | 2000+ lines, 150+ questions - Async, ML, Security, Performance |
+| **[FastAPI](fastapi/)** 🆕 | 1 | 33 questions - Async APIs, Pydantic, WebSocket, Production |
+| **[Multi-Tenant](multi-tenant-architecture/)** 🆕 | 1 | 18 questions - Data isolation, Azure patterns, Scalability |
+| **[System Design](system-design/)** | 23 | Cloud architecture, Scalability, Microservices |
+| **[Node.js](nodejs/)** | 9 | 400 questions - Express, GraphQL, TypeScript |
+| **[React.js](reactjs/)** | 1 | Hooks, Performance, State management |
+| **[JavaScript](javascript/)** | 1 | ES6+, Async patterns, DOM |
+| **[DevOps](devops/)** | 3 | AWS, Docker, K8s, CI/CD |
+| **[Database](database/)** | 2 | SQL/NoSQL, Indexing, Sharding, CAP theorem |
+| **[AI/ML](ai/)** | 2 | Model serving, RAG, Vector DBs, LangChain |
+| **[Full Stack](full-stack/)** | 6 | Algorithms, Architecture patterns |
+| **[Angular](angular/)** | 1 | RxJS, Dependency injection |
+| **[Vue.js](vuejs/)** | 1 | Composition API, Vuex |
+| **[DSA](dsa/)** | 1 | Data structures & algorithms |
+| **[Behavioral](behavioral/)** | 1 | STAR method, Leadership |
+
+**Total:** ~270 files across 15 directories
+
+---
+
+## 🚀 Quick Navigation by Role
+
+**Backend (Python):** [Python](python/) → [FastAPI](fastapi/) → [Database](database/) → [System Design](system-design/)
+
+**Full Stack:** [Python](python/)/[Node.js](nodejs/) → [React](reactjs/) → [FastAPI](fastapi/) → [Multi-Tenant](multi-tenant-architecture/)
+
+**Frontend:** [JavaScript](javascript/) → [React](reactjs/) → [Full Stack](full-stack/)
+
+**DevOps:** [DevOps](devops/) → [System Design](system-design/) → [Multi-Tenant](multi-tenant-architecture/)
+
+**AI/ML:** [Python](python/) → [AI/ML](ai/) → [FastAPI](fastapi/) → [System Design](system-design/)
+
+---
 
 ## 🤖 Interview Content Update Prompt
 
@@ -45,6 +63,9 @@ Copy-paste the prompt below to update any interview guide file(s) in this repo:
 > 5. **Update all code examples** to use current best practices and latest stable versions of libraries/frameworks.
 >
 > 6. **Keep the existing file structure and formatting style.** Match the heading levels, numbering, and code block conventions already used in the file(s).
+
+## 👨‍💻 Lead Maintainer
+[@amitdubeyup](https://github.com/amitdubeyup)
 
 ## 📄 License
 This project is licensed under the **MIT License**.
