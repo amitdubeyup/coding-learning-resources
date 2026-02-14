@@ -43,6 +43,85 @@ with (
 ### Other Additions
 - `str.removeprefix()` and `str.removesuffix()`
 - Performance improvements and new standard library modules.
+
+### Walrus Operator `:=` (Assignment Expressions, Python 3.8+)
+```python
+# Assign and use a value in the same expression
+if (n := len('hello')) > 3:
+	print(f'Length {n} is greater than 3')
+
+# Useful in while loops
+while chunk := f.read(8192):
+	process(chunk)
+
+# In comprehensions
+results = [y for x in data if (y := expensive(x)) is not None]
+```
+
+### Python 3.11 Features
+- **Exception Groups and `except*`:** Handle multiple exceptions simultaneously.
+  ```python
+  try:
+      raise ExceptionGroup("errors", [
+          ValueError("bad value"),
+          TypeError("wrong type"),
+      ])
+  except* ValueError as eg:
+      print(f"Caught ValueErrors: {eg.exceptions}")
+  except* TypeError as eg:
+      print(f"Caught TypeErrors: {eg.exceptions}")
+  ```
+- **`TaskGroup` for structured concurrency:**
+  ```python
+  import asyncio
+
+  async def main():
+      async with asyncio.TaskGroup() as tg:
+          task1 = tg.create_task(fetch_url("https://example.com"))
+          task2 = tg.create_task(fetch_url("https://python.org"))
+      # Both tasks are guaranteed to complete (or all cancel on error)
+      print(task1.result(), task2.result())
+  ```
+- **`tomllib`:** Built-in TOML parser (read-only).
+- **10–60% faster** than Python 3.10 due to the Faster CPython project.
+
+### Python 3.12 Features
+- **`@override` decorator** (PEP 698): Explicitly mark methods that override parent methods.
+  ```python
+  from typing import override
+
+  class Parent:
+      def greet(self) -> str:
+          return "Hello"
+
+  class Child(Parent):
+      @override
+      def greet(self) -> str:  # Type checker ensures this actually overrides
+          return "Hi"
+  ```
+- **Improved f-strings:** F-strings can now contain any valid Python expression, including backslashes, comments, and nested f-strings.
+  ```python
+  songs = ['Take me back', 'Move on']
+  print(f"Top: {"\n".join(songs)}")
+  ```
+- **Type parameter syntax** (PEP 695): Cleaner generic syntax.
+  ```python
+  # Old way
+  from typing import TypeVar
+  T = TypeVar('T')
+  def first(items: list[T]) -> T: ...
+
+  # New way (3.12+)
+  def first[T](items: list[T]) -> T: ...
+  type Vector = list[float]  # type alias
+  ```
+- **Per-interpreter GIL** (experimental): Steps toward true multi-threading.
+
+### Python 3.13 Features
+- **Free-threaded mode (experimental):** `python3.13t` runs without the GIL for true multi-threaded parallelism.
+- **Improved interactive interpreter (REPL):** Multi-line editing, color output, better tracebacks.
+- **JIT compiler (experimental):** Copy-and-patch JIT for potential performance gains.
+- **Improved `dbg()` style f-strings:** `f"{x =}"` now works with more complex expressions.
 ## Security Best Practices and Common Vulnerabilities
 
 **References:**
@@ -279,7 +358,14 @@ with (
    - PEP 8 is the Python Enhancement Proposal that provides guidelines and best practices on how to write Python code.
 
 4. **How is Python interpreted?**
-   - Python code is executed line by line by the Python interpreter.
+   - Python source code is first compiled to bytecode (`.pyc` files), which is then executed by the Python Virtual Machine (PVM). This two-step process (source → bytecode → execution) happens transparently. The `dis` module can be used to inspect bytecode.
+   - Example:
+     ```python
+     import dis
+     def greet():
+         print("Hello")
+     dis.dis(greet)  # Shows bytecode instructions
+     ```
 
 5. **What is the difference between list and tuple?**
    - Lists are mutable, tuples are immutable.
@@ -396,7 +482,9 @@ with (
 	- The package installer for Python.
 
 22. **What is the difference between Python 2 and Python 3?**
-	- Print statement vs function, integer division, Unicode support, etc.
+	- Python 2 reached End of Life on January 1, 2020 and is no longer maintained. All new projects should use Python 3.
+	- Key differences: `print` is a function in Python 3, `/` always returns float in Python 3, strings are Unicode by default in Python 3, `range()` returns an iterator (not a list), and Python 3 has f-strings, walrus operator, pattern matching, and many other modern features.
+	- **Industry note:** If you encounter Python 2 in legacy codebases, use `2to3` tool or `python-modernize` to migrate.
 
 23. **What is a decorator?**
 	- A function that modifies another function.
@@ -454,6 +542,25 @@ with (
 
 // ...existing code...
 
+29. **What is multiple inheritance?**
+	- A class can inherit from more than one parent class. Python uses the C3 linearization (MRO) to resolve method lookup order.
+	- Example:
+	  ```python
+	  class A:
+	      def greet(self):
+	          return 'Hello from A'
+
+	  class B:
+	      def greet(self):
+	          return 'Hello from B'
+
+	  class C(A, B):
+	      pass
+
+	  print(C().greet())  # 'Hello from A' (A comes first in MRO)
+	  print(C.__mro__)    # Shows resolution order
+	  ```
+
 30. **What is method overriding?**
 	- Redefining a method in a subclass.
 	   - Example:
@@ -496,7 +603,26 @@ with (
 		 ```
 
 33. **What is abstraction?**
-	- Hiding complex implementation details and showing only the necessary features.
+	- Hiding complex implementation details and showing only the necessary features. In Python, abstraction is achieved using abstract base classes (ABC).
+	- Example:
+	  ```python
+	  from abc import ABC, abstractmethod
+
+	  class Shape(ABC):
+	      @abstractmethod
+	      def area(self):
+	          pass
+
+	  class Circle(Shape):
+	      def __init__(self, radius):
+	          self.radius = radius
+	      def area(self):
+	          return 3.14 * self.radius ** 2
+
+	  # shape = Shape()  # TypeError: Can't instantiate abstract class
+	  c = Circle(5)
+	  print(c.area())  # 78.5
+	  ```
 
 34. **What is a static method?**
 	- A method bound to the class, not the instance. Defined with `@staticmethod`.
@@ -901,10 +1027,23 @@ with (
 // ...existing code...
 
 102. **What is method overloading?**
-	- Defining multiple methods with the same name but different arguments (not directly supported in Python, can use default arguments or *args).
+	- Defining multiple methods with the same name but different arguments (not directly supported in Python, can use default arguments, *args, or `functools.singledispatch` for type-based dispatch).
+	- Example using `singledispatch`:
+	  ```python
+	  from functools import singledispatch
 
-103. **What is method overriding?**
-	- Redefining a method in a subclass.
+	  @singledispatch
+	  def process(value):
+	      raise NotImplementedError
+
+	  @process.register(int)
+	  def _(value):
+	      return value * 2
+
+	  @process.register(str)
+	  def _(value):
+	      return value.upper()
+	  ```
 
 104. **What is the difference between class and instance variables?**
 	- Class variables are shared; instance variables are unique to each object.
@@ -1466,9 +1605,21 @@ asyncio.run(main())
 
 161. **What is a descriptor?**
 	- An object attribute with binding behavior, defined by methods like `__get__`, `__set__`, and `__delete__`.
+	- Example:
+	  ```python
+	  class Validator:
+	      def __set_name__(self, owner, name):
+	          self.name = name
+	      def __get__(self, obj, objtype=None):
+	          return getattr(obj, f'_{self.name}', None)
+	      def __set__(self, obj, value):
+	          if not isinstance(value, int):
+	              raise TypeError(f'{self.name} must be int')
+	          setattr(obj, f'_{self.name}', value)
 
-162. **What is the use of `property` decorator?**
-	- To define managed attributes with getter/setter/deleter.
+	  class MyClass:
+	      age = Validator()
+	  ```
 
 163. **What is the use of `__enter__` and `__exit__`?**
 	- Used to implement context managers for the `with` statement.
@@ -1483,9 +1634,7 @@ asyncio.run(main())
 
 165. **What is the use of `@lru_cache`?**
 	- Caches results of expensive function calls for performance.
-
-166. **What is monkey patching?**
-	- Dynamically modifying or extending code at runtime.
+	- For unbounded cache, use `@cache` (Python 3.9+) which is equivalent to `@lru_cache(maxsize=None)`.
 
 167. **How do you package and distribute a Python library?**
 	- Use `setuptools`, create `setup.py` or `pyproject.toml`, and upload to PyPI.
@@ -1512,6 +1661,226 @@ asyncio.run(main())
 	  ```python
 	  name = 'Bob'
 	  print(f'Hello, {name}')
+	  ```
+
+171. **What is the difference between `__new__` and `__init__`?**
+	- `__new__` creates a new instance of the class (called before `__init__`). `__init__` initializes the already-created instance. `__new__` is rarely overridden — mainly used for immutable types or implementing Singletons.
+	- Example:
+	  ```python
+	  class Singleton:
+	      _instance = None
+	      def __new__(cls):
+	          if cls._instance is None:
+	              cls._instance = super().__new__(cls)
+	          return cls._instance
+	      def __init__(self):
+	          self.value = 42
+
+	  a = Singleton()
+	  b = Singleton()
+	  print(a is b)  # True
+	  ```
+
+172. **What is the `nonlocal` keyword?**
+	- `nonlocal` allows a nested function to modify a variable from its enclosing (non-global) scope. Without it, assigning to a variable in a nested function creates a new local variable.
+	- Example:
+	  ```python
+	  def counter():
+	      count = 0
+	      def increment():
+	          nonlocal count
+	          count += 1
+	          return count
+	      return increment
+
+	  c = counter()
+	  print(c())  # 1
+	  print(c())  # 2
+	  ```
+
+173. **How does Python pass arguments to functions — by value or by reference?**
+	- Python uses **pass by object reference** (also called "pass by assignment"). The function receives a reference to the object, not a copy. If the object is mutable (list, dict), changes inside the function affect the original. If immutable (int, str, tuple), a new object is created on reassignment.
+	- Example:
+	  ```python
+	  def modify(lst, num):
+	      lst.append(4)   # Mutates original list
+	      num = num + 1   # Creates new int object, original unchanged
+
+	  my_list = [1, 2, 3]
+	  my_num = 10
+	  modify(my_list, my_num)
+	  print(my_list)  # [1, 2, 3, 4] — changed
+	  print(my_num)   # 10 — unchanged
+	  ```
+
+174. **What is the `enum` module?**
+	- Provides support for enumerations — a set of symbolic names bound to unique, constant values. Widely used in production code for type-safe constants.
+	- Example:
+	  ```python
+	  from enum import Enum, auto
+
+	  class Status(Enum):
+	      PENDING = auto()
+	      ACTIVE = auto()
+	      INACTIVE = auto()
+
+	  print(Status.ACTIVE)        # Status.ACTIVE
+	  print(Status.ACTIVE.value)  # 2
+	  print(Status['PENDING'])    # Status.PENDING
+
+	  # Use in match/case (Python 3.10+)
+	  match status:
+	      case Status.ACTIVE:
+	          print('User is active')
+	  ```
+
+175. **What is `pathlib` and how is it different from `os.path`?**
+	- `pathlib` provides an object-oriented interface for filesystem paths. It's the modern, recommended way to handle paths (Python 3.4+). Unlike `os.path` which uses strings, `pathlib.Path` objects support `/` operator for path joining.
+	- Example:
+	  ```python
+	  from pathlib import Path
+
+	  p = Path('src') / 'utils' / 'helpers.py'
+	  print(p.exists())       # True/False
+	  print(p.suffix)         # '.py'
+	  print(p.stem)           # 'helpers'
+	  print(p.parent)         # src/utils
+
+	  # Read/write files
+	  content = p.read_text()
+	  Path('output.txt').write_text('hello')
+
+	  # Glob patterns
+	  for py_file in Path('src').rglob('*.py'):
+	      print(py_file)
+	  ```
+
+176. **What is Pydantic and why is it used?**
+	- Pydantic is the most popular data validation library in Python, used extensively with FastAPI and in production systems. It uses Python type hints to validate data and provides automatic serialization/deserialization.
+	- Example:
+	  ```python
+	  from pydantic import BaseModel, EmailStr, field_validator
+
+	  class User(BaseModel):
+	      name: str
+	      age: int
+	      email: EmailStr
+
+	      @field_validator('age')
+	      @classmethod
+	      def check_age(cls, v):
+	          if v < 0:
+	              raise ValueError('Age must be positive')
+	          return v
+
+	  # Valid
+	  user = User(name='Alice', age=30, email='alice@example.com')
+	  print(user.model_dump())  # {'name': 'Alice', 'age': 30, 'email': 'alice@example.com'}
+
+	  # Invalid — raises ValidationError
+	  # User(name='Bob', age='not_a_number', email='invalid')
+	  ```
+
+177. **What is `defaultdict` and when would you use it?**
+	- A `dict` subclass that provides a default value for missing keys, avoiding `KeyError`. Very common in grouping, counting, and building adjacency lists.
+	- Example:
+	  ```python
+	  from collections import defaultdict
+
+	  # Grouping
+	  groups = defaultdict(list)
+	  for name, dept in [('Alice', 'Eng'), ('Bob', 'Eng'), ('Carol', 'HR')]:
+	      groups[dept].append(name)
+	  # {'Eng': ['Alice', 'Bob'], 'HR': ['Carol']}
+
+	  # Counting
+	  counter = defaultdict(int)
+	  for char in 'mississippi':
+	      counter[char] += 1
+	  ```
+
+178. **What is `deque` and when is it better than a list?**
+	- `deque` (double-ended queue) from `collections` supports O(1) append and pop from both ends, while list is O(n) for operations at the beginning. Use it for queues, BFS, and sliding window problems.
+	- Example:
+	  ```python
+	  from collections import deque
+
+	  dq = deque([1, 2, 3])
+	  dq.appendleft(0)   # O(1) — [0, 1, 2, 3]
+	  dq.pop()           # O(1) — removes 3
+	  dq.popleft()       # O(1) — removes 0
+	  dq.rotate(1)       # Rotate right by 1
+
+	  # Bounded deque (sliding window)
+	  recent = deque(maxlen=3)
+	  for i in range(5):
+	      recent.append(i)
+	  print(recent)  # deque([2, 3, 4], maxlen=3)
+	  ```
+
+179. **What is `__all__` in Python modules?**
+	- `__all__` is a list of public names that should be exported when `from module import *` is used. It controls what gets exposed and is considered good practice for library authors.
+	- Example:
+	  ```python
+	  # mymodule.py
+	  __all__ = ['public_func', 'PublicClass']
+
+	  def public_func():
+	      pass
+
+	  def _private_helper():
+	      pass
+
+	  class PublicClass:
+	      pass
+
+	  # In another file:
+	  from mymodule import *  # Only imports public_func and PublicClass
+	  ```
+
+180. **When should you use threading vs multiprocessing vs asyncio?**
+	- This is one of the most common senior-level Python interview questions:
+	  | Approach | Best for | GIL affected? | Overhead |
+	  |---|---|---|---|
+	  | `threading` | I/O-bound tasks (HTTP requests, file I/O, DB queries) | Yes | Low |
+	  | `multiprocessing` | CPU-bound tasks (data processing, calculations) | No (separate processes) | High (memory) |
+	  | `asyncio` | High-concurrency I/O (thousands of connections, web servers) | Yes | Very low |
+
+	- **Rule of thumb:** Use `asyncio` for high-concurrency I/O (web servers, API clients), `threading` for simple I/O parallelism, and `multiprocessing` for CPU-heavy work.
+	- Example comparison:
+	  ```python
+	  # Threading — I/O bound
+	  from concurrent.futures import ThreadPoolExecutor
+	  with ThreadPoolExecutor(max_workers=5) as executor:
+	      results = list(executor.map(fetch_url, urls))
+
+	  # Multiprocessing — CPU bound
+	  from concurrent.futures import ProcessPoolExecutor
+	  with ProcessPoolExecutor() as executor:
+	      results = list(executor.map(heavy_computation, data))
+
+	  # Asyncio — high-concurrency I/O
+	  import asyncio
+	  async def main():
+	      results = await asyncio.gather(*[fetch(url) for url in urls])
+	  ```
+
+181. **What is `concurrent.futures` and why use it?**
+	- A high-level interface for asynchronously executing callables using thread or process pools. It provides a unified API (`ThreadPoolExecutor` and `ProcessPoolExecutor`) with `submit()`, `map()`, and `as_completed()`, making it simpler than raw `threading` or `multiprocessing`.
+	- Example:
+	  ```python
+	  from concurrent.futures import ThreadPoolExecutor, as_completed
+
+	  def fetch(url):
+	      import requests
+	      return requests.get(url).status_code
+
+	  urls = ['https://python.org', 'https://github.com', 'https://google.com']
+	  with ThreadPoolExecutor() as executor:
+	      futures = {executor.submit(fetch, url): url for url in urls}
+	      for future in as_completed(futures):
+	          url = futures[future]
+	          print(f'{url}: {future.result()}')
 	  ```
 
 ## Networking
@@ -1591,13 +1960,20 @@ asyncio.run(main())
 - [hashlib — Secure hashes and message digests](https://docs.python.org/3/library/hashlib.html)
 - [cryptography Documentation](https://cryptography.io/en/latest/)
 6. **How do you hash a password in Python?**
-   - Use the `hashlib` or `bcrypt` library.
-	 - Example:
+   - **Never use `hashlib` (SHA-256, MD5, etc.) for passwords** — they are too fast and vulnerable to brute-force attacks. Use `bcrypt`, `argon2`, or `scrypt` which are designed for password hashing.
+	 - Example (recommended approach using `bcrypt`):
 		 ```python
-		 import hashlib
-		 password = 'secret'.encode()
-		 hashed = hashlib.sha256(password).hexdigest()
-		 print(hashed)
+		 import bcrypt
+		 password = b'secret'
+		 hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+		 # Verify
+		 bcrypt.checkpw(password, hashed)  # True
+		 ```
+	 - Example (using Python's built-in `hashlib.scrypt`):
+		 ```python
+		 import hashlib, os
+		 salt = os.urandom(16)
+		 hashed = hashlib.scrypt(b'secret', salt=salt, n=16384, r=8, p=1)
 		 ```
 
 7. **How do you encrypt and decrypt data in Python?**
@@ -1662,6 +2038,42 @@ asyncio.run(main())
 		 class Observer:
 			 def update(self, msg):
 				 print('Received:', msg)
+		 ```
+
+12. **What is the Strategy pattern?**
+	- Defines a family of algorithms, encapsulates each one, and makes them interchangeable at runtime.
+	   - Example:
+		 ```python
+		 from typing import Callable
+
+		 def sort_ascending(data: list) -> list:
+		     return sorted(data)
+
+		 def sort_descending(data: list) -> list:
+		     return sorted(data, reverse=True)
+
+		 def process(data: list, strategy: Callable) -> list:
+		     return strategy(data)
+
+		 result = process([3, 1, 2], sort_ascending)  # [1, 2, 3]
+		 ```
+
+13. **What is the Decorator pattern?**
+	- Dynamically adds behavior to an object without modifying its class. Not to be confused with Python's `@decorator` syntax (though Python decorators can implement this pattern).
+	   - Example:
+		 ```python
+		 class Coffee:
+		     def cost(self):
+		         return 5
+
+		 class MilkDecorator:
+		     def __init__(self, coffee):
+		         self._coffee = coffee
+		     def cost(self):
+		         return self._coffee.cost() + 2
+
+		 coffee = MilkDecorator(Coffee())
+		 print(coffee.cost())  # 7
 		 ```
 
 
@@ -1953,9 +2365,7 @@ asyncio.run(main())
 
 ## Python Internals
 
----
-
-## Popular Python Community Tools
+### Popular Python Community Tools
 
 **References:**
 - [Awesome Python Linters](https://github.com/python-linters/awesome-python-linters)
@@ -2014,26 +2424,40 @@ asyncio.run(main())
 	- The process: Source code → Bytecode → Interpreter (PVM) → Machine code (via C, JIT, or JVM depending on implementation).
 	- [How Python runs programs](https://realpython.com/python-virtual-machine/)
 
+### Python Object Model
+- Everything in Python is an object (even functions, classes, and modules).
+- Every object has an identity (`id()`), a type (`type()`), and a value.
+- Small integers (-5 to 256) and interned strings are cached/reused by CPython for performance.
+  ```python
+  a = 256
+  b = 256
+  print(a is b)  # True (cached)
+  a = 257
+  b = 257
+  print(a is b)  # False (not cached, may vary by implementation)
+  ```
+
+### `__slots__` vs `__dict__`
+- By default, Python objects use `__dict__` for attribute storage (a dict per instance).
+- `__slots__` restricts attributes and saves significant memory for many instances.
+  ```python
+  class WithDict:
+      def __init__(self, x, y):
+          self.x = x
+          self.y = y
+
+  class WithSlots:
+      __slots__ = ('x', 'y')
+      def __init__(self, x, y):
+          self.x = x
+          self.y = y
+  # WithSlots uses ~40% less memory per instance
+  ```
+
 **References:**
 - [Python Memory Management](https://docs.python.org/3/c-api/memory.html)
 - [CPython Internals Book](https://realpython.com/cpython-source-code-guide/)
-14. **How does Python manage memory?**
-	- Python uses reference counting and a cyclic garbage collector to manage memory.
 
-15. **What is the difference between CPython, PyPy, and Jython?**
-	- CPython: standard Python implementation in C.
-	- PyPy: fast Python implementation with JIT compilation.
-	- Jython: Python implemented in Java, runs on JVM.
-
-16. **How does garbage collection work in Python?**
-	- Python automatically frees memory by reference counting and detecting cycles with the `gc` module.
 ---
 
-## Additional Advanced Topics Not Yet Covered
-
-- **Networking:** No questions on socket, HTTP requests, or web scraping.
-- **Database:** No questions on SQLite, SQLAlchemy, or database connections.
-- **Security:** No questions on security best practices, encryption, or safe coding.
-- **Design Patterns:** No explicit coverage of Singleton, Factory, Observer, etc.
-- **Interview Coding Problems:** No algorithmic/coding challenge questions (e.g., reverse a linked list, find duplicates, etc.).
-- **Python internals:** No deep-dive on memory management, garbage collection, or CPython internals.
+> All previously noted gaps (Networking, Database, Security, Design Patterns, Coding Problems, Python Internals) have been addressed in sections above.
