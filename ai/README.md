@@ -33,6 +33,7 @@ This document contains a comprehensive set of interview questions and detailed a
 ## 1. Architecture & Overview
 
 ### Q1: Can you describe the overall architecture of your AI agent system?
+
 **Answer:**
 The AI agent system is designed as a modular, scalable backend service. It uses FastAPI as the web framework to expose REST and WebSocket endpoints. LangChain/LangGraph orchestrates the agent's reasoning and workflow, integrating with a VectorDB (backed by FAISS) for semantic search and retrieval. PostgreSQL is used for structured data storage, while Redis provides fast caching and pub/sub for real-time features. WebSocket enables real-time, bidirectional communication with clients. The system is containerized for deployment and can scale horizontally.
 
@@ -54,19 +55,29 @@ graph TD
     LangChain-->|Structured Data|Postgres
     LangChain-->|Cache/PubSub|Redis
     FastAPI-->|WebSocket|Client
+
 ```
 
 ### Q2: What are the main components and their responsibilities?
+
 **Answer:**
+
 - **FastAPI:** API layer for HTTP/WebSocket communication with automatic OpenAPI docs.
+
 - **LangChain/LangGraph:** Agent logic, workflow orchestration, tool use, and LLM integration.
+
 - **VectorDB (FAISS):** Semantic search and retrieval of vectorized data.
+
 - **PostgreSQL:** Persistent storage for structured data (users, logs, configs).
+
 - **Redis:** Caching, session management, and pub/sub for real-time updates.
+
 - **WebSocket:** Real-time communication channel for streaming responses.
 
 ### Q3: How do these components interact during a typical user query?
+
 **Answer:**
+
 1. User sends a query via FastAPI endpoint (HTTP or WebSocket).
 2. FastAPI passes the query to the agent logic (LangChain/LangGraph).
 3. The agent may retrieve context from VectorDB (FAISS) and/or PostgreSQL.
@@ -74,6 +85,7 @@ graph TD
 5. The agent processes the query, possibly invoking an LLM, and returns the response via FastAPI (HTTP/WebSocket).
 
 **Example Code (FastAPI endpoint with LangChain):**
+
 ```python
 from fastapi import FastAPI, WebSocket
 from langchain_openai import ChatOpenAI
@@ -95,6 +107,7 @@ async def websocket_endpoint(websocket: WebSocket):
         data = await websocket.receive_text()
         response = await llm.ainvoke([HumanMessage(content=data)])
         await websocket.send_text(response.content)
+
 ```
 
 ---
@@ -102,14 +115,17 @@ async def websocket_endpoint(websocket: WebSocket):
 ## 2. FastAPI
 
 ### Q4: Why did you choose FastAPI for this project?
+
 **Answer:**
 FastAPI offers high performance (on par with Node.js and Go), native async support, automatic OpenAPI/Swagger documentation, and easy integration with modern Python async libraries. It is well-suited for both REST and WebSocket APIs, making it ideal for AI agent backends that require low latency and high throughput.
 
 ### Q5: How do you handle request validation and serialization in FastAPI?
+
 **Answer:**
 FastAPI uses Pydantic v2 models for request validation and response serialization. This ensures type safety, automatic documentation, and clear API contracts.
 
 **Example:**
+
 ```python
 from pydantic import BaseModel, Field
 
@@ -125,13 +141,16 @@ class QueryResponse(BaseModel):
 async def query_agent(request: QueryRequest):
     response = await llm.ainvoke([HumanMessage(content=request.input)])
     return QueryResponse(response=response.content, tokens_used=response.usage_metadata.get("total_tokens"))
+
 ```
 
 ### Q6: How do you implement authentication and authorization?
+
 **Answer:**
 Authentication can be implemented using OAuth2, JWT, or API keys. FastAPI provides dependency injection for security schemes. Authorization is enforced at the route or business logic level.
 
 **Example (JWT Auth with python-jose):**
+
 ```python
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -152,13 +171,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 async def query_agent(request: QueryRequest, user: str = Depends(get_current_user)):
     # user is authenticated
     ...
+
 ```
 
 ### Q7: How do you manage asynchronous operations in FastAPI?
+
 **Answer:**
 FastAPI natively supports async/await, allowing for non-blocking I/O operations (e.g., database, network calls), which improves scalability and performance. Use async database drivers (asyncpg, redis.asyncio) and async HTTP clients (httpx).
 
 **Example:**
+
 ```python
 import httpx
 
@@ -167,13 +189,16 @@ async def get_external_data():
     async with httpx.AsyncClient() as client:
         response = await client.get("https://api.example.com/data")
     return response.json()
+
 ```
 
 ### Q8: How do you handle errors and exceptions globally in FastAPI?
+
 **Answer:**
 Use exception handlers to catch and format errors consistently across all endpoints.
 
 **Example:**
+
 ```python
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -190,6 +215,7 @@ async def agent_exception_handler(request: Request, exc: AgentException):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "Internal server error"})
+
 ```
 
 ---
@@ -197,10 +223,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 ## 3. LangChain / LangGraph
 
 ### Q9: What is LangChain/LangGraph and why did you use it?
+
 **Answer:**
 LangChain is a framework for building applications with LLMs, providing tools for chaining prompts, memory, tool use, and retrieval. LangGraph extends this with graph-based workflows for complex, stateful agent logic with cycles and branching. They simplify building multi-step agent workflows.
 
 **Example (LangChain with tools - 2026 API):**
+
 ```python
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
@@ -215,13 +243,16 @@ llm = ChatOpenAI(model="gpt-4o")
 agent = create_react_agent(llm, tools=[search])
 
 result = agent.invoke({"messages": [("user", "Search for LangChain docs")]})
+
 ```
 
 ### Q10: How do you define and manage agent workflows with LangGraph?
+
 **Answer:**
 LangGraph uses a graph-based approach where nodes are functions and edges define the flow. It supports cycles, conditionals, and human-in-the-loop patterns.
 
 **Example (LangGraph workflow - 2026 API):**
+
 ```python
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
@@ -249,13 +280,16 @@ workflow.add_edge("generate", END)
 
 app = workflow.compile()
 result = app.invoke({"messages": [], "context": ""})
+
 ```
 
 ### Q11: How do you integrate external tools or APIs with your agent?
+
 **Answer:**
 LangChain supports tool integration via the `@tool` decorator or `StructuredTool`. Tools can call APIs, databases, or perform computations.
 
 **Example (structured tool with validation):**
+
 ```python
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
@@ -273,13 +307,16 @@ def calculator(expression: str) -> str:
         return str(result)
     except Exception as e:
         return f"Error: {e}"
+
 ```
 
 ### Q12: How do you handle context and memory in the agent?
+
 **Answer:**
 LangGraph provides built-in checkpointing for conversation memory. You can persist state to databases for cross-session memory.
 
 **Example (memory with checkpointing):**
+
 ```python
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
@@ -291,13 +328,16 @@ agent = create_react_agent(llm, tools=[], checkpointer=checkpointer)
 config = {"configurable": {"thread_id": "user-123"}}
 result = agent.invoke({"messages": [("user", "Hello")]}, config=config)
 result = agent.invoke({"messages": [("user", "What did I just say?")]}, config=config)
+
 ```
 
 ### Q13: What are guardrails and how do you implement them?
+
 **Answer:**
 Guardrails are safety mechanisms to prevent harmful outputs, validate inputs, and ensure agent behavior stays within bounds. They include input validation, output filtering, and content moderation.
 
 **Example:**
+
 ```python
 from langchain_core.output_parsers import StrOutputParser
 
@@ -321,13 +361,16 @@ async def safe_query(request: QueryRequest):
     response = await llm.ainvoke([HumanMessage(content=validated_input)])
     safe_response = output_guardrail(response.content)
     return {"response": safe_response}
+
 ```
 
 ### Q14: How do you get structured outputs from LLMs?
+
 **Answer:**
 Use Pydantic models with LangChain's `with_structured_output()` to ensure consistent, typed responses.
 
 **Example:**
+
 ```python
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
@@ -343,6 +386,7 @@ structured_llm = llm.with_structured_output(ExtractedInfo)
 result = structured_llm.invoke("My name is John, email john@example.com, I want to cancel my order")
 print(result.name)  # "John"
 print(result.email)  # "john@example.com"
+
 ```
 
 ---
@@ -350,19 +394,23 @@ print(result.email)  # "john@example.com"
 ## 4. VectorDB & FAISS
 
 ### Q15: What is a VectorDB and why is FAISS used?
+
 **Answer:**
 A VectorDB stores high-dimensional vector embeddings for semantic search. FAISS (Facebook AI Similarity Search) is a fast, efficient library for similarity search and clustering of dense vectors, ideal for RAG pipelines. For production, consider managed solutions like Pinecone, Weaviate, Qdrant, or pgvector.
 
 **Diagram:**
-```
+
+```text
 User Query -> [Embedder] -> [VectorDB/FAISS] <-> [Document Vectors]
 ```
 
 ### Q16: How do you generate and store embeddings?
+
 **Answer:**
 Embeddings are generated using embedding models (OpenAI, HuggingFace, Cohere). The vectors are stored in FAISS or a vector database, indexed for fast similarity search.
 
 **Example (2026 best practices):**
+
 ```python
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -376,13 +424,16 @@ vectorstore = FAISS.from_texts(texts, embeddings)
 # Save and load
 vectorstore.save_local("faiss_index")
 loaded_vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+
 ```
 
 ### Q17: How do you perform semantic search in your system?
+
 **Answer:**
 A user query is embedded into a vector, and FAISS finds the most similar vectors/documents. Results are used as context for the agent.
 
 **Example:**
+
 ```python
 # Similarity search
 query = "What is LangChain?"
@@ -392,16 +443,23 @@ docs = vectorstore.similarity_search(query, k=3)
 docs_with_scores = vectorstore.similarity_search_with_score(query, k=3)
 for doc, score in docs_with_scores:
     print(f"Score: {score}, Content: {doc.page_content}")
+
 ```
 
 ### Q18: What are different FAISS index types and when to use them?
+
 **Answer:**
+
 - **IndexFlatL2/IP:** Exact search, best for small datasets (<100k vectors)
+
 - **IndexIVFFlat:** Approximate search with clustering, good for medium datasets
+
 - **IndexIVFPQ:** Product quantization for large datasets, trades accuracy for speed/memory
+
 - **IndexHNSW:** Graph-based, excellent recall with fast search
 
 **Example:**
+
 ```python
 import faiss
 import numpy as np
@@ -421,13 +479,16 @@ index.add(training_data)
 # Search with nprobe parameter
 index.nprobe = 10  # search 10 nearest clusters
 D, I = index.search(query_vec, k=5)
+
 ```
 
 ### Q19: How do you implement hybrid search (keyword + vector)?
+
 **Answer:**
 Hybrid search combines BM25/keyword search with vector similarity for better retrieval. Use ensemble retrievers or databases with hybrid support (pgvector + full-text).
 
 **Example:**
+
 ```python
 from langchain.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
@@ -446,6 +507,7 @@ ensemble_retriever = EnsembleRetriever(
 )
 
 docs = ensemble_retriever.invoke("What is RAG?")
+
 ```
 
 ---
@@ -453,14 +515,17 @@ docs = ensemble_retriever.invoke("What is RAG?")
 ## 5. PostgreSQL
 
 ### Q20: What role does PostgreSQL play in your system?
+
 **Answer:**
 PostgreSQL is used for structured, relational data storage (users, logs, configs, metadata). It provides ACID guarantees, supports complex queries, and with pgvector extension, can also serve as a vector database.
 
 ### Q21: How do you interact with PostgreSQL from FastAPI?
+
 **Answer:**
 Use SQLAlchemy 2.0 with asyncpg for efficient, non-blocking database access.
 
 **Example (SQLAlchemy 2.0 async):**
+
 ```python
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
@@ -481,13 +546,16 @@ async def get_user(user_id: int):
     async with async_session() as session:
         result = await session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
+
 ```
 
 ### Q22: How do you use pgvector for vector search in PostgreSQL?
+
 **Answer:**
 pgvector adds vector similarity search to PostgreSQL, enabling hybrid queries combining relational filters with semantic search.
 
 **Example:**
+
 ```sql
 -- Enable extension
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -509,13 +577,16 @@ FROM documents
 WHERE metadata->>'category' = 'tech'
 ORDER BY embedding <=> '[0.1, 0.2, ...]'
 LIMIT 5;
+
 ```
 
 ### Q23: How do you handle migrations and schema changes?
+
 **Answer:**
 Use Alembic for database migrations with version control and safe rollbacks.
 
 **Example:**
+
 ```bash
 # Initialize Alembic
 alembic init alembic
@@ -528,6 +599,7 @@ alembic upgrade head
 
 # Rollback
 alembic downgrade -1
+
 ```
 
 ---
@@ -535,14 +607,17 @@ alembic downgrade -1
 ## 6. Redis
 
 ### Q24: What is Redis used for in your architecture?
+
 **Answer:**
 Redis is used for caching (LLM responses, embeddings), session management, rate limiting, pub/sub for real-time features, and as a task queue broker.
 
 ### Q25: How do you use Redis for caching with modern async API?
+
 **Answer:**
 Use redis-py with asyncio support for non-blocking cache operations.
 
 **Example (redis-py async - 2026):**
+
 ```python
 import redis.asyncio as redis
 import json
@@ -561,13 +636,16 @@ async def get_semantic_cache(query_embedding: list[float], threshold: float = 0.
     # Store embeddings and use vector similarity for cache hits
     # Consider using Redis Stack with vector search
     pass
+
 ```
 
 ### Q26: How do you implement rate limiting with Redis?
+
 **Answer:**
 Use Redis for distributed rate limiting with sliding window or token bucket algorithms.
 
 **Example:**
+
 ```python
 import redis.asyncio as redis
 from fastapi import HTTPException
@@ -583,13 +661,16 @@ async def rate_limit(user_id: str, limit: int = 100, window: int = 60):
     if count > limit:
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     return count
+
 ```
 
 ### Q27: How do you use Redis pub/sub for real-time features?
+
 **Answer:**
 Redis pub/sub broadcasts real-time updates (agent progress, notifications) to subscribed clients.
 
 **Example:**
+
 ```python
 import redis.asyncio as redis
 import asyncio
@@ -603,6 +684,7 @@ async def subscribe_progress(session_id: str):
     async for message in pubsub.listen():
         if message["type"] == "message":
             yield message["data"].decode()
+
 ```
 
 ---
@@ -610,14 +692,17 @@ async def subscribe_progress(session_id: str):
 ## 7. WebSocket
 
 ### Q28: Why did you use WebSocket in your system?
+
 **Answer:**
 WebSocket enables real-time, bidirectional communication, allowing the agent to stream responses token-by-token, send progress updates, and handle long-running conversations efficiently.
 
 ### Q29: How do you implement streaming responses with WebSocket?
+
 **Answer:**
 Stream LLM tokens as they're generated for better UX.
 
 **Example:**
+
 ```python
 from fastapi import WebSocket, WebSocketDisconnect
 from langchain_openai import ChatOpenAI
@@ -635,13 +720,16 @@ async def websocket_chat(websocket: WebSocket):
             await websocket.send_text("[DONE]")
     except WebSocketDisconnect:
         pass
+
 ```
 
 ### Q30: How do you handle WebSocket authentication?
+
 **Answer:**
 Authenticate during the initial handshake using tokens in query params or the first message.
 
 **Example:**
+
 ```python
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -654,13 +742,16 @@ async def websocket_endpoint(websocket: WebSocket):
     
     await websocket.accept()
     # Connection authenticated, proceed...
+
 ```
 
 ### Q31: How do you scale WebSocket connections across multiple servers?
+
 **Answer:**
 Use Redis pub/sub or a message broker to broadcast messages across all server instances.
 
 **Example:**
+
 ```python
 class ConnectionManager:
     def __init__(self):
@@ -681,6 +772,7 @@ class ConnectionManager:
             if msg["type"] == "message":
                 for ws in self.active_connections.values():
                     await ws.send_text(msg["data"].decode())
+
 ```
 
 ---
@@ -688,10 +780,12 @@ class ConnectionManager:
 ## 8. Integration & Best Practices
 
 ### Q32: How do you orchestrate interactions between all components?
+
 **Answer:**
 The agent logic (LangGraph) acts as the orchestrator, invoking VectorDB, PostgreSQL, and Redis as needed. FastAPI exposes the API, and WebSocket provides real-time communication. Each component is loosely coupled via dependency injection.
 
 **Example:**
+
 ```python
 from fastapi import Depends
 from contextlib import asynccontextmanager
@@ -717,10 +811,13 @@ async def get_dependencies(request: Request):
 async def query(request: QueryRequest, deps=Depends(get_dependencies)):
     # Use deps["redis"], deps["vectorstore"], etc.
     pass
+
 ```
 
 ### Q33: How do you ensure scalability and performance?
+
 **Answer:**
+
 - Use async I/O throughout (FastAPI, asyncpg, redis.asyncio)
 - Cache frequent queries and embeddings in Redis
 - Use efficient vector indices (HNSW, IVF)
@@ -729,10 +826,12 @@ async def query(request: QueryRequest, deps=Depends(get_dependencies)):
 - Use connection pooling for databases
 
 ### Q34: How do you monitor and log your system?
+
 **Answer:**
 Use structured logging (JSON), distributed tracing (OpenTelemetry), and metrics (Prometheus/Grafana).
 
 **Example:**
+
 ```python
 import structlog
 from opentelemetry import trace
@@ -752,13 +851,16 @@ async def query(request: QueryRequest):
         span.set_attribute("query.length", len(request.input))
         logger.info("processing_query", query=request.input[:100])
         # ... process
+
 ```
 
 ### Q35: How do you deploy your system?
+
 **Answer:**
 Containerize with Docker, use CI/CD pipelines, and deploy with Kubernetes for orchestration.
 
 **Example (Dockerfile - Python 3.12):**
+
 ```dockerfile
 FROM python:3.12-slim
 
@@ -773,13 +875,16 @@ COPY . .
 
 # Run with uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
 ```
 
 ### Q36: How do you handle versioning and backward compatibility?
+
 **Answer:**
 Version your API endpoints, use semantic versioning, and maintain backward compatibility.
 
 **Example:**
+
 ```python
 from fastapi import APIRouter
 
@@ -798,6 +903,7 @@ async def query_v2(request: QueryRequestV2):
 
 app.include_router(v1_router)
 app.include_router(v2_router)
+
 ```
 
 ---
@@ -805,10 +911,12 @@ app.include_router(v2_router)
 ## 9. Advanced & Scenario-Based Questions
 
 ### Q37: How would you add support for a new LLM or embedding model?
+
 **Answer:**
 Abstract the LLM/embedding interfaces and implement adapters for new providers.
 
 **Example:**
+
 ```python
 from abc import ABC, abstractmethod
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -839,10 +947,13 @@ class AnthropicProvider(LLMProvider):
 def get_llm_provider(provider_name: str) -> LLMProvider:
     providers = {"openai": OpenAIProvider, "anthropic": AnthropicProvider}
     return providers[provider_name]()
+
 ```
 
 ### Q38: How would you handle a sudden spike in user traffic?
+
 **Answer:**
+
 - Horizontal scaling with Kubernetes autoscaler
 - Queue requests with Redis/Celery for backpressure
 - Aggressive caching (semantic cache for similar queries)
@@ -850,7 +961,9 @@ def get_llm_provider(provider_name: str) -> LLMProvider:
 - Circuit breakers for external services
 
 ### Q39: How would you debug a slow semantic search?
+
 **Answer:**
+
 1. Profile embedding generation time
 2. Check FAISS index type (use IVF/HNSW for large datasets)
 3. Monitor GPU/CPU utilization
@@ -858,7 +971,9 @@ def get_llm_provider(provider_name: str) -> LLMProvider:
 5. Consider approximate nearest neighbors with tuned parameters
 
 ### Q40: How would you migrate from FAISS to another VectorDB?
+
 **Answer:**
+
 1. Abstract the vector store interface
 2. Implement new backend (Pinecone, Weaviate, etc.)
 3. Dual-write during migration
@@ -866,13 +981,16 @@ def get_llm_provider(provider_name: str) -> LLMProvider:
 5. Switch traffic gradually
 
 ### Q41: How would you implement multi-tenancy in your system?
+
 **Answer:**
+
 - Add tenant_id to all data models
 - Separate vector indices per tenant or filter by tenant_id
 - Row-level security in PostgreSQL
 - Tenant-aware rate limiting
 
 **Example:**
+
 ```python
 class Document(Base):
     id = Column(Integer, primary_key=True)
@@ -889,10 +1007,13 @@ async def search_documents(tenant_id: str, query_embedding: list):
         .limit(5)
     )
     return result.scalars().all()
+
 ```
 
 ### Q42: How would you ensure data privacy and compliance?
+
 **Answer:**
+
 - Encrypt data at rest (database encryption) and in transit (TLS)
 - Implement data retention policies with automatic deletion
 - Audit logging for compliance
@@ -900,10 +1021,12 @@ async def search_documents(tenant_id: str, query_embedding: list):
 - Data residency controls
 
 ### Q43: How would you add a new tool or plugin to the agent?
+
 **Answer:**
 Define the tool with the `@tool` decorator and add to the agent's toolset.
 
 **Example:**
+
 ```python
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
@@ -922,15 +1045,19 @@ def search_database(query: str) -> str:
 
 # Add tools to agent
 agent = create_react_agent(llm, tools=[get_weather, search_database])
+
 ```
 
 ### Q44: How would you handle long-running tasks or streaming responses?
+
 **Answer:**
+
 - WebSocket for streaming tokens
 - Background tasks with Celery/ARQ for long operations
 - Server-Sent Events (SSE) for one-way streaming
 
 **Example (SSE):**
+
 ```python
 from fastapi.responses import StreamingResponse
 
@@ -942,13 +1069,16 @@ async def stream_response(request: QueryRequest):
         yield "data: [DONE]\n\n"
     
     return StreamingResponse(generate(), media_type="text/event-stream")
+
 ```
 
 ### Q45: How would you persist chat history or agent state?
+
 **Answer:**
 Use LangGraph checkpointers with database backends for persistence.
 
 **Example (PostgreSQL checkpointer):**
+
 ```python
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
@@ -963,13 +1093,16 @@ async def create_agent_with_persistence():
     config = {"configurable": {"thread_id": "session-123"}}
     result = await agent.ainvoke({"messages": [("user", "Hello")]}, config=config)
     return result
+
 ```
 
 ### Q46: How would you implement rate limiting?
+
 **Answer:**
 Use Redis with sliding window algorithm and FastAPI middleware.
 
 **Example:**
+
 ```python
 from fastapi import Depends, HTTPException
 import redis.asyncio as redis
@@ -994,13 +1127,16 @@ async def rate_limiter(
     if request_count > limit:
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     return True
+
 ```
 
 ### Q47: How would you expose metrics and health checks?
+
 **Answer:**
 Add dedicated endpoints for health checks and Prometheus metrics.
 
 **Example:**
+
 ```python
 from prometheus_client import Counter, Histogram, generate_latest
 from fastapi.responses import PlainTextResponse
@@ -1022,15 +1158,19 @@ async def health_check():
 @app.get("/metrics")
 async def metrics():
     return PlainTextResponse(generate_latest(), media_type="text/plain")
+
 ```
 
 ### Q48: How would you support multiple languages or locales?
+
 **Answer:**
+
 - Use multilingual embedding models (e.g., multilingual-e5-large)
 - Detect language and route to appropriate models
 - Store locale metadata for filtering
 
 **Example:**
+
 ```python
 from langdetect import detect
 
@@ -1040,6 +1180,7 @@ def translate_and_respond(query: str, target_lang: str = "en") -> str:
     detected_lang = detect(query)
     # Use multilingual model or translate
     return f"Detected: {detected_lang}, responding in {target_lang}"
+
 ```
 
 ---
@@ -1047,10 +1188,12 @@ def translate_and_respond(query: str, target_lang: str = "en") -> str:
 ## 10. Specialized & Advanced Topics
 
 ### Q49: What is BERT and how can you use it in your agent?
+
 **Answer:**
 BERT (Bidirectional Encoder Representations from Transformers) is a transformer model for NLU. Use it for embeddings, classification, or question answering.
 
 **Example (HuggingFace):**
+
 ```python
 from transformers import AutoTokenizer, AutoModel
 import torch
@@ -1065,13 +1208,16 @@ def get_embedding(text: str) -> list[float]:
     # Mean pooling
     embedding = outputs.last_hidden_state.mean(dim=1).squeeze().tolist()
     return embedding
+
 ```
 
 ### Q50: How do you evaluate the performance of your AI agent?
+
 **Answer:**
 Use task-specific metrics and evaluation frameworks like RAGAS for RAG systems.
 
 **Example (RAGAS evaluation):**
+
 ```python
 from ragas import evaluate
 from ragas.metrics import faithfulness, answer_relevancy, context_precision
@@ -1089,13 +1235,16 @@ results = evaluate(
     metrics=[faithfulness, answer_relevancy, context_precision]
 )
 print(results)
+
 ```
 
 ### Q51: What is Model Context Protocol (MCP) and how is it used?
+
 **Answer:**
 MCP is an open standard by Anthropic for connecting AI assistants to external data sources and tools. It provides a standardized way to expose resources, tools, and prompts to LLMs.
 
 **Example (MCP server):**
+
 ```python
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -1122,13 +1271,16 @@ async def call_tool(name: str, arguments: dict):
 async def main():
     async with stdio_server() as (read, write):
         await server.run(read, write)
+
 ```
 
 ### Q52: How do you process audio files in your agent?
+
 **Answer:**
 Use speech-to-text (Whisper) for transcription and text-to-speech for responses.
 
 **Example:**
+
 ```python
 from openai import OpenAI
 import base64
@@ -1150,13 +1302,16 @@ async def text_to_speech(text: str) -> bytes:
         input=text
     )
     return response.content
+
 ```
 
 ### Q53: How do you implement agentic patterns like planning and reflection?
+
 **Answer:**
 Use LangGraph to build agents that can plan steps, execute them, and reflect on results.
 
 **Example (ReAct with reflection):**
+
 ```python
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Literal
@@ -1201,6 +1356,7 @@ workflow.add_node("reflector", reflector)
 workflow.add_edge(START, "planner")
 workflow.add_edge("planner", "executor")
 workflow.add_conditional_edges("executor", should_continue)
+
 ```
 
 ---
@@ -1208,13 +1364,16 @@ workflow.add_conditional_edges("executor", should_continue)
 ## 11. Stump-the-Candidate: Deep-Dive Interview Q&A
 
 ### Q54: How would you handle cross-service failures or partial outages?
+
 **Answer:**
+
 - Implement retries with exponential backoff
 - Use circuit breakers (e.g., circuitbreaker library)
 - Gracefully degrade features (fallback to cached data)
 - Health checks and alerting
 
 **Example:**
+
 ```python
 from circuitbreaker import circuit
 import tenacity
@@ -1229,22 +1388,29 @@ async def call_external_api(query: str):
         response = await client.get(f"https://api.example.com/search?q={query}")
         response.raise_for_status()
         return response.json()
+
 ```
 
 ### Q55: What are the trade-offs of microservices vs. monolith for this agent?
+
 **Answer:**
+
 - **Microservices:** Independent scaling, fault isolation, polyglot friendly. Cons: network complexity, distributed tracing needed.
+
 - **Monolith:** Simpler deployment, lower latency, easier debugging. Cons: scaling constraints, larger blast radius.
 - Consider starting monolithic and extracting services as needed.
 
 ### Q56: How do you debug or trace errors in complex agent workflows?
+
 **Answer:**
+
 - Use LangSmith for LangChain/LangGraph tracing
 - OpenTelemetry for distributed tracing
 - Structured logging with request IDs
 - Step-by-step workflow visualization
 
 **Example:**
+
 ```python
 # Enable LangSmith tracing
 import os
@@ -1253,13 +1419,16 @@ os.environ["LANGCHAIN_API_KEY"] = "your-api-key"
 os.environ["LANGCHAIN_PROJECT"] = "my-agent"
 
 # All LangChain operations are now traced automatically
+
 ```
 
 ### Q57: How would you implement custom memory modules in LangGraph?
+
 **Answer:**
 Implement custom checkpointers for specialized memory needs.
 
 **Example:**
+
 ```python
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from typing import Any
@@ -1277,48 +1446,64 @@ class CustomMemory(BaseCheckpointSaver):
         key = f"checkpoint:{config['configurable']['thread_id']}"
         await self.redis.set(key, json.dumps(checkpoint))
         return config
+
 ```
 
 ### Q58: How do you handle vector drift or embedding model upgrades?
+
 **Answer:**
+
 - Version embeddings with model identifier
 - Re-embed documents in background when upgrading
 - Keep old and new indices during transition
 - A/B test retrieval quality
 
 ### Q59: What are the limitations of FAISS and how do you overcome them?
+
 **Answer:**
+
 - **Single-node:** Use distributed wrappers or managed services (Pinecone, Weaviate)
+
 - **No metadata filtering:** Combine with PostgreSQL for hybrid queries
+
 - **Memory-bound:** Use disk-based indices or quantization
 
 ### Q60: How do you securely rotate secrets in production without downtime?
+
 **Answer:**
+
 - Use secret managers with versioning (AWS Secrets Manager, HashiCorp Vault)
 - Application reloads secrets on change (watch for updates)
 - Dual-version support during transition
 
 ### Q61: How do you handle scaling WebSocket connections?
+
 **Answer:**
+
 - Use Redis pub/sub for cross-server communication
 - Sticky sessions with load balancer
 - Connection pooling and limits
 
 ### Q62: What are the security risks of WebSockets?
+
 **Answer:**
+
 - Lack of built-in authentication (validate on connect)
 - Message injection (validate all messages)
 - DoS (set message size limits, rate limiting)
 - Use WSS (TLS) always
 
 ### Q63: How do you estimate and monitor LLM API costs?
+
 **Answer:**
+
 - Track token usage per request
 - Log costs in structured logs
 - Set budget alerts
 - Cache expensive operations
 
 **Example:**
+
 ```python
 from langchain_core.callbacks import BaseCallbackHandler
 
@@ -1328,10 +1513,13 @@ class CostTracker(BaseCallbackHandler):
         cost = (usage.get("prompt_tokens", 0) * 0.00001 + 
                 usage.get("completion_tokens", 0) * 0.00003)
         logger.info("llm_cost", tokens=usage, cost_usd=cost)
+
 ```
 
 ### Q64: How do you measure and mitigate bias in agent outputs?
+
 **Answer:**
+
 - Use bias evaluation datasets
 - Regular audits of outputs
 - Prompt engineering to reduce bias
@@ -1339,26 +1527,33 @@ class CostTracker(BaseCallbackHandler):
 - Content filtering
 
 ### Q65: How would you provide real-time explanations for LLM decisions?
+
 **Answer:**
+
 - Return retrieved context with responses
 - Use chain-of-thought prompting
 - Log intermediate reasoning steps
 
 ### Q66: How do you debug intermittent production bugs?
+
 **Answer:**
+
 - Detailed structured logging with correlation IDs
 - Distributed tracing
 - Error sampling and aggregation
 - Reproduction environments with production data snapshots
 
 ### Q67: How do you trace memory leaks in async Python code?
+
 **Answer:**
+
 - Use tracemalloc for allocation tracking
 - objgraph for reference analysis
 - Check for unawaited coroutines
 - Monitor event loop metrics
 
 **Example:**
+
 ```python
 import tracemalloc
 
@@ -1370,17 +1565,22 @@ snapshot = tracemalloc.take_snapshot()
 top_stats = snapshot.statistics('lineno')
 for stat in top_stats[:10]:
     print(stat)
+
 ```
 
 ### Q68: What are cold start implications for serverless agents?
+
 **Answer:**
+
 - Cold starts add 1-5 seconds latency
 - Mitigate with provisioned concurrency
 - Minimize package size
 - Use lazy loading for heavy dependencies
 
 ### Q69: How do you manage stateful workflows in serverless?
+
 **Answer:**
+
 - Store state in DynamoDB/Redis
 - Use Step Functions for orchestration
 - Checkpoint after each step
@@ -1391,7 +1591,9 @@ for stat in top_stats[:10]:
 ## 12. Languages, Databases, and Tools
 
 ### Q70: Why is Python the preferred language for AI agents?
+
 **Answer:**
+
 - Extensive AI/ML ecosystem (PyTorch, TensorFlow, HuggingFace)
 - LangChain/LangGraph native support
 - Rich data processing libraries (NumPy, pandas)
@@ -1399,7 +1601,9 @@ for stat in top_stats[:10]:
 - Rapid prototyping and readability
 
 ### Q71: What makes PostgreSQL a good choice for AI agent backends?
+
 **Answer:**
+
 - ACID compliance for data integrity
 - pgvector extension for vector search
 - JSONB for flexible schemas
@@ -1407,19 +1611,28 @@ for stat in top_stats[:10]:
 - Mature ecosystem and reliability
 
 ### Q72: Why use FAISS or a Vector Database?
+
 **Answer:**
+
 - Fast similarity search over millions of vectors
 - Multiple index types for different scale/accuracy trade-offs
 - CPU and GPU support
 - Well-documented and battle-tested
 
 ### Q73: What other tools are essential for AI agents?
+
 **Answer:**
+
 - **LangChain/LangGraph:** Workflow orchestration
+
 - **FastAPI:** Async API layer
+
 - **Redis:** Caching and pub/sub
+
 - **Celery/ARQ:** Background tasks
+
 - **Prometheus/Grafana:** Monitoring
+
 - **Docker/Kubernetes:** Deployment
 
 ---
@@ -1427,12 +1640,14 @@ for stat in top_stats[:10]:
 ## 13. Advanced Topics for Robust AI Agents
 
 ### Q74: What is prompt engineering and how does it impact performance?
+
 **Answer:**
 Prompt engineering designs inputs to guide LLM behavior. Good prompts improve accuracy, reduce hallucinations, and enable complex tasks.
 
 **Example templates:**
 
 **System prompt:**
+
 ```python
 system_prompt = """You are a helpful AI assistant. Follow these rules:
 1. Be concise and accurate
@@ -1440,9 +1655,11 @@ system_prompt = """You are a helpful AI assistant. Follow these rules:
 3. If unsure, say "I don't know"
 4. Never make up information
 """
+
 ```
 
 **Few-shot:**
+
 ```python
 few_shot_prompt = """
 Examples:
@@ -1455,16 +1672,20 @@ A: RAG (Retrieval-Augmented Generation) combines retrieval with generation for g
 Q: {question}
 A:
 """
+
 ```
 
 ### Q75: How do you fine-tune LLMs for custom tasks?
+
 **Answer:**
+
 - Collect domain-specific data
 - Use OpenAI fine-tuning API or HuggingFace Trainer
 - Evaluate on held-out test sets
 - Consider parameter-efficient methods (LoRA, QLoRA)
 
 **Example (OpenAI fine-tuning):**
+
 ```python
 from openai import OpenAI
 client = OpenAI()
@@ -1480,17 +1701,25 @@ job = client.fine_tuning.jobs.create(
     training_file=file.id,
     model="gpt-4o-mini-2024-07-18"
 )
+
 ```
 
 ### Q76: What are advanced RAG patterns?
+
 **Answer:**
+
 - **Multi-hop retrieval:** Chain queries for complex reasoning
+
 - **Reranking:** Use cross-encoders to reorder results
+
 - **Hybrid search:** Combine keyword and vector search
+
 - **Query expansion:** Augment queries with related terms
+
 - **Contextual compression:** Summarize retrieved docs
 
 **Example (reranking):**
+
 ```python
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain_cohere import CohereRerank
@@ -1503,13 +1732,16 @@ compression_retriever = ContextualCompressionRetriever(
 
 # Retrieves 20, reranks to top 5
 docs = compression_retriever.invoke("What is LangChain?")
+
 ```
 
 ### Q77: How do you design multi-agent systems?
+
 **Answer:**
 Multiple specialized agents collaborate on complex tasks. Use LangGraph for orchestration.
 
 **Example:**
+
 ```python
 from langgraph.graph import StateGraph
 
@@ -1525,16 +1757,20 @@ workflow.add_node("write", writer_agent)
 workflow.add_node("review", reviewer_agent)
 workflow.add_edge("research", "write")
 workflow.add_edge("write", "review")
+
 ```
 
 ### Q78: How do you prevent prompt injection attacks?
+
 **Answer:**
+
 - Input sanitization and validation
 - Separate user input from instructions
 - Use structured outputs
 - Monitor for suspicious patterns
 
 **Example:**
+
 ```python
 import re
 
@@ -1556,13 +1792,16 @@ async def safe_query(request: QueryRequest):
     if detect_injection(request.input):
         raise HTTPException(status_code=400, detail="Invalid input detected")
     # Process safely...
+
 ```
 
 ### Q79: How do you implement semantic caching?
+
 **Answer:**
 Cache responses based on semantic similarity, not just exact matches.
 
 **Example:**
+
 ```python
 class SemanticCache:
     def __init__(self, vectorstore, similarity_threshold: float = 0.95):
@@ -1581,13 +1820,16 @@ class SemanticCache:
         query_id = str(uuid.uuid4())
         self.vectorstore.add_texts([query], metadatas=[{"query_id": query_id}])
         self.cache[query_id] = response
+
 ```
 
 ### Q80: How do you implement user feedback loops?
+
 **Answer:**
 Collect feedback, analyze patterns, and use for model improvement.
 
 **Example:**
+
 ```python
 class Feedback(Base):
     __tablename__ = "feedback"
@@ -1618,6 +1860,7 @@ async def submit_feedback(
     # Use low ratings for retraining dataset
     if rating <= 2:
         await add_to_retraining_queue(query, response, feedback_text)
+
 ```
 
 ---
@@ -1639,9 +1882,11 @@ rag-agent/
 ├── requirements.txt
 ├── Dockerfile
 └── docker-compose.yml
+
 ```
 
 ### requirements.txt
+
 ```text
 fastapi>=0.115.0
 uvicorn>=0.32.0
@@ -1655,9 +1900,11 @@ redis>=5.0.0
 pydantic>=2.0.0
 python-jose>=3.3.0
 httpx>=0.27.0
+
 ```
 
 ### app/main.py
+
 ```python
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
@@ -1692,9 +1939,11 @@ async def query(request: QueryRequest):
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
 ```
 
 ### app/agent.py
+
 ```python
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
@@ -1717,18 +1966,23 @@ def create_agent(vectorstore):
         checkpointer=checkpointer
     )
     return agent
+
 ```
 
 ### Running the App
+
 ```bash
 uvicorn app.main:app --reload
+
 ```
 
 ### Example Query
+
 ```bash
 curl -X POST "http://localhost:8000/query" \
   -H "Content-Type: application/json" \
   -d '{"input": "What is LangChain?", "session_id": "user-123"}'
+
 ```
 
 ---
@@ -1738,11 +1992,15 @@ curl -X POST "http://localhost:8000/query" \
 ### Automated Testing
 
 **Types of Tests:**
+
 - **Unit tests:** Test individual functions, prompt templates
+
 - **Integration tests:** Test end-to-end flows with mocked LLMs
+
 - **Evaluation tests:** Test retrieval quality and response accuracy
 
 **Example (pytest with mocking):**
+
 ```python
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -1760,11 +2018,13 @@ async def test_query_endpoint(mock_llm, client):
     response = await client.post("/query", json={"input": "test"})
     assert response.status_code == 200
     assert "response" in response.json()
+
 ```
 
 ### CI/CD Setup
 
 **GitHub Actions (.github/workflows/ci.yml):**
+
 ```yaml
 name: CI
 
@@ -1797,6 +2057,7 @@ jobs:
           pip install pytest pytest-asyncio httpx
       - name: Run tests
         run: pytest tests/ -v
+
 ```
 
 ---
@@ -1804,6 +2065,7 @@ jobs:
 ## 16. Frontend/UX Integration
 
 ### React Chat Component
+
 ```jsx
 import React, { useState, useEffect, useRef } from 'react';
 
@@ -1862,6 +2124,7 @@ function Chat() {
 }
 
 export default Chat;
+
 ```
 
 ---
@@ -1869,6 +2132,7 @@ export default Chat;
 ## 17. Deployment Templates & Cloud Tips
 
 ### docker-compose.yml
+
 ```yaml
 version: '3.8'
 services:
@@ -1901,9 +2165,11 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
 ```
 
 ### Kubernetes Deployment
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -1937,6 +2203,7 @@ spec:
             secretKeyRef:
               name: api-secrets
               key: openai-key
+
 ```
 
 ---
@@ -1946,7 +2213,7 @@ spec:
 ### Decision Matrix
 
 | Use Case | OpenAI API | Azure OpenAI | Anthropic Claude | Local (Ollama) |
-|----------|:----------:|:------------:|:----------------:|:--------------:|
+| ---------- | :----------: | :------------: | :----------------: | :--------------: |
 | Best accuracy | ✅ | ✅ | ✅ | ❌ |
 | Data privacy | ❌ | ✅ | ❌ | ✅ |
 | Cost control | ❌ | ❌ | ❌ | ✅ |
@@ -1956,7 +2223,7 @@ spec:
 ### Embedding Models (2026)
 
 | Model | Dimensions | Best For |
-|-------|------------|----------|
+| ------- | ------------ | ---------- |
 | text-embedding-3-small | 1536 | General purpose, cost-effective |
 | text-embedding-3-large | 3072 | Maximum accuracy |
 | multilingual-e5-large | 1024 | Multi-language support |
@@ -1967,7 +2234,7 @@ spec:
 ## 19. Data Privacy & Compliance Checklist
 
 | Practice | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | Minimize data collection | Only collect data needed for the use case |
 | Anonymize/pseudonymize | Remove or mask user identifiers |
 | User consent & deletion | GDPR/CCPA right to be forgotten |
@@ -1982,12 +2249,17 @@ spec:
 ## 20. Performance Benchmarks & Optimization
 
 ### Key Metrics
+
 - **Latency (P50, P95, P99):** Response time distribution
+
 - **Throughput:** Requests per second
+
 - **Token usage:** Input/output tokens per request
+
 - **Error rate:** Failed requests percentage
 
 ### Optimization Strategies
+
 1. **Caching:** Redis for responses, semantic cache for similar queries
 2. **Async I/O:** Use asyncio throughout
 3. **Connection pooling:** Database and Redis pools
@@ -1996,12 +2268,14 @@ spec:
 6. **Index optimization:** Choose appropriate FAISS index type
 
 ### Load Testing
+
 ```bash
 # Using hey for HTTP load testing
 hey -n 1000 -c 50 -m POST \
   -H "Content-Type: application/json" \
   -d '{"input": "test query"}' \
   http://localhost:8000/query
+
 ```
 
 ---
@@ -2009,6 +2283,7 @@ hey -n 1000 -c 50 -m POST \
 ## 21. References & Further Reading
 
 ### Core Tools & Frameworks
+
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [LangChain Documentation](https://python.langchain.com/docs/)
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
@@ -2017,17 +2292,20 @@ hey -n 1000 -c 50 -m POST \
 - [Redis Documentation](https://redis.io/docs/)
 
 ### Tutorials & Examples
+
 - [LangChain Templates](https://github.com/langchain-ai/langchain/tree/master/templates)
 - [OpenAI Cookbook](https://github.com/openai/openai-cookbook)
 - [RAG Best Practices](https://www.anthropic.com/research/building-effective-agents)
 
 ### Cloud & Deployment
+
 - [AWS Bedrock](https://aws.amazon.com/bedrock/)
 - [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - [Pinecone Vector DB](https://www.pinecone.io/)
 - [Weaviate Vector DB](https://weaviate.io/)
 
 ### Responsible AI
+
 - [OpenAI Safety Best Practices](https://platform.openai.com/docs/guides/safety-best-practices)
 - [Anthropic Responsible AI](https://www.anthropic.com/research)
 - [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
