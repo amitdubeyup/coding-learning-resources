@@ -13,20 +13,20 @@ Browse the sections below to start your interview preparation.
 | Section | Files | What's Inside |
 |---------|-------|---------------|
 | **[Python](python/)** ⭐ | 219 | 2000+ lines, 150+ questions - Async, ML, Security, Performance |
-| **[FastAPI](fastapi/)** 🆕 | 1 | 33 questions - Async APIs, Pydantic, WebSocket, Production |
-| **[Multi-Tenant](multi-tenant-architecture/)** 🆕 | 1 | 18 questions - Data isolation, Azure patterns, Scalability |
-| **[System Design](system-design/)** | 23 | Cloud architecture, Scalability, Microservices |
 | **[Node.js](nodejs/)** | 9 | 400 questions - Express, GraphQL, TypeScript |
-| **[React.js](reactjs/)** | 1 | Hooks, Performance, State management |
+| **[FastAPI](fastapi/)** 🆕 | 1 | 33 questions - Async APIs, Pydantic, WebSocket, Production |
+| **[Django](django/)** | - | Django example project (Tennis Club app) |
 | **[JavaScript](javascript/)** | 1 | ES6+, Async patterns, DOM |
-| **[Frontend](frontend/)** | 1 | HTML/CSS, Web fundamentals, Browser APIs |
+| **[React.js](reactjs/)** | 1 | Hooks, Performance, State management |
 | **[Angular](angular/)** | 1 | RxJS, Dependency injection |
 | **[Vue.js](vuejs/)** | 1 | Composition API, Vuex |
-| **[Django](django/)** | - | Django example project (Tennis Club app) |
-| **[DevOps](devops/)** | 3 | AWS, Docker, K8s, CI/CD |
-| **[Database](database/)** | 2 | SQL/NoSQL, Indexing, Sharding, CAP theorem |
-| **[AI/ML](ai/)** | 2 | Model serving, RAG, Vector DBs, LangChain |
+| **[Frontend](frontend/)** | 1 | HTML/CSS, Web fundamentals, Browser APIs |
 | **[Full Stack](full-stack/)** | 6 | Algorithms, Architecture patterns |
+| **[System Design](system-design/)** | 23 | Cloud architecture, Scalability, Microservices |
+| **[Multi-Tenant](multi-tenant-architecture/)** 🆕 | 1 | 18 questions - Data isolation, Azure patterns, Scalability |
+| **[Database](database/)** | 2 | SQL/NoSQL, Indexing, Sharding, CAP theorem |
+| **[DevOps](devops/)** | 3 | AWS, Docker, K8s, CI/CD |
+| **[AI/ML](ai/)** | 2 | Model serving, RAG, Vector DBs, LangChain |
 | **[DSA](dsa/)** | 1 | Data structures & algorithms |
 | **[Program](program/)** | 1 | Programming fundamentals, Best practices |
 | **[Behavioral](behavioral/)** | 1 | STAR method, Leadership |
