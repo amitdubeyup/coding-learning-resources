@@ -11,6 +11,7 @@ classical ML a minority of the technical rounds. Companion files:
 [`foundations.md`](foundations.md) (LLM internals — start here for depth) ·
 [`rag.md`](rag.md) · [`agents.md`](agents.md) ·
 [`evaluation-and-safety.md`](evaluation-and-safety.md) ·
+[`classical-ml.md`](classical-ml.md) (classical ML, ML coding round, ML system design) ·
 [`interview-qa.md`](interview-qa.md) (legacy Q&A, pending review).
 
 The three question tiers senior loops draw from: **foundations** (tokenization,

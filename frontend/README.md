@@ -8,6 +8,9 @@ Frontend interview prep: the web platform fundamentals plus the major frameworks
   model, responsive design, accessibility, and browser fundamentals.
 - [`graphql.md`](graphql.md) — GraphQL schema design, queries/mutations/subscriptions,
   resolvers, and REST-vs-GraphQL trade-offs.
+- [`system-design.md`](system-design.md) — the **frontend system-design round**:
+  component architecture, state & data flow, performance (Core Web Vitals),
+  accessibility, and worked examples (typeahead, infinite feed, design system).
 - **[`react/`](react/)** — the fully rebuilt React module:
   - [`react/README.md`](react/README.md) — core model + hooks
   - [`react/rendering-and-performance.md`](react/rendering-and-performance.md)
@@ -32,3 +35,4 @@ senior React question.
 - JavaScript/TypeScript language depth: [`../languages/`](../languages/).
 - API design that frontends consume: [`graphql.md`](graphql.md) and
   [`../system-design/`](../system-design/).
+- Browser/app security (XSS, CSP, CSRF): [`../backend/web-security.md`](../backend/web-security.md).
