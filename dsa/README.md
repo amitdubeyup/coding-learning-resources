@@ -349,9 +349,16 @@ Target ~6–8 problems per pattern (easy → medium → 1–2 hard). Depth beats
 
 ## Companion files
 
-- [`sorting.md`](sorting.md) — sorting algorithms and when each wins.
-- [`trees-and-graphs.md`](trees-and-graphs.md) — tree/graph traversal deep dive.
-- [`coding-problems-100.md`](coding-problems-100.md) — 100 warm-up programs (basics & language fluency).
-
-> These three were merged in from the old `program/` and `full-stack/` folders.
-> They are next in line for the same word-by-word review this index received.
+- [`sorting.md`](sorting.md) — sorting algorithms **plus a senior "what's actually
+  tested" lens**: the JS comparator gotcha, quicksort/mergesort/heapsort trade-offs,
+  stability, quickselect for top-K, and when non-comparison sorts apply.
+- [`trees-and-graphs.md`](trees-and-graphs.md) — tree/graph structures and traversals,
+  **with the graph algorithms interviews expect** (topological sort, Union-Find,
+  Dijkstra) and the high-frequency tree problems (validate BST, LCA, diameter,
+  serialize).
+- [`coding-problems-100.md`](coding-problems-100.md) — 100 easy/medium warm-up programs
+  for language fluency. Treat these as **fundamentals, not FAANG-level**: for FAANG,
+  apply the 15 patterns above to medium/hard problems.
+- [`common-topics-qa.md`](common-topics-qa.md) — a topic-by-topic DSA Q&A refresher
+  (complexity, arrays/strings, and more) — good for quick concept review alongside the
+  patterns above.

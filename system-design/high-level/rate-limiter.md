@@ -1,317 +1,100 @@
-# Design a Rate Limiter
+# Design a rate limiter
 
-## System Requirements
+Restrict how many requests a client can make in a window — to protect services from
+abuse, accidental overload, and cost blowouts. The interview is mostly about
+**which algorithm** and **how to make it correct and fast across many servers**.
 
-### Functional Requirements
-1. Support multiple rate limiting algorithms (Token Bucket, Leaky Bucket)
-2. Configurable rate limits per user/service
-3. Distributed rate limiting
-4. Rate limit headers in responses
-5. Rate limit bypass for critical services
-6. Rate limit analytics and monitoring
-7. Rate limit configuration management
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 10ms for rate limit checks)
-3. Scalable to handle millions of requests per second
-4. Consistent rate limiting across distributed systems
-5. Minimal memory footprint
+**Functional:** limit by key (user / IP / API key), configurable limits per
+route, return standard `X-RateLimit-*` headers and **429 Too Many Requests** when
+exceeded. **Non-functional:** very **low latency** (it's on every request's hot path —
+add <~few ms), **highly available**, and **consistent enough** across a fleet of
+servers. Decide **fail-open vs fail-closed** if the limiter's datastore is down
+(usually **fail-open** — don't take the whole API down because Redis blipped).
 
-## Capacity Estimation
+## 2. Where it runs
 
-### Traffic Estimates
-- Daily active users: 10 million
-- Average requests per user: 1000 per day
-- Peak RPS: 100,000
-- Total requests per day: 10 billion
-- Average rate limit rules: 5 per user
-- Total rate limit rules: 50 million
+Usually at the edge — an **API gateway** or a middleware in front of services — so bad
+traffic is rejected before it costs you real work. The counters live in a **shared,
+fast store (Redis)** so all app servers see the same count.
 
-### Storage Estimates
-- Rate limit data: 100 bytes per rule
-- User data: 1 KB per user
-- Analytics data: 1 KB per request
-- Daily storage: 10 GB
-- Annual storage: ~3.6 TB
-- Number of storage nodes: ~5
+## 3. The algorithms (know the trade-offs)
 
-## System APIs
+| Algorithm | How | Trade-off |
+|---|---|---|
+| **Fixed window** | count per calendar window (e.g. per minute) | simplest; **boundary burst** — 2× the limit can slip through across the window edge |
+| **Sliding window log** | store every request timestamp, count those in the last window | exact; **memory-heavy** at scale |
+| **Sliding window counter** | weight current + previous fixed windows | great accuracy/memory balance — common production choice |
+| **Token bucket** | tokens refill at a rate; each request spends one | **allows controlled bursts**; the usual default |
+| **Leaky bucket** | queue drains at a fixed rate | **smooths** output to a constant rate; no bursts |
 
-### Check Rate Limit
-```
-GET /api/v1/rate-limit
-Request Headers:
-{
-    "X-API-Key": "key123",
-    "X-User-ID": "user123"
-}
-Response:
-{
-    "allowed": true,
-    "limit": 100,
-    "remaining": 95,
-    "reset": 1616248800
-}
-Response Headers:
-{
-    "X-RateLimit-Limit": "100",
-    "X-RateLimit-Remaining": "95",
-    "X-RateLimit-Reset": "1616248800"
-}
-```
+Senior framing: **token bucket** when you want to permit short bursts (most APIs);
+**leaky bucket** when a downstream needs a steady rate; **sliding window counter**
+when you want accurate per-window limits cheaply.
 
-### Configure Rate Limit
-```
-POST /api/v1/rate-limit/config
-Request:
-{
-    "user_id": "user123",
-    "rules": [
-        {
-            "endpoint": "/api/v1/users",
-            "method": "GET",
-            "limit": 100,
-            "window": 3600,
-            "algorithm": "token_bucket"
-        }
-    ]
-}
-Response:
-{
-    "status": "success",
-    "config_id": "config123"
-}
-```
+## 4. Token bucket (single-node reference)
 
-## Database Schema
-
-### Rate Limit Rules
-```sql
-CREATE TABLE rate_limit_rules (
-    rule_id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36),
-    endpoint VARCHAR(255),
-    method VARCHAR(10),
-    limit INT,
-    window INT,
-    algorithm VARCHAR(20),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    status VARCHAR(20)
-);
-
-CREATE INDEX idx_rules_user ON rate_limit_rules(user_id);
-CREATE INDEX idx_rules_endpoint ON rate_limit_rules(endpoint, method);
-```
-
-### Rate Limit Counters
-```sql
-CREATE TABLE rate_limit_counters (
-    counter_id VARCHAR(36) PRIMARY KEY,
-    rule_id VARCHAR(36),
-    user_id VARCHAR(36),
-    count INT,
-    reset_at TIMESTAMP,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-);
-
-CREATE INDEX idx_counters_rule ON rate_limit_counters(rule_id, user_id);
-CREATE INDEX idx_counters_reset ON rate_limit_counters(reset_at);
-```
-
-## High-Level Design
-
-### Components
-1. **Rate Limit Service**: Core rate limiting logic
-2. **Counter Service**: Rate limit tracking
-3. **Config Service**: Rule management
-4. **Analytics Service**: Usage tracking
-5. **Cache Service**: Counter caching
-6. **Bypass Service**: Critical service handling
-
-### Rate Limiting Flow
-1. **Request Processing**
-   - Request validation
-   - Rule lookup
-   - Counter check
-   - Response generation
-
-2. **Counter Management**
-   - Counter increment
-   - Window management
-   - Cleanup handling
-   - Analytics collection
-
-## Detailed Component Design
-
-### Rate Limit Service
-1. Algorithm implementation
-2. Rule evaluation
-3. Counter management
-4. Response generation
-5. Error handling
-
-### Counter Service
-1. Counter operations
-2. Window management
-3. Cleanup handling
-4. Consistency management
-5. Performance optimization
-
-### Config Service
-1. Rule management
-2. Configuration validation
-3. Rule distribution
-4. Version control
-5. Audit logging
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Service Scaling**
-   - Load balancing
-   - Service replication
-   - Geographic distribution
-
-2. **Counter Scaling**
-   - Counter sharding
-   - Replica distribution
-   - Cache distribution
-
-3. **Storage Scaling**
-   - Data sharding
-   - Read replicas
-   - Cache distribution
-
-### Performance Optimization
-1. **Counter Optimization**
-   - Counter batching
-   - Cache warming
-   - Lazy cleanup
-   - Memory optimization
-
-2. **Rule Optimization**
-   - Rule caching
-   - Rule compilation
-   - Rule distribution
-   - Rule validation
-
-## Rate Limiting Features
-
-1. **Algorithms**
-   - Token Bucket
-   - Leaky Bucket
-   - Fixed Window
-   - Sliding Window
-   - Adaptive Rate Limiting
-
-2. **Rule Types**
-   - User-based limits
-   - IP-based limits
-   - Endpoint limits
-   - Service limits
-   - Custom limits
-
-3. **Bypass Features**
-   - Critical service bypass
-   - Emergency bypass
-   - VIP user bypass
-   - Service bypass
-   - Time-based bypass
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Rate limit hits
-   - Bypass usage
-   - Rule effectiveness
-   - Counter accuracy
-   - Error rates
-
-2. **Alerts**
-   - High bypass rate
-   - Rule conflicts
-   - Counter issues
-   - Storage issues
-   - Service health
-
-## Security Considerations
-
-1. **Rate Limit Security**
-   - Bypass protection
-   - Rule validation
-   - Counter protection
-   - Access control
-   - Audit logging
-
-2. **Configuration Security**
-   - Rule validation
-   - Access control
-   - Change tracking
-   - Version control
-   - Rollback capability
-
-## Implementation Details
-
-### Token Bucket Algorithm
 ```python
+import time
+
 class TokenBucket:
-    def __init__(self, capacity, refill_rate):
+    def __init__(self, capacity, refill_per_sec):
         self.capacity = capacity
-        self.refill_rate = refill_rate
+        self.refill = refill_per_sec
         self.tokens = capacity
-        self.last_refill = time.time()
+        self.ts = time.monotonic()
 
-    def consume(self, tokens=1):
-        self.refill()
-        if self.tokens >= tokens:
-            self.tokens -= tokens
+    def allow(self, cost=1):
+        now = time.monotonic()
+        self.tokens = min(self.capacity, self.tokens + (now - self.ts) * self.refill)
+        self.ts = now
+        if self.tokens >= cost:
+            self.tokens -= cost
             return True
         return False
-
-    def refill(self):
-        now = time.time()
-        time_passed = now - self.last_refill
-        new_tokens = time_passed * self.refill_rate
-        self.tokens = min(self.capacity, self.tokens + new_tokens)
-        self.last_refill = now
 ```
 
-### Distributed Rate Limiting
+## 5. Distributed correctness (the part people get wrong)
+
+Across many servers the counter is shared in Redis — and the update **must be atomic**.
+A `GET` then `INCR` is a **race**: two servers can both read "under limit" and both
+increment, overshooting. Fix it one of these ways:
+
+**(a) Atomic fixed/counter window — `INCR` first, set expiry on creation:**
 ```python
-class DistributedRateLimiter:
-    def __init__(self, redis_client):
-        self.redis = redis_client
-
-    def is_allowed(self, key, limit, window):
-        current = self.redis.get(key)
-        if current is None:
-            self.redis.setex(key, window, 1)
-            return True
-        if int(current) < limit:
-            self.redis.incr(key)
-            return True
-        return False
+def allow(redis, key, limit, window_seconds):
+    count = redis.incr(key)          # atomic; creates at 1 if absent
+    if count == 1:
+        redis.expire(key, window_seconds)
+    return count <= limit
 ```
+`INCR` is atomic, so no lost updates. (Minor caveat: if the process dies between
+`incr` and `expire`, the key could lack a TTL — do both in a **Lua script** to make
+the whole check-and-set atomic in production.)
 
-## Trade-offs and Alternatives
+**(b) Sliding window log with a sorted set** (accurate): store timestamps in a
+`ZSET`, drop old entries with `ZREMRANGEBYSCORE`, then `ZCARD` to count — wrap in a Lua
+script/pipeline so it's atomic.
 
-### Alternative Approaches
-1. **Local vs. Distributed**
-   - Local: Better performance, inconsistent
-   - Distributed: More complex, consistent
+The interview point: **name the race and reach for an atomic primitive (INCR/Lua/ZSET),
+not read-modify-write.**
 
-2. **Algorithm Choice**
-   - Token Bucket: Better burst handling
-   - Leaky Bucket: Better rate smoothing
+## 6. Scaling & operational concerns
 
-### Trade-offs
-1. **Accuracy vs. Performance**
-   - More accurate: Higher latency
-   - Better performance: Less accurate
+- Redis handles very high throughput; **shard by key** if one node isn't enough, and
+  co-locate the limiter with the gateway to keep latency low.
+- **Local + global two-tier:** an in-process token bucket per server as a cheap first
+  gate, backed by Redis for the shared truth — cuts Redis load.
+- **Fail-open** when Redis is unreachable (availability > perfect enforcement), unless
+  the endpoint is security-critical.
+- Return `Retry-After` and `X-RateLimit-{Limit,Remaining,Reset}` so clients back off
+  politely.
 
-2. **Storage vs. Computation**
-   - More storage: Better history
-   - More computation: Better adaptation 
+## Trade-offs to voice
+- **Accuracy vs cost/latency** — sliding-window log is exact but heavy; counter/token
+  approximate but cheap.
+- **Local vs distributed** — per-node is fast but lets `N×limit` through; shared Redis
+  is consistent but adds a network hop.
+- **Fail-open vs fail-closed** — availability vs strict enforcement when the store is down.
+- **Burst vs smooth** — token bucket vs leaky bucket.

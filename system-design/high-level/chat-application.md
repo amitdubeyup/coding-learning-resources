@@ -1,275 +1,89 @@
-# Design a Real-time Chat Application
+# Design a real-time chat application (WhatsApp / Slack / Messenger)
 
-## System Requirements
+The interesting part isn't sending a message — it's delivering it in real time to a
+recipient whose live connection is held by *some other server* in a fleet of
+thousands, plus persistence, ordering, and offline handling.
 
-### Functional Requirements
-1. Real-time messaging between users
-2. Support for different message types (text, images, files)
-3. Group chat functionality
-4. Message delivery status (sent, delivered, read)
-5. Online/offline status
-6. Message history and search
-7. Push notifications
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 100ms for message delivery)
-3. Scalable to handle millions of concurrent users
-4. Message persistence
-5. End-to-end encryption
+**Functional:** 1:1 and group messaging in real time; delivery/read receipts
+(sent → delivered → read); online/last-seen presence; message history; push
+notifications when offline. **Non-functional:** **low latency** (<~100 ms delivery),
+**highly available**, **durable** (never lose a message), ordered within a
+conversation, scale to millions of **concurrent persistent connections**.
 
-## Capacity Estimation
+## 2. Transport: why WebSockets
 
-### Traffic Estimates
-- Daily active users: 50 million
-- Average messages per user: 100 per day
-- Peak concurrent users: 1 million
-- Peak messages per second: 50,000
-- Total messages per day: 5 billion
-- Average message size: 1 KB
+HTTP is request/response — the server can't push. Options: long-polling (works,
+wasteful, higher latency) or **WebSocket** (persistent, bidirectional) — the standard
+choice. SSE is one-way (server→client) so it doesn't fit two-way chat. Clients hold an
+open WebSocket to a **connection/gateway server**.
 
-### Storage Estimates
-- Message data: 1 KB per message
-- User data: 2 KB per user
-- Chat metadata: 500 bytes per chat
-- Daily storage: 5 TB
-- Annual storage: ~1.8 PB
-- Number of storage nodes: ~100
+## 3. The core problem: routing a message to a live connection
 
-## System APIs
+Connections are **stateful** — user A is connected to gateway server G1, user B to
+G17. When A sends to B, the server handling A must get the message to the *specific
+server* holding B's connection. Two standard approaches:
 
-### Send Message
-```
-POST /api/v1/messages
-Request:
-{
-    "chat_id": "chat123",
-    "sender_id": "user123",
-    "content": "Hello!",
-    "type": "text",
-    "metadata": {
-        "reply_to": "msg123",
-        "mentions": ["user456"]
-    }
-}
-Response:
-{
-    "message_id": "msg123",
-    "status": "sent",
-    "created_at": "2024-03-20T10:00:00Z"
-}
-```
+- **A presence/registry** mapping `user_id → gateway server` (in Redis). G1 looks up
+  B, finds G17, forwards the message (directly or via an internal message bus). 
+- **A pub/sub backbone** (Redis pub/sub or Kafka): each gateway subscribes to channels
+  for its connected users; publishing to B's channel reaches whichever server holds B.
 
-### Get Messages
-```
-GET /api/v1/chats/{chat_id}/messages
-Query Parameters:
-{
-    "before": "msg123",
-    "limit": 50,
-    "type": "all"
-}
-Response:
-{
-    "messages": [
-        {
-            "message_id": "msg123",
-            "sender_id": "user123",
-            "content": "Hello!",
-            "type": "text",
-            "status": "delivered",
-            "created_at": "2024-03-20T10:00:00Z"
-        }
-    ],
-    "has_more": true
-}
-```
+This routing layer — not the API — is what makes chat hard, and it's what the
+interviewer wants you to surface. Load balancing WebSockets also needs care (sticky/
+consistent routing; connections are long-lived, so you can't rebalance freely).
 
-## Database Schema
+## 4. Message flow
 
-### Messages Table
-```sql
-CREATE TABLE messages (
-    message_id VARCHAR(36) PRIMARY KEY,
-    chat_id VARCHAR(36),
-    sender_id VARCHAR(36),
-    content TEXT,
-    type VARCHAR(20),
-    status VARCHAR(20),
-    metadata JSONB,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-);
+1. A sends over its WebSocket to its gateway.
+2. Gateway **persists** the message (durability first) and assigns a per-conversation
+   sequence number for **ordering**.
+3. Gateway routes to B's gateway (via registry/pub-sub) → pushed down B's socket →
+   client ACKs → status becomes **delivered**; when B views it → **read**.
+4. If **B is offline** (no live connection): the message is already persisted; enqueue
+   a **push notification** (APNs/FCM). B syncs history on reconnect.
+- Make sends **idempotent** (client message id) so retries don't duplicate.
 
-CREATE INDEX idx_messages_chat ON messages(chat_id, created_at);
-CREATE INDEX idx_messages_sender ON messages(sender_id, created_at);
-```
+## 5. Storage: pick for the access pattern
 
-### Chats Table
-```sql
-CREATE TABLE chats (
-    chat_id VARCHAR(36) PRIMARY KEY,
-    type VARCHAR(20),
-    name VARCHAR(255),
-    metadata JSONB,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-);
+Reads are "fetch the last N messages in a conversation, newest first," and writes are
+enormous and append-only. That's a **wide-column store (Cassandra/HBase)** sweet spot:
+partition by `chat_id`, cluster by time/sequence, so a conversation's recent messages
+are a single efficient range read. (A sharded SQL store works at smaller scale; the
+write volume is why large systems go wide-column.) Store `chat`, `chat_participants`,
+and `message(chat_id, seq, sender, body, type, status, ts)`.
 
-CREATE TABLE chat_participants (
-    chat_id VARCHAR(36),
-    user_id VARCHAR(36),
-    role VARCHAR(20),
-    joined_at TIMESTAMP,
-    PRIMARY KEY (chat_id, user_id)
-);
-```
+## 6. Group chat & fan-out
 
-## High-Level Design
+A group message must reach all members. Small groups: fan out on write (deliver to each
+member's connection/queue). Very large groups/channels: fan out on read or via the
+pub/sub topic for the channel, to avoid write amplification. Name the **fan-out-on-write
+vs fan-out-on-read** trade-off (same as news-feed design).
 
-### Components
-1. **Chat Service**: Core chat functionality
-2. **WebSocket Service**: Real-time communication
-3. **Message Service**: Message handling
-4. **Presence Service**: Online status
-5. **Storage Service**: Message persistence
-6. **Notification Service**: Push notifications
+## 7. Presence (online / last-seen)
 
-### Message Flow
-1. **Message Sending**
-   - Message validation
-   - Real-time delivery
-   - Persistence
-   - Notification
+Clients send periodic **heartbeats**; the gateway updates a presence entry (Redis) with
+a TTL. Missed heartbeats → mark offline. Broadcasting every presence change to large
+groups is expensive — debounce/limit it. Presence is inelegant to make perfectly
+accurate; eventual/approximate is acceptable.
 
-2. **Message Receiving**
-   - WebSocket delivery
-   - Status updates
-   - History sync
-   - Offline handling
+## 8. Scaling & reliability
 
-## Detailed Component Design
+- **Connection servers scale horizontally**; the hard limit is concurrent sockets per
+  box (tune OS limits) — many servers, each holding a slice of users.
+- **Registry/pub-sub** must scale with connections; shard it.
+- **Durability before delivery** — persist, then deliver, so a crash never loses a
+  message; clients reconcile via history sync on reconnect.
+- **Ordering** is per-conversation (a sequence per `chat_id`), not global — global
+  ordering is unnecessary and expensive.
+- End-to-end encryption if required (keys client-side; server routes ciphertext).
 
-### WebSocket Service
-1. Connection management
-2. Message routing
-3. Heartbeat handling
-4. Reconnection logic
-5. Load balancing
-
-### Message Service
-1. Message validation
-2. Delivery guarantees
-3. Retry logic
-4. Ordering
-5. Deduplication
-
-### Presence Service
-1. Online status tracking
-2. Last seen updates
-3. Status broadcasting
-4. Heartbeat monitoring
-5. Cleanup handling
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Service Scaling**
-   - Load balancing
-   - Service replication
-   - Geographic distribution
-
-2. **WebSocket Scaling**
-   - Connection distribution
-   - Message routing
-   - State management
-
-3. **Storage Scaling**
-   - Message sharding
-   - Read replicas
-   - Data partitioning
-
-### Performance Optimization
-1. **Message Delivery**
-   - Message batching
-   - Compression
-   - Caching
-   - Connection pooling
-
-2. **Storage Optimization**
-   - Message archiving
-   - Index optimization
-   - Cache warming
-   - Data cleanup
-
-## Chat Features
-
-1. **Message Types**
-   - Text messages
-   - Images
-   - Files
-   - Voice messages
-   - Video calls
-
-2. **Chat Types**
-   - One-on-one chats
-   - Group chats
-   - Channels
-   - Broadcast messages
-
-3. **Message Features**
-   - Read receipts
-   - Typing indicators
-   - Message reactions
-   - Message editing
-   - Message deletion
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Message latency
-   - Delivery rate
-   - Connection stability
-   - Storage usage
-   - Error rates
-
-2. **Alerts**
-   - High latency
-   - Connection drops
-   - Storage issues
-   - Error spikes
-   - Service health
-
-## Security Considerations
-
-1. **Message Security**
-   - End-to-end encryption
-   - Message signing
-   - Access control
-   - Content filtering
-
-2. **Connection Security**
-   - TLS encryption
-   - Authentication
-   - Rate limiting
-   - DDoS protection
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **WebSocket vs. Long Polling**
-   - WebSocket: Better performance, more complex
-   - Long Polling: Simpler, higher latency
-
-2. **Centralized vs. Distributed**
-   - Centralized: Simpler, single point of failure
-   - Distributed: More complex, better scalability
-
-### Trade-offs
-1. **Consistency vs. Performance**
-   - Strong consistency: Higher latency
-   - Eventual consistency: Better performance
-
-2. **Storage vs. Computation**
-   - More storage: Faster retrieval
-   - More computation: Lower storage cost 
+## Trade-offs to voice
+- **WebSocket vs long-polling** — efficient/complex/stateful vs simple/wasteful.
+- **Fan-out on write vs read** — fast reads/heavy writes vs cheap writes/heavy reads,
+  chosen by group size.
+- **Wide-column vs SQL** — write-scale + range reads vs relational convenience.
+- **Delivery guarantees** — at-least-once + idempotency (practical) vs exactly-once
+  (costly).
+- **Presence accuracy vs cost** — precise real-time status is expensive; approximate is fine.

@@ -3,13 +3,19 @@
 Modern AI engineering interviews split into two tracks. Know which one you're in:
 
 - **GenAI / LLM application engineering** — RAG, agents, prompting, evals,
-  serving, cost/latency. This is where most 2025+ hiring is. Start here.
+  serving, cost/latency. This is where most hiring is. Start here.
 - **Classic ML / MLOps** — modeling, features, training, deployment, monitoring.
 
-This module covers both, GenAI-first. Companion files:
+This module covers both, GenAI-first — AI-engineer loops are now majority-GenAI, with
+classical ML a minority of the technical rounds. Companion files:
+[`foundations.md`](foundations.md) (LLM internals — start here for depth) ·
 [`rag.md`](rag.md) · [`agents.md`](agents.md) ·
 [`evaluation-and-safety.md`](evaluation-and-safety.md) ·
 [`interview-qa.md`](interview-qa.md) (legacy Q&A, pending review).
+
+The three question tiers senior loops draw from: **foundations** (tokenization,
+attention, embeddings), **application** (RAG, agents, fine-tuning), and **production**
+(cost, latency, evaluation, guardrails).
 
 > **On model names/versions:** the frontier moves monthly. This guide teaches
 > *capabilities and trade-offs*, not leaderboards. Always check current model
@@ -30,9 +36,14 @@ This module covers both, GenAI-first. Companion files:
 
 ## LLM fundamentals you must be able to explain
 
+> For the deep version of everything in this section — attention math, positional
+> encoding, scaling laws, fine-tuning, reasoning models — see
+> [`foundations.md`](foundations.md). This is the summary.
+
 - **Transformer, in one breath:** tokens → embeddings → stacked self-attention +
   feed-forward blocks → next-token probability distribution. Attention lets every
-  token weigh every other token; that's the whole trick.
+  token weigh every other token; that's the whole trick (and why cost is O(n²) in
+  sequence length).
 - **Tokens, not words.** Cost, context limits, and latency are all measured in
   tokens (~4 chars/token in English). Be able to reason about token budgets.
 - **Context window** = how many tokens the model can attend to at once. Bigger
@@ -43,6 +54,8 @@ This module covers both, GenAI-first. Companion files:
 - **Decoder-only vs encoder-only vs encoder-decoder:** decoder-only (GPT-style)
   dominates generation; encoder-only (BERT-style) still wins for embeddings and
   classification; encoder-decoder (T5-style) for translation/seq2seq.
+- **Reasoning models** trade *inference* compute for accuracy — trained to "think"
+  before answering. Know the trade-off (latency/cost); details in `foundations.md`.
 - **Why hallucinations happen:** the model optimizes for *plausible* next tokens,
   not truth. It has no grounding unless you provide it (→ RAG, tools, citations).
 - **Structured outputs:** prefer native JSON/schema or function-calling modes
@@ -79,19 +92,21 @@ the axes:
 Key point to land: **RAG changes what the model knows; fine-tuning changes how it
 behaves.** They're complementary, not either/or. Long context is not a RAG
 replacement at scale — it's expensive per query and doesn't persist knowledge.
-Full deep dive in [`rag.md`](rag.md).
+Full RAG deep dive in [`rag.md`](rag.md); fine-tuning mechanics (LoRA/QLoRA) in
+[`foundations.md`](foundations.md).
 
 ## The modern GenAI stack
 
-- **Orchestration:** LangChain/LangGraph, LlamaIndex, or increasingly plain code
-  + a thin SDK. Be ready to argue *against* heavy frameworks (hidden control flow,
-  debugging pain) as much as for them.
+- **Orchestration:** LangGraph (stateful agents), LangChain, LlamaIndex, or
+  increasingly plain code + a thin SDK. Be ready to argue *against* heavy frameworks
+  (hidden control flow, debugging pain) as much as for them.
 - **Tool use / function calling:** the model emits a structured call; your code
   executes it and returns the result. Foundation of agents.
-- **MCP (Model Context Protocol):** emerging standard for connecting models to
-  tools/data sources through a common interface — worth knowing by name.
-- **Vector store:** pgvector (Postgres), or a dedicated store when scale/latency
-  demands it. Covered in [`rag.md`](rag.md).
+- **MCP (Model Context Protocol):** now the common standard for connecting models to
+  tools/data sources through one interface — worth knowing by name.
+- **Vector store:** pgvector (Postgres) by default; dedicated stores (Qdrant,
+  Pinecone, Weaviate, Chroma) when scale/latency/hybrid-search demands it. See
+  [`rag.md`](rag.md).
 - **Embeddings + reranking:** a bi-encoder retrieves candidates; a cross-encoder
   reranker reorders the top-k for precision.
 - **Observability:** trace every LLM call — inputs, outputs, tokens, latency,
@@ -104,11 +119,11 @@ Full deep dive in [`rag.md`](rag.md).
 - **Semantic caching:** cache by embedding similarity, not exact string match, to
   serve repeated/near-duplicate queries cheaply.
 - **Route by difficulty:** small/cheap model for easy calls, frontier model only
-  when needed. Big cost lever.
+  when needed. Big cost lever — and the same idea gates reasoning effort.
 - **Batching + concurrency** for throughput; **quantization** (8-bit/4-bit) and
   **KV-cache** for self-hosted inference (vLLM/TGI).
 - **Know your knobs:** prompt length, output length (`max_tokens`), model size,
-  and call count are the four cost/latency levers.
+  reasoning effort, and call count are the cost/latency levers.
 
 ## Classic ML & MLOps essentials
 

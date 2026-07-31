@@ -2,6 +2,35 @@
 
 This document covers various sorting algorithms, including their time and space complexities, step-by-step approaches, and optimized JavaScript implementations.
 
+## What actually gets tested (senior lens)
+
+You will almost never implement bubble/selection/insertion sort in a real interview —
+you call the language's built-in `O(n log n)` sort. What's tested is **judgment**:
+
+- **The comparator gotcha (JS):** `Array.prototype.sort()` sorts *lexicographically* by
+  default — `[1, 2, 10].sort()` → `[1, 10, 2]`. Always pass a comparator for numbers:
+  `arr.sort((a, b) => a - b)`.
+- **Which algorithm and why:**
+  - **Quicksort** — in-place, cache-friendly, avg `O(n log n)`, but **worst-case
+    `O(n²)`** on bad pivots (fix with a randomized / median-of-three pivot); **not
+    stable**.
+  - **Mergesort** — **stable**, **guaranteed `O(n log n)`**, needs `O(n)` space; the
+    choice for **linked lists** and **external sort** (data larger than RAM).
+  - **Heapsort** — in-place, `O(n log n)`, not stable, poor cache locality; the idea
+    behind priority queues.
+- **Stability** — a stable sort preserves the relative order of equal keys; it matters
+  when sorting by one field after another (multi-key sorts).
+- **Beating `O(n log n)`:** comparison sorts *cannot* beat `O(n log n)`;
+  **counting / radix / bucket** sorts achieve `O(n + k)` **only when the key space is
+  bounded** (small integer range, fixed-width keys). Always name that constraint.
+- **Where sorting is really the answer:** "sort then two-pointer / greedy," interval
+  problems (sort by start time), and **top-K / kth-largest** — for which
+  **quickselect** averages `O(n)` (beats a full sort) and a **min-heap** gives
+  `O(n log k)`. See the patterns in [`README.md`](README.md).
+
+The implementations below are for understanding the mechanics — know the trade-offs
+above cold, and reach for the built-in in practice.
+
 ## Table of Contents
 
 - [Bubble Sort](#bubble-sort)
@@ -199,6 +228,10 @@ Quick Sort picks a pivot element, partitions the array so smaller elements go le
 4. Recursively apply the same process to the left partition
 5. And to the right partition
 6. Keep going until you have single elements or empty arrays
+
+> **Senior note:** a fixed last-element pivot degrades to `O(n²)` on already-sorted
+> input. In practice randomize the pivot (or use median-of-three) to make the bad case
+> vanishingly unlikely.
 
 ### JavaScript Implementation
 ```javascript

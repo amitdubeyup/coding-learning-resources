@@ -1,261 +1,74 @@
-# Design a Distributed File System
+# Design a distributed file system
 
-## System Requirements
+Store petabytes across commodity machines that individually fail, while presenting one
+reliable file system (the GFS/HDFS model). The interview centers on **splitting files
+into replicated blocks** and **separating the metadata plane from the data plane** so a
+central coordinator never becomes the bottleneck.
 
-### Functional Requirements
-1. File storage and retrieval
-2. Directory structure support
-3. File versioning and history
-4. File sharing and permissions
-5. File locking and concurrency
-6. File replication and backup
-7. File search and metadata
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 100ms for reads)
-3. Scalable to handle petabytes of data
-4. Data durability and consistency
-5. Fault tolerance and recovery
+**Functional:** store/retrieve large files, directory hierarchy, permissions,
+replication. **Non-functional:** scale to **petabytes / billions of files**, **durable**
+despite constant hardware failure, high read throughput, and available. Assume large
+files and read/append-heavy workloads (the GFS design point) rather than tiny-file
+random writes.
 
-## Capacity Estimation
+## 2. The core architecture: blocks + two planes
 
-### Traffic Estimates
-- Daily active users: 50 million
-- Average file operations per user: 100 per day
-- Peak QPS: 100,000
-- Average file size: 1 MB
-- Total operations per day: 5 billion
+- **Chunk the file.** Split each file into large fixed-size **blocks** (e.g. 64–128 MB)
+  and scatter blocks across many **data nodes**. Large files become sets of blocks that
+  read in parallel from many machines.
+- **Replicate each block** (typically **factor 3**) across different nodes (and racks) —
+  the primary durability mechanism on unreliable hardware.
+- **Separate control from data:**
+  - **Metadata plane — the name node:** holds the directory tree, permissions, and the
+    map of *file → blocks → which data nodes hold them*.
+  - **Data plane — data nodes:** store and serve the actual block bytes.
 
-### Storage Estimates
-- Total storage: 10 PB
-- Average file size: 1 MB
-- Number of files: 10 billion
-- Storage per node: 100 TB
-- Number of storage nodes: ~100
+**The key move:** a client asks the **name node** only for *where* a file's blocks live,
+then reads/writes the bytes **directly from the data nodes**. The name node stays out of
+the data path, so it doesn't bottleneck on bandwidth — it only handles lightweight
+metadata. Say this explicitly.
 
-## System APIs
+## 3. Durability & failure handling
 
-### File Operations
-```
-PUT /api/v1/files/{path}
-Request:
-{
-    "content": "file content",
-    "metadata": {
-        "owner": "user123",
-        "permissions": "rw-r--r--",
-        "type": "text/plain"
-    }
-}
-Response:
-{
-    "file_id": "file123",
-    "version": 1,
-    "size": 1024,
-    "created_at": "2024-03-20T10:00:00Z"
-}
-```
+- **Heartbeats:** data nodes heartbeat to the name node. Missed heartbeats → node
+  presumed dead → the name node **re-replicates** its blocks elsewhere to restore the
+  replication factor. Self-healing.
+- **Checksums** per block detect corruption (bit rot); a bad replica is repaired from a
+  good one.
+- **Rack-aware placement:** spread replicas across racks so a rack/switch failure
+  doesn't take out all copies.
 
-### File Read
-```
-GET /api/v1/files/{path}
-Query Parameters:
-{
-    "version": 1,
-    "range": "bytes=0-1024"
-}
-Response:
-{
-    "content": "file content",
-    "metadata": {
-        "owner": "user123",
-        "size": 1024,
-        "type": "text/plain",
-        "modified_at": "2024-03-20T10:00:00Z"
-    }
-}
-```
+## 4. Why large blocks
 
-## Database Schema
+64–128 MB blocks (vs KB filesystem blocks) **amortize metadata and seek overhead** and
+suit large sequential reads — fewer blocks per file means the name node's metadata map
+stays small enough to keep in memory. The cost: **small files waste a block's worth of
+metadata** and pack poorly — this design is for big files, not billions of tiny ones.
 
-### Files Table
-```sql
-CREATE TABLE files (
-    file_id VARCHAR(36) PRIMARY KEY,
-    path VARCHAR(2048),
-    name VARCHAR(255),
-    size BIGINT,
-    type VARCHAR(100),
-    owner_id VARCHAR(36),
-    permissions VARCHAR(10),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    version INT,
-    metadata JSONB
-);
+## 5. The name node as a single point of failure
 
-CREATE INDEX idx_files_path ON files(path);
-CREATE INDEX idx_files_owner ON files(owner_id);
-```
+Centralized metadata is the classic weak point. Mitigations:
+- **HA standby** name node with a shared/replicated edit log; automatic failover.
+- **Federation/sharding** of the namespace across multiple name nodes when metadata
+  outgrows one machine.
+Naming the SPOF and how you'd remove it is expected at senior level.
 
-### File Blocks Table
-```sql
-CREATE TABLE file_blocks (
-    block_id VARCHAR(36) PRIMARY KEY,
-    file_id VARCHAR(36),
-    block_number INT,
-    size INT,
-    checksum VARCHAR(64),
-    storage_nodes TEXT[],
-    created_at TIMESTAMP,
-    PRIMARY KEY (file_id, block_number)
-);
-```
+## 6. Consistency model
 
-## High-Level Design
+GFS/HDFS relax POSIX semantics for scale — they favor **append** and are optimized for
+throughput over low-latency random writes. Reads see committed data; concurrent-write
+semantics are deliberately simple. The trade is **scalability/throughput over strict
+consistency and arbitrary random writes**.
 
-### Components
-1. **Name Node**: Manages file system metadata
-2. **Data Nodes**: Store actual file data
-3. **Client Library**: File system interface
-4. **Replication Manager**: Handles data replication
-5. **Load Balancer**: Distributes requests
-6. **Monitoring System**: Tracks system health
-
-### File System Architecture
-1. **Metadata Management**
-   - File hierarchy
-   - Access control
-   - Block mapping
-   - Version control
-
-2. **Data Storage**
-   - Block storage
-   - Replication
-   - Data distribution
-   - Fault tolerance
-
-## Detailed Component Design
-
-### Name Node
-1. Metadata management
-2. Block mapping
-3. Access control
-4. Load balancing
-5. Health monitoring
-
-### Data Node
-1. Block storage
-2. Data replication
-3. Block verification
-4. Space management
-5. Heartbeat reporting
-
-### Client Library
-1. File operations
-2. Caching
-3. Retry logic
-4. Error handling
-5. Performance optimization
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Name Node Scaling**
-   - Metadata partitioning
-   - Read replicas
-   - Load distribution
-
-2. **Data Node Scaling**
-   - Block distribution
-   - Storage expansion
-   - Load balancing
-
-3. **Client Scaling**
-   - Connection pooling
-   - Request batching
-   - Local caching
-
-### Performance Optimization
-1. **Storage Optimization**
-   - Block size tuning
-   - Compression
-   - Caching
-   - Prefetching
-
-2. **Network Optimization**
-   - Data locality
-   - Pipeline requests
-   - Compression
-   - Connection reuse
-
-## File System Features
-
-1. **Data Management**
-   - Block allocation
-   - Space management
-   - Garbage collection
-   - Data balancing
-
-2. **Replication**
-   - Synchronous replication
-   - Asynchronous replication
-   - Replication factor
-   - Replica placement
-
-3. **Consistency**
-   - Strong consistency
-   - Eventual consistency
-   - Version control
-   - Conflict resolution
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Storage usage
-   - I/O performance
-   - Replication status
-   - Error rates
-   - Latency
-
-2. **Alerts**
-   - Storage thresholds
-   - Replication delays
-   - Node failures
-   - Performance issues
-   - Error spikes
-
-## Security Considerations
-
-1. **Access Control**
-   - Authentication
-   - Authorization
-   - ACL management
-   - Audit logging
-
-2. **Data Protection**
-   - Encryption at rest
-   - Encryption in transit
-   - Data integrity
-   - Backup and recovery
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **Centralized vs. Distributed**
-   - Centralized: Simpler, single point of failure
-   - Distributed: More complex, better scalability
-
-2. **Block Size**
-   - Larger blocks: Better throughput
-   - Smaller blocks: Better space utilization
-
-### Trade-offs
-1. **Consistency vs. Performance**
-   - Strong consistency: Higher latency
-   - Eventual consistency: Better performance
-
-2. **Replication vs. Storage**
-   - More replication: Better availability
-   - Less replication: Lower cost 
+## Trade-offs to voice
+- **Block size** — large blocks → throughput + small metadata, but wasteful for tiny
+  files.
+- **Replication factor** — higher durability/read parallelism vs storage cost (3× is
+  the usual sweet spot).
+- **Central metadata** — simple, fast lookups vs a SPOF/scaling limit (fix with HA +
+  federation).
+- **Consistency vs throughput** — relaxed append-oriented semantics buy petabyte scale.
+- **Replication vs erasure coding** — 3× replicas (simple, fast recovery) vs erasure
+  coding (far less storage overhead, costlier reconstruction) for colder data.

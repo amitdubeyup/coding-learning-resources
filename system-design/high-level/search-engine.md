@@ -1,283 +1,71 @@
-# Design a Search Engine
+# Design a search engine
 
-## System Requirements
+Two flavors get asked: **web-scale search** (crawl the internet, rank with link
+analysis) and, more commonly, a **search feature** over your own corpus (products,
+docs, messages). Both stand on the same idea — the **inverted index** — so lead with
+that, then adapt.
 
-### Functional Requirements
-1. Web crawling and indexing
-2. Full-text search capabilities
-3. Relevance ranking
-4. Support for different content types
-5. Search suggestions and autocomplete
-6. Filtering and faceted search
-7. Real-time indexing
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 200ms for search results)
-3. Scalable to handle billions of documents
-4. High accuracy and relevance
-5. Cost-effective storage
+**Functional:** full-text search over a large corpus; relevance ranking; filters/
+facets; autocomplete; near-real-time indexing of new/updated docs. **Non-functional:**
+low latency (<~200 ms), high availability, scale to billions of docs, good relevance.
 
-## Capacity Estimation
+## 2. The core idea: the inverted index
 
-### Traffic Estimates
-- Daily active users: 100 million
-- Average searches per user: 10 per day
-- Peak QPS: 100,000
-- Total searches per day: 1 billion
-- Average documents per search: 10
-- Total documents: 100 billion
+A naive scan of every document per query is impossible at scale. Instead, build an
+**inverted index**: for each **term**, store a **posting list** of the documents (and
+positions) containing it.
 
-### Storage Estimates
-- Document data: 10 KB per document
-- Index data: 1 KB per document
-- Daily storage growth: 1 TB
-- Annual storage: ~365 TB
-- Number of storage nodes: ~50
-
-## System APIs
-
-### Search
 ```
-GET /api/v1/search
-Query Parameters:
-{
-    "query": "machine learning",
-    "page": 1,
-    "page_size": 10,
-    "filters": {
-        "type": ["article", "video"],
-        "date": "last_week"
-    },
-    "sort": "relevance"
-}
-Response:
-{
-    "results": [
-        {
-            "id": "doc123",
-            "title": "Introduction to Machine Learning",
-            "url": "https://example.com/ml",
-            "snippet": "...",
-            "type": "article",
-            "score": 0.95,
-            "metadata": {
-                "author": "John Doe",
-                "date": "2024-03-20"
-            }
-        }
-    ],
-    "total": 1000,
-    "page": 1,
-    "page_size": 10,
-    "facets": {
-        "type": {
-            "article": 500,
-            "video": 300
-        }
-    }
-}
+"machine" → [doc3, doc7, doc42, ...]
+"learning" → [doc7, doc42, doc99, ...]
 ```
 
-### Suggest
-```
-GET /api/v1/suggest
-Query Parameters:
-{
-    "prefix": "machine",
-    "limit": 5
-}
-Response:
-{
-    "suggestions": [
-        "machine learning",
-        "machine learning algorithms",
-        "machine learning tutorial",
-        "machine learning python",
-        "machine learning jobs"
-    ]
-}
-```
+A query for `machine learning` then becomes: fetch both posting lists, **intersect**
+them (AND) or union (OR), and you have candidate docs without touching the corpus.
+Positions in the postings enable **phrase** search. This is what engines like Lucene/
+Elasticsearch implement — for a "search feature" interview, the right answer is usually
+"use an inverted-index engine and design the ingestion, index, ranking, and sharding
+around it."
 
-## Database Schema
+## 3. Pipeline
 
-### Documents Table
-```sql
-CREATE TABLE documents (
-    doc_id VARCHAR(36) PRIMARY KEY,
-    url VARCHAR(2048),
-    title TEXT,
-    content TEXT,
-    type VARCHAR(20),
-    metadata JSONB,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    status VARCHAR(20)
-);
+1. **Ingest** — crawl (web) or consume a change stream (your data).
+2. **Analyze** — tokenize, lowercase, remove stop-words, stem/lemmatize, so "running"
+   matches "run." Do the *same* analysis at index and query time.
+3. **Index** — write terms → postings; support **near-real-time** updates by indexing
+   into small segments and merging in the background.
+4. **Serve** — analyze the query, fetch postings, combine, **rank**, paginate.
 
-CREATE INDEX idx_documents_type ON documents(type);
-CREATE INDEX idx_documents_updated ON documents(updated_at);
-```
+## 4. Ranking (the relevance half)
 
-### Inverted Index
-```sql
-CREATE TABLE inverted_index (
-    term VARCHAR(255),
-    doc_id VARCHAR(36),
-    position INT[],
-    score DECIMAL(10,2),
-    PRIMARY KEY (term, doc_id)
-);
+- **Term relevance:** **TF-IDF / BM25** — a term is more significant if frequent in a
+  doc but rare across the corpus. BM25 is the standard baseline.
+- **Query-independent signals:** popularity, freshness, and for the web, **link
+  analysis (PageRank-style)** — authoritative pages rank higher.
+- **Learning-to-rank:** an ML model combines these signals from click/engagement data
+  — the modern top layer.
 
-CREATE INDEX idx_inverted_doc ON inverted_index(doc_id);
-```
+## 5. Sharding a huge index (scatter-gather)
 
-## High-Level Design
+- **Document partitioning (the common choice):** each shard holds a *complete* index
+  for its slice of documents. A query **scatters** to all shards, each returns its top
+  results, and a coordinator **gathers** and merges them. Scales with document count;
+  every query hits every shard.
+- **Term partitioning:** each shard owns certain terms' postings. Less common — hot
+  terms create hotspots and multi-term queries touch multiple shards awkwardly.
+- Replicate shards for availability and query throughput; **cache** hot queries.
 
-### Components
-1. **Crawler Service**: Web crawling
-2. **Indexer Service**: Document indexing
-3. **Search Service**: Query processing
-4. **Ranking Service**: Result ranking
-5. **Suggestion Service**: Autocomplete
-6. **Cache Service**: Result caching
+## 6. Autocomplete
 
-### Search Flow
-1. **Query Processing**
-   - Query parsing
-   - Term extraction
-   - Filter application
-   - Cache lookup
+A separate low-latency path: a **trie** (prefix tree) or an FST of popular queries,
+ranked by frequency — returns suggestions in a few ms, independent of the main index.
 
-2. **Result Generation**
-   - Document retrieval
-   - Result ranking
-   - Facet generation
-   - Response formatting
-
-## Detailed Component Design
-
-### Crawler Service
-1. URL management
-2. Content fetching
-3. Link extraction
-4. Rate limiting
-5. Robots.txt handling
-
-### Indexer Service
-1. Document processing
-2. Term extraction
-3. Index building
-4. Index merging
-5. Index optimization
-
-### Ranking Service
-1. Relevance scoring
-2. PageRank calculation
-3. Freshness scoring
-4. User feedback
-5. Machine learning
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Service Scaling**
-   - Load balancing
-   - Service replication
-   - Geographic distribution
-
-2. **Index Scaling**
-   - Index sharding
-   - Term partitioning
-   - Replica distribution
-
-3. **Storage Scaling**
-   - Data sharding
-   - Read replicas
-   - Cache distribution
-
-### Performance Optimization
-1. **Search Optimization**
-   - Query optimization
-   - Result caching
-   - Index optimization
-   - Parallel processing
-
-2. **Crawling Optimization**
-   - Distributed crawling
-   - Priority queuing
-   - Content deduplication
-   - Rate limiting
-
-## Search Features
-
-1. **Query Features**
-   - Full-text search
-   - Phrase search
-   - Wildcard search
-   - Boolean operators
-   - Field search
-
-2. **Result Features**
-   - Relevance ranking
-   - Faceted search
-   - Result highlighting
-   - Related searches
-   - Search suggestions
-
-3. **Content Types**
-   - Web pages
-   - Documents
-   - Images
-   - Videos
-   - News articles
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Search latency
-   - Result quality
-   - Index size
-   - Crawl rate
-   - Error rates
-
-2. **Alerts**
-   - High latency
-   - Low result quality
-   - Index issues
-   - Crawl failures
-   - Storage issues
-
-## Security Considerations
-
-1. **Crawler Security**
-   - Rate limiting
-   - User agent identification
-   - Access control
-   - Content validation
-
-2. **Search Security**
-   - Query validation
-   - Result filtering
-   - Access control
-   - Privacy protection
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **Centralized vs. Distributed**
-   - Centralized: Simpler, single point of failure
-   - Distributed: More complex, better scalability
-
-2. **Real-time vs. Batch**
-   - Real-time: Better freshness, higher cost
-   - Batch: Lower cost, delayed updates
-
-### Trade-offs
-1. **Relevance vs. Performance**
-   - Better relevance: Higher latency
-   - Better performance: Lower relevance
-
-2. **Freshness vs. Storage**
-   - More frequent updates: Higher storage
-   - Less frequent updates: Lower storage 
+## Trade-offs to voice
+- **Document vs term partitioning** — even load + simple merges (scatter-gather) vs
+  fewer shards touched but hotspots.
+- **Freshness vs cost** — real-time indexing (segment merges) vs cheaper batch rebuilds.
+- **Precision vs recall** — strict matching vs stemming/synonyms that broaden results.
+- **Build vs buy** — a tuned Lucene/Elasticsearch cluster vs a from-scratch index
+  (almost always use the engine).

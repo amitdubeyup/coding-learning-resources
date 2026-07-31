@@ -1,269 +1,70 @@
-# Design a Notification System
+# Design a notification system
 
-## System Requirements
+Deliver notifications across **push, email, and SMS** at scale, reliably, without
+spamming users. The interview is about **decoupling, reliable delivery, dedup, and
+respecting user preferences** — not the individual channel APIs.
 
-### Functional Requirements
-1. Support multiple notification types (push, email, SMS)
-2. Real-time notification delivery
-3. Notification preferences management
-4. Notification history and tracking
-5. Template management
-6. A/B testing support
-7. Analytics and reporting
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 100ms for push notifications)
-3. Scalable to handle millions of notifications per second
-4. Reliable delivery
-5. Cost-effective
+**Functional:** multiple channels (push via APNs/FCM, email via SES/SendGrid, SMS via
+Twilio); templates with variable substitution; per-user **preferences / opt-out /
+quiet hours**; delivery tracking; priority (a 2FA code beats a marketing blast).
+**Non-functional:** **highly available**, scale to billions/day, **reliable delivery**
+(at-least-once), low latency for high-priority, cost-aware (SMS is expensive).
 
-## Capacity Estimation
+## 2. Why a queue is the backbone
 
-### Traffic Estimates
-- Daily active users: 100 million
-- Average notifications per user: 10 per day
-- Peak QPS: 50,000
-- Total notifications per day: 1 billion
-- Push notifications: 60%
-- Email notifications: 30%
-- SMS notifications: 10%
+Callers (services that want to notify) must not block on third-party providers that are
+slow or flaky. So the flow is **decoupled through a queue**:
 
-### Storage Estimates
-- Notification metadata: 100 bytes per notification
-- Template storage: 1 GB
-- User preferences: 1 KB per user
-- Total storage per day: 100 GB
-- Storage per year: ~36 TB
-
-## System APIs
-
-### Send Notification
 ```
-POST /api/v1/notifications
-Request:
-{
-    "user_id": "user123",
-    "type": "push",
-    "template_id": "welcome",
-    "data": {
-        "name": "John",
-        "action": "login"
-    },
-    "channels": ["push", "email"],
-    "priority": "high"
-}
-Response:
-{
-    "notification_id": "notif123",
-    "status": "queued",
-    "estimated_delivery": "2024-03-20T10:00:01Z"
-}
+producers → Notification API → [validate, dedup, apply prefs, render template]
+          → per-channel queues → channel workers → provider (APNs/FCM/SES/Twilio)
+          → delivery status ← webhooks
 ```
 
-### Get Notifications
-```
-GET /api/v1/users/{user_id}/notifications
-Query Parameters:
-{
-    "status": "unread",
-    "type": "all",
-    "limit": 50,
-    "before": "notif123"
-}
-Response:
-{
-    "notifications": [
-        {
-            "id": "notif123",
-            "type": "push",
-            "title": "Welcome!",
-            "content": "Welcome back, John!",
-            "created_at": "2024-03-20T10:00:00Z",
-            "status": "delivered"
-        }
-    ],
-    "has_more": true
-}
-```
+The queue smooths spikes, enables retries, and isolates a failing channel from the
+rest. Use **priority queues** (or separate high/low queues) so transactional
+notifications jump ahead of bulk ones.
 
-## Database Schema
+## 3. The pieces and why each exists
 
-### Notifications Table
-```sql
-CREATE TABLE notifications (
-    notification_id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36),
-    type VARCHAR(20),
-    template_id VARCHAR(36),
-    data JSONB,
-    status VARCHAR(20),
-    created_at TIMESTAMP,
-    delivered_at TIMESTAMP,
-    read_at TIMESTAMP,
-    metadata JSONB
-);
+- **Ingestion/API** — accept a notification request (`user, template, data, channels,
+  priority`), validate, and enqueue fast.
+- **Preference service** — check opt-outs, channel choice, and **quiet hours/DND**
+  *before* sending. Skipping this is how products get reported as spam.
+- **Template service** — versioned templates + variable substitution + localization;
+  cache compiled templates.
+- **Channel workers** — one per channel, each an **adapter** over a provider; they own
+  provider-specific auth, formatting, and rate limits.
+- **Tracking/analytics** — consume provider **webhooks** (delivered/bounced/opened) to
+  update status and metrics.
 
-CREATE INDEX idx_notifications_user ON notifications(user_id, created_at);
-CREATE INDEX idx_notifications_status ON notifications(status);
-```
+## 4. Reliable delivery (the senior details)
 
-### Templates Table
-```sql
-CREATE TABLE notification_templates (
-    template_id VARCHAR(36) PRIMARY KEY,
-    type VARCHAR(20),
-    name VARCHAR(255),
-    content TEXT,
-    variables JSONB,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    version INT
-);
-```
+- **At-least-once + idempotency/dedup.** Retries and duplicate upstream events mean the
+  same notification can be requested twice — dedup on a **notification key** so a user
+  isn't paged twice. Exactly-once is impractical across third parties; at-least-once +
+  dedup is the pragmatic target.
+- **Retries with exponential backoff + jitter**, then a **dead-letter queue** for
+  messages that keep failing (for inspection/alerting), so one bad message doesn't
+  block the queue.
+- **Rate limiting / throttling per user** — cap notifications per user per window so a
+  buggy producer can't spam someone (cross-ref [`rate-limiter.md`](rate-limiter.md)).
+- **Provider failover** — a secondary provider per channel for resilience.
 
-## High-Level Design
+## 5. Scaling
 
-### Components
-1. **Notification Service**: Core notification logic
-2. **Delivery Service**: Handles different channels
-3. **Template Service**: Manages notification templates
-4. **Queue System**: Buffers notifications
-5. **Analytics Service**: Tracks delivery metrics
-6. **Preference Service**: Manages user preferences
+- Channel workers scale independently on their queues (SMS workers ≠ push workers).
+- Shard by user id; batch where providers support it (email/push batch sends).
+- Precompute/cache preferences and templates; the hot path should be mostly queue I/O.
 
-### Notification Flow
-1. **Creation**
-   - Template selection
-   - Content generation
-   - Channel selection
-   - Priority assignment
-
-2. **Delivery**
-   - Channel routing
-   - Delivery tracking
-   - Retry logic
-   - Status updates
-
-## Detailed Component Design
-
-### Notification Service
-1. Request validation
-2. Template processing
-3. Channel selection
-4. Priority management
-5. Analytics collection
-
-### Delivery Service
-1. Channel management
-2. Delivery optimization
-3. Rate limiting
-4. Error handling
-5. Status tracking
-
-### Template Service
-1. Template management
-2. Variable substitution
-3. Version control
-4. A/B testing
-5. Analytics tracking
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Service Scaling**
-   - Load balancing
-   - Service replication
-   - Geographic distribution
-
-2. **Queue Scaling**
-   - Queue partitioning
-   - Consumer scaling
-   - Priority queues
-
-3. **Storage Scaling**
-   - Data sharding
-   - Read replicas
-   - Cache distribution
-
-### Performance Optimization
-1. **Delivery Optimization**
-   - Batching
-   - Prioritization
-   - Caching
-   - Compression
-
-2. **Template Optimization**
-   - Template caching
-   - Pre-compilation
-   - CDN distribution
-
-## Notification Features
-
-1. **Delivery Channels**
-   - Push notifications
-   - Email notifications
-   - SMS notifications
-   - In-app notifications
-
-2. **Personalization**
-   - User preferences
-   - Dynamic content
-   - Localization
-   - Timing optimization
-
-3. **Analytics**
-   - Delivery rates
-   - Open rates
-   - Click rates
-   - Conversion tracking
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Delivery latency
-   - Success rate
-   - Channel performance
-   - User engagement
-   - Error rates
-
-2. **Alerts**
-   - High latency
-   - Low delivery rate
-   - Channel failures
-   - Queue buildup
-   - Error spikes
-
-## Security Considerations
-
-1. **Data Protection**
-   - PII handling
-   - Data encryption
-   - Access control
-   - Audit logging
-
-2. **Channel Security**
-   - API security
-   - Rate limiting
-   - Spam prevention
-   - Content validation
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **Synchronous vs. Asynchronous**
-   - Synchronous: Simpler, higher latency
-   - Asynchronous: More complex, better performance
-
-2. **Centralized vs. Distributed**
-   - Centralized: Simpler, single point of failure
-   - Distributed: More complex, better scalability
-
-### Trade-offs
-1. **Reliability vs. Performance**
-   - More reliable: Higher latency
-   - Better performance: Less reliable
-
-2. **Cost vs. Features**
-   - More features: Higher cost
-   - Lower cost: Limited features 
+## Trade-offs to voice
+- **At-least-once vs exactly-once** — practical (dedup) vs impractical across external
+  providers.
+- **Sync vs async** — always async via the queue; the caller shouldn't wait on a
+  provider.
+- **Priority separation** — dedicated high-priority path vs one queue (2FA must not sit
+  behind a marketing batch).
+- **Push vs pull for in-app** — server push vs client polls its notification inbox.
+- **Cost vs reach** — SMS reliable but pricey; push cheap but requires app + opt-in.

@@ -1,222 +1,68 @@
-# Design a Distributed Cache System
+# Design a distributed cache
 
-## System Requirements
+Design a cache cluster (think Redis Cluster / Memcached) that stores key-value data in
+memory across many nodes with sub-millisecond reads. The interview centers on **how
+keys are distributed**, **how you survive a node dying**, and the **hot-key** pitfall.
+(General caching strategy — where/what to cache — is in [`../fundamentals.md`](../fundamentals.md); this is the cache *system* itself.)
 
-### Functional Requirements
-1. Store and retrieve key-value pairs
-2. Support for different data types (strings, lists, hashes, etc.)
-3. Automatic cache invalidation
-4. Cache eviction policies
-5. Support for atomic operations
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability (99.99%)
-2. Low latency (< 10ms)
-3. Scalable to handle millions of requests per second
-4. Data consistency
-5. Fault tolerance
+**Functional:** `get`/`set`/`delete` by key, TTL expiry, eviction when memory fills.
+**Non-functional:** very **low latency** (<~1 ms), scale to millions of ops/s,
+**highly available**, and **horizontally scalable** by adding nodes with minimal
+disruption.
 
-## Capacity Estimation
+## 2. The core problem: distributing keys across nodes
 
-### Traffic Estimates
-- Daily active users: 50 million
-- Average requests per user: 100 per day
-- Read to Write ratio: 80:20
-- Total requests per day: 5 billion
-- Peak QPS: 100,000
+Which node holds a given key? A naive `hash(key) % N` **remaps almost every key when N
+changes** (a node added/removed) — a cache-wide miss storm that can stampede the
+database.
 
-### Storage Estimates
-- Average key size: 50 bytes
-- Average value size: 1 KB
-- Total cache size: 1 TB
-- Memory per node: 64 GB
-- Number of nodes: ~16
+**Consistent hashing** is the answer: hash both nodes and keys onto a ring; a key
+belongs to the next node clockwise. Adding/removing a node moves only ~**1/N** of keys,
+not all of them. **Virtual nodes** (each physical node placed at many ring positions)
+even out the distribution and smooth rebalancing. This is *the* thing to say.
 
-## System APIs
+## 3. Availability: replication
 
-### Get Value
-```
-GET /api/v1/cache/{key}
-Response:
-{
-    "value": "cached_value",
-    "ttl": 3600,
-    "last_updated": "2024-03-20T10:00:00Z"
-}
-```
+A node dying shouldn't lose its whole keyspace or drop those reads. Give each shard a
+**primary + one or more replicas** on different machines:
+- **Async replication** (usual for caches) — fast writes, tiny window of possible loss
+  on failover. Fine, because a cache is a rebuildable copy of the source of truth.
+- **Sync/quorum** — stronger consistency, higher latency; only if the cache must not
+  serve stale data.
+On primary failure, promote a replica. Since the cache isn't the source of truth,
+availability is usually favored over strict consistency (AP).
 
-### Set Value
-```
-POST /api/v1/cache
-Request:
-{
-    "key": "user:123",
-    "value": "user_data",
-    "ttl": 3600,
-    "consistency_level": "strong"
-}
-Response:
-{
-    "status": "success",
-    "expires_at": "2024-03-20T11:00:00Z"
-}
-```
+## 4. Eviction & expiry
 
-## Database Schema
+Memory is bounded, so you need an **eviction policy** when full:
+- **LRU** (evict least-recently-used) — the common default; **LFU** for frequency-
+  skewed workloads; **TTL** expiry for time-bounded data.
+Combine with a max-memory policy. This is what makes it a *cache* (lossy by design)
+rather than a store.
 
-### Cache Metadata Table
-```sql
-CREATE TABLE cache_metadata (
-    key_hash VARCHAR(32) PRIMARY KEY,
-    key VARCHAR(255),
-    node_id VARCHAR(36),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    ttl INT,
-    version INT
-);
-```
+## 5. The hot-key problem (senior pitfall)
 
-### Cache Statistics Table
-```sql
-CREATE TABLE cache_stats (
-    node_id VARCHAR(36),
-    hits BIGINT,
-    misses BIGINT,
-    evictions BIGINT,
-    memory_used BIGINT,
-    timestamp TIMESTAMP
-);
-```
+Consistent hashing spreads keys evenly, but a **single viral key** (one celebrity, one
+trending item) all lands on **one node** and melts it. Mitigations: **replicate hot
+keys** across nodes and read from any; add a **client-side/local cache** for the
+hottest keys; or key-suffix sharding for that key. Naming the hot-key problem
+distinguishes a senior answer.
 
-## High-Level Design
+## 6. Client access & stampede
 
-### Components
-1. **Cache Nodes**: Individual cache servers
-2. **Load Balancer**: Distributes requests
-3. **Consistency Manager**: Handles data consistency
-4. **Cluster Manager**: Manages node membership
-5. **Monitoring System**: Tracks performance metrics
+- **Smart client or proxy** knows the ring and routes each key to the right node
+  (client-side sharding avoids a proxy hop).
+- **Cache stampede:** when a hot key expires, many misses hit the DB at once — guard
+  with a lock/single-flight, early recompute, or jittered TTLs.
+- **Write policy** (cache-aside vs write-through vs write-back) is chosen by the app —
+  see [`../fundamentals.md`](../fundamentals.md).
 
-### Cache Architecture
-1. **Distributed Hash Table (DHT)**
-   - Consistent hashing for key distribution
-   - Virtual nodes for better load balancing
-   - Replication factor of 3
-
-2. **Data Partitioning**
-   - Hash-based partitioning
-   - Dynamic rebalancing
-   - Hot spot mitigation
-
-## Detailed Component Design
-
-### Cache Node
-1. In-memory storage (Redis/Memcached)
-2. Local persistence
-3. Eviction policy implementation
-4. Health monitoring
-5. Replication management
-
-### Consistency Manager
-1. Version control
-2. Conflict resolution
-3. Consistency levels
-4. Replication coordination
-5. Failure detection
-
-### Cluster Manager
-1. Node discovery
-2. Health checks
-3. Load balancing
-4. Failure recovery
-5. Configuration management
-
-## Scaling Considerations
-
-### Horizontal Scaling
-1. **Adding Nodes**
-   - Automatic rebalancing
-   - Zero downtime
-   - Data migration
-
-2. **Removing Nodes**
-   - Graceful shutdown
-   - Data redistribution
-   - Connection draining
-
-### Performance Optimization
-1. **Memory Management**
-   - LRU eviction
-   - Memory fragmentation
-   - Max memory policy
-
-2. **Network Optimization**
-   - Connection pooling
-   - Pipeline requests
-   - Compression
-
-## Cache Invalidation Strategies
-
-1. **Time-based (TTL)**
-   - Absolute expiration
-   - Sliding expiration
-   - Background cleanup
-
-2. **Event-based**
-   - Write-through
-   - Write-behind
-   - Cache-aside
-
-3. **Manual Invalidation**
-   - Pattern matching
-   - Version-based
-   - Tag-based
-
-## Consistency Models
-
-1. **Strong Consistency**
-   - Synchronous replication
-   - Quorum-based writes
-   - Linearizable operations
-
-2. **Eventual Consistency**
-   - Asynchronous replication
-   - Conflict resolution
-   - Version vectors
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Hit ratio
-   - Latency
-   - Memory usage
-   - Network I/O
-   - Error rates
-
-2. **Alerts**
-   - High latency
-   - Low hit ratio
-   - Memory pressure
-   - Node failures
-   - Network issues
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **Centralized vs. Distributed**
-   - Centralized: Simpler, lower latency
-   - Distributed: Better scalability, fault tolerance
-
-2. **In-memory vs. Disk-based**
-   - In-memory: Faster, more expensive
-   - Disk-based: Slower, cost-effective
-
-### Trade-offs
-1. **Consistency vs. Performance**
-   - Strong consistency: Higher latency
-   - Eventual consistency: Better performance
-
-2. **Memory vs. CPU**
-   - More memory: Better hit ratio
-   - More CPU: Better compression 
+## Trade-offs to voice
+- **Consistent hashing vs modulo** — minimal reshuffle on scaling vs mass invalidation.
+- **Async vs sync replication** — speed + tiny loss window vs consistency + latency
+  (async is usually right for a cache).
+- **Availability vs consistency** — a cache normally chooses availability; it's not the
+  source of truth.
+- **Memory vs hit ratio** — more RAM/replicas improve hits at higher cost.

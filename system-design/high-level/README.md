@@ -1,157 +1,44 @@
-# High-Level System Design Interview Guide
+# High-level design — worked examples
 
-## Table of Contents
-1. [Design a URL Shortening Service (TinyURL)](tinyurl.md)
-2. [Design a Distributed Cache System](distributed-cache.md)
-3. [Design a Rate Limiter](rate-limiter.md)
-4. [Design a Distributed Logging System](distributed-logging.md)
-5. [Design a Real-time Chat Application](chat-application.md)
-6. [Design a Search Engine](search-engine.md)
-7. [Design a Distributed File System](distributed-file-system.md)
-8. [Design a Notification System](notification-system.md)
-9. [Design a Payment System](payment-system.md)
-10. [Design a Social Media Feed](social-media-feed.md)
+Ten classic system-design problems, each written to a senior bar: lead with the core
+decision, reason through the trade-offs, and close with what to voice in the interview.
 
-## Core Components Overview
+> **Read [`../fundamentals.md`](../fundamentals.md) first.** Every design here assembles
+> from those building blocks (load balancing, caching, sharding, replication,
+> consistency, queues, estimation). This folder is practice at *applying* them.
 
-### URL Shortening Service
-- URL shortening algorithm and collision handling
-- Database schema and indexing strategies
-- Rate limiting and analytics tracking
-- Scaling considerations and caching strategies
-- Security measures and URL validation
+## The designs — and the one idea each turns on
 
-### Distributed Cache System
-- Cache invalidation strategies and consistency models
-- Partitioning and replication techniques
-- Cache eviction policies and memory management
-- Cache warming and monitoring strategies
-- Performance optimization and failure handling
+| Design | The centerpiece decision |
+|---|---|
+| [TinyURL](tinyurl.md) | Key generation (distributed ID + Base62) and **301 vs 302** redirects |
+| [Rate limiter](rate-limiter.md) | Algorithm choice + **atomic** distributed counting (no read-modify-write race) |
+| [Chat application](chat-application.md) | Routing a message to the server holding the recipient's **live WebSocket** |
+| [News feed](social-media-feed.md) | **Fan-out on write vs read** + the celebrity problem → hybrid |
+| [Notification system](notification-system.md) | A **queue** to decouple delivery; dedup, retries + DLQ, preferences |
+| [Payment system](payment-system.md) | **Idempotency**, a double-entry **ledger**, PCI tokenization, state machine |
+| [Search engine](search-engine.md) | The **inverted index** + ranking (BM25) + scatter-gather sharding |
+| [Distributed cache](distributed-cache.md) | **Consistent hashing** + replication + the hot-key problem |
+| [Distributed logging](distributed-logging.md) | A durable **buffer (Kafka)** decoupling producers; tiered storage |
+| [Distributed file system](distributed-file-system.md) | **Blocks + replication** and the metadata/data-plane split (GFS/HDFS) |
 
-### Rate Limiter
-- Token bucket and leaky bucket algorithms
-- Distributed rate limiting implementation
-- Rate limit headers and bypass strategies
-- Analytics and monitoring
-- Configuration management and security
+## How to practice
 
-### Distributed Logging System
-- Log aggregation and real-time processing
-- Storage and retention policies
-- Query capabilities and search optimization
-- Log shipping and compression strategies
-- Monitoring and alerting
+Pick a design, then narrate it end-to-end using the framework from `fundamentals.md`:
+requirements → estimation → API → data model → high-level design → deep dive →
+bottlenecks. Don't memorize the answer — rehearse *making and defending the
+centerpiece decision*, because the interviewer will push on your trade-offs, not your
+recall.
 
-### Real-time Chat Application
-- WebSocket implementation and message delivery
-- Message ordering and persistence
-- Online/offline status management
-- Group chat scaling strategies
-- End-to-end encryption and security
+## Recurring patterns across these designs
+- **Read-heavy → cache + CDN + replicas** (TinyURL, feed, search).
+- **Write spikes / slow downstream → a queue decouples it** (notifications, logging,
+  feed fan-out, payments' outbox).
+- **Scale a stateful tier → consistent hashing / sharding** (cache, DFS, search index).
+- **Correctness-critical → idempotency + strong consistency** (payments).
+- **Fan-out on write vs read** recurs wherever one event reaches many consumers (feed,
+  chat groups, notifications).
 
-### Search Engine
-- Crawling and indexing strategies
-- Relevance ranking algorithms
-- Distributed search implementation
-- Query optimization and caching
-- Real-time indexing and updates
-
-### Distributed File System
-- File storage and retrieval mechanisms
-- Replication and consistency models
-- Fault tolerance and recovery
-- Performance optimization
-- Security and access control
-
-### Notification System
-- Push, email, and SMS notifications
-- Delivery guarantees and retry mechanisms
-- Template management and personalization
-- Rate limiting and batching
-- Analytics and monitoring
-
-### Payment System
-- Transaction processing and idempotency
-- Payment gateway integration
-- Fraud detection and prevention
-- Security and compliance
-- Monitoring and reconciliation
-
-### Social Media Feed
-- Feed generation and ranking
-- Real-time updates and caching
-- Content personalization
-- Performance optimization
-- Analytics and monitoring
-
-## Common Design Patterns
-
-1. Scalability Patterns
-   - Horizontal vs Vertical Scaling
-   - Database Sharding
-   - Caching Strategies
-   - Load Balancing
-
-2. Performance Patterns
-   - Response Time Optimization
-   - Throughput Enhancement
-   - Resource Utilization
-   - Bottleneck Identification
-
-3. Reliability Patterns
-   - Fault Tolerance
-   - High Availability
-   - Disaster Recovery
-   - Data Consistency
-
-4. Security Patterns
-   - Authentication & Authorization
-   - Data Protection
-   - API Security
-   - Infrastructure Security
-
-## Best Practices
-
-1. System Design
-   - Clear requirements gathering
-   - Scalable architecture planning
-   - Performance optimization
-   - Security-first approach
-
-2. Implementation
-   - Clean architecture
-   - Proper documentation
-   - Monitoring and logging
-   - Error handling
-
-3. Common Pitfalls
-   - Premature optimization
-   - Over-engineering
-   - Security oversights
-   - Scalability issues
-
-## Resources
-
-### Books
-- Designing Data-Intensive Applications (Kleppmann)
-- Clean Architecture (Martin)
-- Building Microservices (Newman)
-- System Design Interview (Alex Xu)
-
-### Online Resources
-- High Scalability
-- Martin Fowler's Blog
-- InfoQ Architecture
-- AWS Architecture Center
-
-### Tools
-- Draw.io (Architecture Diagrams)
-- Postman (API Testing)
-- JMeter (Load Testing)
-- Prometheus (Monitoring)
-
-### Communities
-- Stack Overflow
-- Reddit r/systemdesign
-- High Scalability Forum
-- InfoQ Architecture Forum
+## References
+- *Designing Data-Intensive Applications* (Kleppmann) — the single best book here
+- *System Design Interview* Vol. 1–2 (Alex Xu) · the original GFS / Dynamo / Kafka papers

@@ -1,204 +1,87 @@
-# Design a URL Shortening Service (TinyURL)
+# Design a URL shortener (TinyURL / bit.ly)
 
-## System Requirements
+The classic warm-up design. It looks trivial, so the interviewer scores you on the
+*decisions*: how you generate keys, how you serve reads at scale, and the redirect
+subtlety most people miss. Uses the building blocks in [`../fundamentals.md`](../fundamentals.md).
 
-### Functional Requirements
-1. Given a long URL, generate a shorter URL
-2. When users access the short URL, redirect them to the original URL
-3. Custom short URLs should be supported
-4. URLs should expire after a certain time period
-5. Analytics for URL usage should be available
+## 1. Requirements
 
-### Non-Functional Requirements
-1. High availability
-2. Low latency
-3. Scalable to handle millions of URLs
-4. Secure and reliable
+**Functional:** shorten a long URL → short code; visiting the short code redirects to
+the original; optional custom alias; optional expiry; basic click analytics.
+**Non-functional:** redirects must be **fast** (<~10 ms) and **highly available**
+(a dead shortener breaks every link ever made); short codes unique; massively
+**read-heavy**.
 
-## Capacity Estimation
+## 2. Estimation (sets the shape)
 
-### Traffic Estimates
-- Daily active users: 100 million
-- Average URL creation per user: 1 per day
-- Read to Write ratio: 100:1
-- Total URLs per day: 100 million
-- Total redirects per day: 10 billion
+Say 100 M new URLs/day and a **100:1 read:write** ratio → ~10 B redirects/day ≈
+**~115 K reads/s**, ~1.2 K writes/s. Storage: ~100 M/day × ~500 B × years → tens of
+TB. Two takeaways immediately: **optimize the read/redirect path hard** (cache + CDN),
+and this is a **key-value** problem (`code → long URL`), not a relational one.
 
-### Storage Estimates
-- Average URL length: 100 characters
-- Short URL length: 7 characters
-- Storage per URL: ~200 bytes
-- Total storage per year: ~7.3 TB
+## 3. The core decision: generating the short code
 
-## System APIs
+This is the heart of the interview. Two families:
 
-### Create URL
-```
-POST /api/v1/urls
-Request:
-{
-    "long_url": "https://www.example.com/very/long/url",
-    "custom_alias": "optional_custom_alias",
-    "expiry_date": "2024-12-31"
-}
-Response:
-{
-    "short_url": "https://tinyurl.com/abc123",
-    "expiry_date": "2024-12-31"
-}
-```
+**A) Hash the long URL** (e.g. MD5/SHA, take first 7 chars, Base62). 
+- Pro: same URL → same code (natural dedup). 
+- Con: **collisions** must be detected and resolved (rehash/append), and it doesn't
+  help with custom aliases.
 
-### Get URL
-```
-GET /api/v1/urls/{short_url}
-Response:
-{
-    "long_url": "https://www.example.com/very/long/url",
-    "created_at": "2024-03-20",
-    "expiry_date": "2024-12-31"
-}
-```
+**B) Unique ID → Base62 encode** (preferred senior answer). 
+- Generate a globally unique 64-bit ID, then Base62-encode it to a short string.
+  **Base62** `[a-zA-Z0-9]` gives 62⁷ ≈ **3.5 trillion** 7-char codes.
+- No collisions by construction.
+- Con: naive auto-increment is a bottleneck and makes codes **sequential/guessable**
+  (enumeration risk). Fix by distributing ID generation:
+  - a **ticket/range server** hands each app server a block of IDs (e.g. 1,000 at a
+    time) to use locally — cheap and avoids per-write coordination; or
+  - a **Snowflake-style** ID (timestamp + machine + sequence); or
+  - a key-generation service that pre-generates unused keys.
+- To defeat guessing, encode a permuted/salted ID rather than the raw counter.
 
-## Database Schema
+**Custom aliases:** check uniqueness (a conditional insert / `SETNX`), validate length
+and against a blocklist.
 
-### URLs Table
-```sql
-CREATE TABLE urls (
-    id BIGINT PRIMARY KEY,
-    short_url VARCHAR(7) UNIQUE,
-    long_url VARCHAR(2048),
-    user_id BIGINT,
-    created_at TIMESTAMP,
-    expiry_date TIMESTAMP,
-    is_custom BOOLEAN,
-    clicks BIGINT DEFAULT 0
-);
-```
+## 4. Data model & storage
 
-### Analytics Table
-```sql
-CREATE TABLE url_analytics (
-    id BIGINT PRIMARY KEY,
-    url_id BIGINT,
-    ip_address VARCHAR(45),
-    user_agent VARCHAR(512),
-    referrer VARCHAR(2048),
-    timestamp TIMESTAMP,
-    country VARCHAR(2),
-    device_type VARCHAR(20)
-);
-```
+A key-value mapping fits: `short_code (PK) → long_url, owner, created_at, expiry`.
+- At this scale a **NoSQL KV/wide-column store** (or a sharded SQL store, sharded by
+  `short_code`) serves lookups by primary key in O(1) — exactly the access pattern.
+- Don't over-index; the redirect only needs point lookups by code.
 
-## High-Level Design
+## 5. The read/redirect path (where the traffic is)
 
-### Components
-1. **Load Balancer**: Distributes traffic across multiple servers
-2. **Application Servers**: Handle URL creation and redirection
-3. **Database Servers**: Store URL mappings and analytics
-4. **Cache Servers**: Cache frequently accessed URLs
-5. **Analytics Servers**: Process and store analytics data
+1. Request hits `short_code`.
+2. **Cache first (Redis), cache-aside.** With 100:1 reads and heavy skew (a few links
+   go viral), cache hit rate is very high — most redirects never touch the DB.
+3. On miss, read the DB, populate the cache (with TTL).
+4. **Redirect — and here's the subtlety:** 
+   - **301 (permanent)** → browsers cache it, so subsequent clicks skip your server:
+     fewer hits, lower cost, but **you lose per-click analytics**. 
+   - **302 (temporary)** → every click comes back to you: enables analytics and lets
+     you change the target, at higher traffic. 
+   Naming this trade-off is the senior signal; most candidates miss it. Pick 302 if
+   analytics matter, 301 if raw scale/cost dominates.
 
-### URL Shortening Algorithm
-1. **Base62 Encoding**
-   - Use characters: [a-zA-Z0-9]
-   - 7 characters can represent 62^7 ≈ 3.5 trillion URLs
-   - Example: "abc123" represents a unique ID
+## 6. Analytics without slowing redirects
 
-2. **Custom URLs**
-   - Check availability in database
-   - Validate against profanity/restricted words
-   - Store with is_custom flag
+Never write analytics synchronously on the redirect path. **Emit a click event to a
+queue/stream (Kafka)** and process it asynchronously into an analytics store. The
+redirect returns immediately; counting is eventually consistent (perfectly fine here).
 
-## Detailed Component Design
+## 7. Scaling & availability
 
-### URL Creation Service
-1. Validate input URL
-2. Generate short URL
-3. Store in database
-4. Cache the mapping
-5. Return short URL
+- **Stateless app tier** behind a load balancer; scale horizontally.
+- **Cache + CDN** absorb the read storm; edge-cache hot codes.
+- **Shard** the store by `short_code`; add **read replicas**.
+- **Expiry/cleanup** via a TTL or a background sweeper.
+- Availability > strong consistency here: a slightly stale cache is fine, an outage is
+  not (favor A in CAP for the read path).
 
-### URL Redirection Service
-1. Receive request for short URL
-2. Check cache for mapping
-3. If not in cache, query database
-4. Update analytics
-5. Redirect to long URL
-
-### Analytics Service
-1. Collect click data
-2. Process in real-time
-3. Store in analytics database
-4. Generate reports
-
-## Scaling Considerations
-
-### Database Scaling
-1. **Sharding**
-   - Shard by URL hash
-   - Distribute load across multiple servers
-
-2. **Replication**
-   - Master-slave replication
-   - Read replicas for analytics
-
-### Caching Strategy
-1. **Multi-level Cache**
-   - In-memory cache (Redis)
-   - CDN for static content
-   - Browser caching
-
-2. **Cache Invalidation**
-   - TTL-based expiration
-   - Write-through cache
-
-## Security Considerations
-
-1. **URL Validation**
-   - Check for malicious URLs
-   - Validate URL format
-   - Prevent spam
-
-2. **Rate Limiting**
-   - Per user/IP limits
-   - API rate limiting
-   - DDoS protection
-
-3. **Access Control**
-   - User authentication
-   - URL ownership
-   - Private URLs
-
-## Monitoring and Analytics
-
-1. **Key Metrics**
-   - Response time
-   - Error rates
-   - Cache hit ratio
-   - Storage usage
-
-2. **Alerts**
-   - High latency
-   - Error rate spikes
-   - Storage thresholds
-   - Security incidents
-
-## Trade-offs and Alternatives
-
-### Alternative Approaches
-1. **Hash-based vs. Counter-based**
-   - Hash-based: No collision handling needed
-   - Counter-based: Sequential, predictable
-
-2. **Database vs. NoSQL**
-   - SQL: Better for analytics
-   - NoSQL: Better for scaling
-
-### Trade-offs
-1. **Performance vs. Consistency**
-   - Eventual consistency for better performance
-   - Strong consistency for critical operations
-
-2. **Storage vs. Computation**
-   - Pre-compute vs. on-demand generation
-   - Cache size vs. hit ratio 
+## Trade-offs to voice
+- **Hash vs ID-encode** — dedup-friendly-but-collisions vs collision-free-but-needs-
+  distributed-IDs.
+- **301 vs 302** — cost/scale vs analytics/flexibility.
+- **SQL vs NoSQL** — you only need point lookups, so KV/NoSQL scales more simply.
+- **Sequential vs permuted IDs** — simplicity vs unguessability.

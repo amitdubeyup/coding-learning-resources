@@ -5,12 +5,15 @@ you use **hooks correctly**, and can you reason about **performance and modern
 patterns**. This module is split accordingly:
 
 - **This file** — core model + hooks.
-- [`rendering-and-performance.md`](rendering-and-performance.md) — reconciliation, re-renders, memoization, perf.
-- [`advanced-and-modern.md`](advanced-and-modern.md) — state management, Server Components, Suspense, SSR/CSR/SSG/ISR, testing, patterns.
+- [`rendering-and-performance.md`](rendering-and-performance.md) — reconciliation, re-renders, memoization, the React Compiler, perf.
+- [`advanced-and-modern.md`](advanced-and-modern.md) — state management, React 19 Actions, Server Components, Suspense, SSR/CSR/SSG/ISR, testing.
 - [`react-legacy-qa.md`](react-legacy-qa.md) — the original long-form Q&A (kept for reference, pending review).
 
 Modern React = **function components + hooks**. Class components still work but are
 legacy for new code; know their lifecycle only well enough to translate it to hooks.
+**React 19 is the current baseline** (Actions, the `use()` API, ref as a prop, stable
+Server Components) and the **React Compiler** now auto-memoizes — both change some
+long-standing answers, flagged below.
 
 ## The mental model
 
@@ -36,14 +39,13 @@ legacy for new code; know their lifecycle only well enough to translate it to ho
 ### `useState`
 ```jsx
 const [count, setCount] = useState(0);
-// Functional update when the next value depends on the previous one:
-setCount(c => c + 1);
+setCount(c => c + 1);   // functional update when next value depends on previous
 ```
 Use the functional form inside async callbacks or when batching multiple updates —
 reading `count` directly can be stale.
 
 ### `useEffect`
-Runs side effects (subscriptions, fetches, manual DOM work) *after* render.
+Runs side effects (subscriptions, non-React DOM work, timers) *after* render.
 ```jsx
 useEffect(() => {
   const id = setInterval(tick, 1000);
@@ -55,16 +57,20 @@ useEffect(() => {
   deps cause stale closures; the `eslint-plugin-react-hooks` exhaustive-deps rule
   catches these.
 - **Don't overuse effects.** Data derived from props/state should be computed during
-  render, not synced via an effect. Effects are for *external* systems.
+  render, not synced via an effect. Effects are for *external* systems. For data
+  fetching, prefer a caching library (or a Server Component) — see `advanced-and-modern.md`.
 
 ### `useRef`
 A mutable box that persists across renders **without** causing a re-render. Two uses:
 holding a DOM node (`ref={myRef}`) and storing mutable values (timers, previous
-values, instance-like data).
+values, instance-like data). Note: in React 19 `ref` is a **normal prop** — function
+components receive it directly, and `forwardRef` is no longer needed (still works, but
+documented as heading for deprecation).
 
 ### `useMemo` / `useCallback`
-Memoize an expensive computed value / a stable function identity across renders.
-Use them to prevent needless work or re-renders — **not by default**. Covered in
+Memoize an expensive computed value / a stable function identity. **In React 19 with
+the compiler you rarely write these by hand** — it auto-memoizes. Reach for them as an
+escape hatch or in pre-compiler code. Full treatment in
 [`rendering-and-performance.md`](rendering-and-performance.md).
 
 ### `useContext`
@@ -78,6 +84,17 @@ const [state, dispatch] = useReducer(reducer, initialState);
 dispatch({ type: "increment" });
 ```
 Prefer it over multiple `useState`s when updates are logically grouped.
+
+### React 19 hooks (know these exist and what they're for)
+- **`use(resource)`** — reads a **promise** (suspends until it resolves) or **context**.
+  Uniquely, it *can* be called conditionally / in loops (see Rules of Hooks below).
+- **`useActionState`** — manages an async "Action": returns `[state, dispatch, isPending]`,
+  folding pending + error + result into one hook (replaces the old hand-wired pattern).
+- **`useOptimistic`** — show an instant optimistic UI while a mutation is in flight;
+  auto-reverts on failure.
+- **`useFormStatus`** — read the parent `<form>`'s submission status from a child
+  without prop-drilling.
+These are the **Actions** feature; worked examples in [`advanced-and-modern.md`](advanced-and-modern.md).
 
 ### Custom hooks
 Extract reusable stateful logic into a `useSomething()` function that calls other
@@ -101,6 +118,8 @@ function useDebounced(value, ms) {
 2. **Only call hooks from React function components or other custom hooks.**
 
 Break rule 1 and you get the classic "rendered more/fewer hooks than expected" crash.
+**The one exception (React 19):** the new `use()` API is deliberately allowed inside
+conditionals and loops — it's the first hook that breaks rule 1 by design.
 
 ## Keys (small topic, frequent question)
 
@@ -113,15 +132,19 @@ insert, or delete — it causes wrong state/DOM reuse. Use a stable id from the 
 - **Controlled:** value lives in React state (`value={x} onChange={...}`). Predictable,
   the default choice.
 - **Uncontrolled:** the DOM holds the value; you read it via a ref. Handy for simple
-  or performance-sensitive forms and file inputs.
+  or performance-sensitive forms and file inputs. React 19's `<form action={fn}>` +
+  `useActionState` cover many form cases with far less wiring.
 
 ## Quick-fire answers
 
 - **Why keys?** Stable identity for efficient, correct list reconciliation.
 - **Why does my effect run twice in dev?** React 18+ Strict Mode intentionally
-  double-invokes effects in development to surface missing cleanup. It doesn't happen
-  in production.
+  double-invokes effects in development to surface missing cleanup. Not in production.
 - **`useEffect` vs `useLayoutEffect`?** `useLayoutEffect` fires synchronously after
   DOM mutations, before paint — use it only when you must measure/adjust layout to
   avoid a flicker; otherwise `useEffect`.
-- **How to share logic between components?** Custom hooks.
+- **Share logic between components?** Custom hooks.
+- **Still need `forwardRef` in React 19?** No — `ref` is a normal prop now (it still
+  works, but is on the deprecation path).
+- **What's `use()` for?** Reading a promise (with Suspense) or context, and it can be
+  called conditionally — unlike every other hook.

@@ -2,6 +2,40 @@
 
 This document covers fundamental data structures including Trees, Graphs, Binary Trees, Binary Search Trees, and traversal algorithms BFS and DFS. Each section includes detailed explanations, time and space complexities, working principles, and basic JavaScript implementations.
 
+## What actually gets tested (senior lens)
+
+Trees and graphs are among the highest-frequency FAANG topics. What matters at senior
+level:
+
+**Trees** — recursion (DFS) is the workhorse; know the four traversals (pre-/in-/
+post-order + level-order via BFS). **In-order traversal of a BST yields sorted order** —
+the key insight behind many BST questions. High-frequency problems: **validate a BST**,
+**lowest common ancestor (LCA)**, max depth / **diameter**, path sum, invert/mirror,
+and **serialize/deserialize**. Almost all reduce to "recurse, do work at the node,
+combine the children's results."
+
+**Graphs** — model as an **adjacency list**. The two traversals map to different jobs:
+- **BFS** → shortest path in an **unweighted** graph (and level-order).
+- **DFS** → connectivity, cycle detection, path existence, and the basis of topo sort.
+
+The must-know graph algorithms and *when* to reach for each:
+- **Topological sort** (Kahn's BFS, or DFS) — order a **DAG** by dependencies (course
+  schedule, build order). If a topo order doesn't exist, there's a cycle.
+- **Union-Find / DSU** — connectivity and cycle detection in **undirected** graphs,
+  counting connected components/islands, and Kruskal's MST. Near-O(1) per operation
+  with path compression + union by rank.
+- **Dijkstra** — shortest path with **non-negative** weights (min-heap, `O(E log V)`).
+  Use **Bellman-Ford** if weights can be negative; **A\*** when you have a heuristic.
+- **Cycle detection** — DFS with three colors (white/gray/black) for directed graphs;
+  Union-Find for undirected.
+
+**Grids are graphs.** "Number of islands," flood fill, and shortest-path-in-a-maze are
+just BFS/DFS where a cell's neighbors are the 4 (or 8) adjacent cells — recognizing
+this converts a scary-looking grid problem into a standard traversal.
+
+Cross-reference the BFS/DFS, graph, and tree patterns in [`README.md`](README.md). The
+reference below covers the mechanics and implementations.
+
 ## Table of Contents
 
 - [Trees and Graphs](#trees-and-graphs)
@@ -280,6 +314,10 @@ graph.addEdge('C', 'E');
 
 console.log(bfs(graph, 'A')); // ['A', 'B', 'C', 'D', 'E']
 ```
+
+> **Interview note:** using an array's `shift()` as a queue is `O(n)` per dequeue —
+> fine for small inputs, but for large graphs use a real queue (index pointer or a
+> deque) to keep BFS at `O(V + E)`.
 
 ## Depth-First Search (DFS)
 
