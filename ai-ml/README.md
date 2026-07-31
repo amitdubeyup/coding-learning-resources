@@ -10,6 +10,7 @@ This module covers both, GenAI-first — AI-engineer loops are now majority-GenA
 classical ML a minority of the technical rounds. Companion files:
 [`foundations.md`](foundations.md) (LLM internals — start here for depth) ·
 [`rag.md`](rag.md) · [`agents.md`](agents.md) ·
+[`genai-system-design.md`](genai-system-design.md) (worked AI system designs) ·
 [`evaluation-and-safety.md`](evaluation-and-safety.md) ·
 [`classical-ml.md`](classical-ml.md) (classical ML, ML coding round, ML system design) ·
 [`interview-qa.md`](interview-qa.md) (legacy Q&A, pending review).
@@ -160,7 +161,8 @@ A repeatable framework for "design an AI assistant for X":
 6. **Serving:** caching, streaming, autoscaling, rate limits, cost controls.
 7. **Safety & ops:** prompt-injection defense, PII handling, monitoring, on-call.
 
-Worked examples of steps 2 and 5 live in [`rag.md`](rag.md) and
+Full worked examples live in [`genai-system-design.md`](genai-system-design.md); deep
+dives on steps 2 and 5 in [`rag.md`](rag.md) and
 [`evaluation-and-safety.md`](evaluation-and-safety.md).
 
 ## Rapid-fire Q&A
