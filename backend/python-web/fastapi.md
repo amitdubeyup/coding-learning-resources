@@ -59,14 +59,15 @@ FastAPI uses Pydantic models for automatic request validation. When you define a
 
 **Example:**
 ```python
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 class User(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str
     age: int = Field(..., gt=0, lt=150)
 
-    @validator('email')
+    @field_validator('email')      # Pydantic v2 (v1 used @validator)
+    @classmethod
     def validate_email(cls, v):
         if '@' not in v:
             raise ValueError('Invalid email')
@@ -210,20 +211,26 @@ def sync_db_query(db: Session):
 
 ## Pydantic Models & Validation
 
+> **Pydantic v2** (the current major version) is assumed throughout. Key v1 → v2
+> changes reflected below: `@validator` → `@field_validator` (+ `@classmethod`),
+> `@root_validator` → `@model_validator(mode="after")` (receives `self`, not
+> `values`), `regex=` → `pattern=` in `Field`, and `class Config` →
+> `model_config = ConfigDict(...)`.
+
 ### Q7: How do you use Pydantic for complex data validation?
 **Answer:**
 Pydantic provides powerful validation through field constraints, custom validators, and model configuration.
 
 **Example:**
 ```python
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
 class Address(BaseModel):
     street: str
     city: str
-    zipcode: str = Field(..., regex=r'^\d{5}$')
+    zipcode: str = Field(..., pattern=r'^\d{5}$')   # v2: `pattern=` (v1 was `regex=`)
 
 class User(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -233,28 +240,27 @@ class User(BaseModel):
     addresses: List[Address] = []
     created_at: datetime = Field(default_factory=datetime.now)
 
-    @validator('email')
+    @field_validator('email')            # v2: @field_validator (v1: @validator)
+    @classmethod
     def validate_email(cls, v):
         if '@' not in v or '.' not in v:
             raise ValueError('Invalid email format')
         return v.lower()
 
-    @validator('password')
+    @field_validator('password')
+    @classmethod
     def validate_password(cls, v):
         if not any(char.isdigit() for char in v):
             raise ValueError('Password must contain a number')
         return v
 
-    @root_validator
-    def check_adult_with_address(cls, values):
-        age = values.get('age')
-        addresses = values.get('addresses')
-        if age and age < 18 and addresses:
+    @model_validator(mode='after')       # v2: model_validator (v1: @root_validator)
+    def check_adult_with_address(self):
+        if self.age and self.age < 18 and self.addresses:
             raise ValueError('Minors cannot have addresses')
-        return values
+        return self
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)  # v2 (v1: class Config)
 ```
 
 ### Q8: Explain Pydantic's type hints and how FastAPI uses them
@@ -674,7 +680,7 @@ async def limited_route(request: Request):
     return {"message": "This endpoint is rate limited"}
 
 # Custom rate limiter with Redis
-import aioredis
+import redis.asyncio as redis   # aioredis is deprecated; use redis-py's asyncio
 from datetime import datetime, timedelta
 
 async def rate_limit(
@@ -1310,6 +1316,6 @@ async def get_users_with_posts_optimized(db: AsyncSession = Depends(get_db)):
 ## Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
-- [SQLAlchemy Async](https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html)
+- [Pydantic Documentation](https://docs.pydantic.dev/)
+- [SQLAlchemy Async](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html)
 - [Uvicorn](https://www.uvicorn.org/)

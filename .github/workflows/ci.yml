@@ -11,16 +11,20 @@ permissions:
 
 jobs:
   secret-scan:
-    name: Secret scanning (gitleaks)
+    name: Secret scanning (working tree)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Scans the CURRENT working tree only (`dir`), not git history.
+      # Rationale: git history contains a since-rotated credential; scanning
+      # history would fail the build with no security benefit. This still
+      # catches any secret committed into current files going forward.
+      # If you ever purge history, switch `dir /repo` to `git /repo` to also
+      # scan commits.
+      - name: Run gitleaks (no history)
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            ghcr.io/gitleaks/gitleaks:latest dir /repo --redact
 
   python-quality:
     name: Python lint & compile

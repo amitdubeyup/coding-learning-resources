@@ -4,8 +4,7 @@ A structured, verified knowledge base for cracking senior-level software & AI
 engineering interviews at top-tier companies worldwide — DSA, system design,
 languages, backend/frontend, data, DevOps, AI/ML, and behavioral rounds.
 
-> **Quality bar:** accurate, current, runnable, honest. Every file must meet the
-> standard in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+> **Quality bar:** accurate, current, runnable, honest — every file earns its place.
 
 ## How to use this repo
 
