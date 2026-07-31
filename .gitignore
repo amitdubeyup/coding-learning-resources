@@ -59,13 +59,14 @@ coverage/
 .turbo/
 
 # ---------------------------------------------------------------------------
-# Editors & OS
+# Editors, tooling & OS
 # ---------------------------------------------------------------------------
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.claude/
 *.swp
 *.swo
 
