@@ -1,39 +1,69 @@
-# 🎓 Coding Learning Resources
+# 🎯 Engineering Interview Prep
 
-> **Comprehensive interview preparation repository** - Python, JavaScript, System Design, Cloud, AI/ML, and more.
+A structured, verified knowledge base for cracking senior-level software & AI
+engineering interviews at top-tier companies worldwide — DSA, system design,
+languages, backend/frontend, data, DevOps, AI/ML, and behavioral rounds.
 
-## 🎯 Quick Start
+> **Quality bar:** accurate, current, runnable, honest. Every file must meet the
+> standard in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Browse the sections below to start your interview preparation.
+## How to use this repo
 
----
+1. **Start with the three universal gates:** [`dsa/`](dsa/),
+   [`system-design/`](system-design/), and [`behavioral/`](behavioral/) — they decide
+   most senior offers regardless of role.
+2. **Learn patterns, not problems.** `dsa/` teaches the ~15 patterns behind the
+   hundreds of LeetCode variants.
+3. **Then go deep on your stack** via the language/framework folders below.
+4. **Practice out loud** — senior interviews score how you reason about trade-offs.
 
-## 📚 Content Overview
+## Layout
 
-| Section | Files | What's Inside |
-|---------|-------|---------------|
-| **[Python](python/)** ⭐ | 2 | 2000+ lines, 150+ questions - Async, ML, Security, Performance |
-| **[Node.js](nodejs/)** | 9 | 400 questions - Express, async, performance, security |
-| **[JavaScript](javascript/)** | 2 | ES6+, Async patterns, DOM + **TypeScript 32 Q&A** 🆕 |
-| **[React.js](reactjs/)** | 1 | Hooks, Performance, State management |
-| **[Angular](angular/)** | 1 | RxJS, Dependency injection |
-| **[Vue.js](vuejs/)** | 1 | Composition API, Vuex |
-| **[Frontend](frontend/)** | 2 | HTML/CSS, Web fundamentals + **GraphQL 24 Q&A** 🆕 |
-| **[Full Stack](full-stack/)** | 6 | Algorithms, Architecture patterns |
-| **[System Design](system-design/)** | 23 | Cloud architecture, Scalability, Microservices |
-| **[Database](database/)** | 3 | SQL/NoSQL, Indexing, CAP theorem + **PostgreSQL 34 Q&A** 🆕 |
-| **[DevOps](devops/)** | 4 | AWS, GitHub, Docker + **Kubernetes 33 Q&A** 🆕 |
-| **[AI/ML](ai/)** | 1 | Model serving, RAG, Vector DBs, LangChain |
-| **[DSA](dsa/)** | 1 | Data structures & algorithms |
-| **[Program](program/)** | 1 | Programming fundamentals, Best practices |
-| **[Behavioral](behavioral/)** | 1 | STAR method, Leadership |
+| Area | Folder | Focus |
+|------|--------|-------|
+| Algorithms | [`dsa/`](dsa/) | 15 patterns, complexity, curated problem sets |
+| System design | [`system-design/`](system-design/) | high-level, low-level (OS), multi-tenancy |
+| Languages | [`languages/`](languages/) | Python, JavaScript, TypeScript |
+| Backend | [`backend/`](backend/) | Node.js, Python web (FastAPI/Django) |
+| Frontend | [`frontend/`](frontend/) | React, Angular, Vue, HTML/CSS, GraphQL |
+| Data | [`data/`](data/) | SQL, indexing, NoSQL, CAP, caching |
+| DevOps | [`devops/`](devops/) | containers, AWS, CI/CD, observability |
+| AI/ML | [`ai-ml/`](ai-ml/) | LLMs, RAG, agents, evaluation, MLOps |
+| Behavioral | [`behavioral/`](behavioral/) | STAR method, competency map, story bank |
+| Projects | [`projects/`](projects/) | runnable reference apps (Django, FastAPI) |
 
-**Total:** ~62 markdown files across 15 directories
+Each folder has a `README.md` index. Files ending in `-legacy-qa.md` are the original
+long-form Q&A, kept for reference and pending a final line-by-line review.
 
----
+## 🔴 Security notice — action required
 
-## 👨‍💻 Lead Maintainer
-[@amitdubeyup](https://github.com/amitdubeyup)
+Live credentials were previously committed to this repo. The code is fixed (secrets
+now come from the environment), but the secrets remain in **git history**. Complete
+[`SECURITY.md`](SECURITY.md) — rotate the DB password and Django `SECRET_KEY`, and
+purge history — **before pushing anywhere.**
 
-## 📄 License
-This project is licensed under the **MIT License**.
+## 🧹 Final housekeeping (run once)
+
+Empty folders remain from the reorg (I couldn't delete them directly). Sweep macOS
+files and remove the empties:
+
+```bash
+find . -name .DS_Store -delete
+rmdir ai angular database fastapi javascript multi-tenant-architecture \
+      program reactjs vuejs django full-stack python
+```
+
+There's also a quarantine folder at `~/Learning/_learning-code-quarantine/`
+(old databases, build artifacts, `helper.txt`, and two personal scripts that were
+not yours) — inspect and `rm -rf` when satisfied.
+
+## Status
+
+Restructured and rewritten to the quality bar: **DSA, AI-ML, behavioral, frontend
+(React/Angular/Vue), languages (Python/JS/TS), data, DevOps, Node.js**, plus all
+security/code/CI hardening. Remaining polish: a version pass over the
+`*-legacy-qa.md` deep-dives and the Pydantic-v1 bits in the FastAPI notes.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

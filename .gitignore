@@ -1,18 +1,77 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# ---------------------------------------------------------------------------
+# Secrets & environment  — NEVER commit these
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.*
 
-# Other files and folders
-.settings/
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# ---------------------------------------------------------------------------
+# Databases & data artifacts (should never be in git)
+# ---------------------------------------------------------------------------
+*.sqlite3
+*.db
+*.sql.bak
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# ---------------------------------------------------------------------------
+# Django
+# ---------------------------------------------------------------------------
+staticfiles/
+productionfiles/
+media/
+*.log
+local_settings.py
+
+# ---------------------------------------------------------------------------
+# Node / JS
+# ---------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+coverage/
+.next/
+.turbo/
+
+# ---------------------------------------------------------------------------
+# Editors & OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Archives & misc junk
+# ---------------------------------------------------------------------------
+*.zip
+*.tar.gz
+Archive.zip

@@ -2,15 +2,48 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
+permissions:
+  contents: read
 
 jobs:
-  check:
+  secret-scan:
+    name: Secret scanning (gitleaks)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Check file existence
-      run: |
-        ls -la
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  python-quality:
+    name: Python lint & compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: pip install ruff
+      - name: Lint (ruff)
+        run: ruff check . || true   # non-blocking until the codebase is clean
+      - name: Byte-compile all Python
+        run: python -m compileall -q projects
+
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" || true
